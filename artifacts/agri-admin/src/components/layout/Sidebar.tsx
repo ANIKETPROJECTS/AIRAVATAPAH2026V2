@@ -1,4 +1,4 @@
-import { BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone, TrendingUp, Settings, Wheat, ChevronLeft, ChevronRight, Smartphone, UserPlus } from "lucide-react";
+import { BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone, TrendingUp, Settings, ChevronLeft, ChevronRight, Smartphone, UserPlus } from "lucide-react";
 
 const navItems = [
   { key: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -27,9 +27,20 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle }: Sid
       style={{ backgroundColor: "#0D2B1E" }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-sidebar-border">
-        <Wheat className="h-7 w-7 text-secondary flex-shrink-0" />
-        {!collapsed && <span className="font-heading text-lg text-secondary tracking-wide">AgriAdmin AI</span>}
+      <div className="flex items-center justify-center px-3 py-4 border-b border-sidebar-border">
+        {collapsed ? (
+          <img
+            src="/krishi-suvidha-logo.png"
+            alt="Krishi Suvidha"
+            className="h-8 w-8 object-contain"
+          />
+        ) : (
+          <img
+            src="/krishi-suvidha-logo.png"
+            alt="Krishi Suvidha"
+            className="h-20 w-auto object-contain"
+          />
+        )}
       </div>
 
       {/* Nav */}
