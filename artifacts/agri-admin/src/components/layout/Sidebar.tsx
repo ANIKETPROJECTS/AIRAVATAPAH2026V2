@@ -27,18 +27,18 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle }: Sid
       style={{ backgroundColor: "#0D2B1E" }}
     >
       {/* Logo */}
-      <div className="flex items-center justify-center px-3 py-4 border-b border-sidebar-border">
+      <div className="flex items-center justify-center border-b border-sidebar-border">
         {collapsed ? (
           <img
             src="/krishi-suvidha-logo.png"
             alt="Krishi Suvidha"
-            className="h-8 w-8 object-contain"
+            className="w-full h-auto object-contain"
           />
         ) : (
           <img
             src="/krishi-suvidha-logo.png"
             alt="Krishi Suvidha"
-            className="h-20 w-auto object-contain"
+            className="w-full h-auto object-contain"
           />
         )}
       </div>
