@@ -1331,7 +1331,7 @@ export default function NewRegistration() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={handleBackToUpload}
