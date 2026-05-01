@@ -27,11 +27,12 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle }: Sid
       style={{ backgroundColor: "#0D2B1E" }}
     >
       {/* Logo */}
-      <div className="flex items-center justify-center border-b border-sidebar-border" style={{ padding: "6px 10px" }}>
+      <div className="border-b border-sidebar-border overflow-hidden" style={{ padding: "0 10px" }}>
         <img
           src="/krishi-suvidha-logo.png"
           alt="Krishi Suvidha"
           className="w-full h-auto object-contain"
+          style={{ marginTop: "-18%", marginBottom: "-18%" }}
         />
       </div>
 
