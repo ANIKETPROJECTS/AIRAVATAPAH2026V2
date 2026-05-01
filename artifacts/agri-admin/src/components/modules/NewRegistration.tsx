@@ -722,6 +722,71 @@ function DocUploadCard({
   );
 }
 
+function ReviewTabBar({
+  completedCards,
+  activeIndex,
+  showProfile,
+  onJump,
+  onJumpToProfile,
+  onBack,
+}: {
+  completedCards: DocCard[];
+  activeIndex: number;
+  showProfile: boolean;
+  onJump: (i: number) => void;
+  onJumpToProfile: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="sticky top-0 z-10 bg-background border-b border-border mb-6 -mx-6 px-6 pt-3">
+      <div className="flex items-center gap-1 mb-0 overflow-x-auto scrollbar-none">
+        <button
+          onClick={onBack}
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors rounded-t-lg mr-2"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Upload
+        </button>
+        <div className="w-px h-5 bg-border flex-shrink-0 mr-2" />
+
+        {completedCards.map((card, i) => {
+          const Icon = card.icon;
+          const isActive = !showProfile && activeIndex === i;
+          return (
+            <button
+              key={card.id}
+              onClick={() => onJump(i)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all rounded-t-sm whitespace-nowrap ${
+                isActive
+                  ? `border-b-2 ${card.borderColor.replace("border-", "border-b-")} ${card.color} bg-muted/30`
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20"
+              }`}
+            >
+              <Icon className={`h-3.5 w-3.5 ${isActive ? card.color : ""}`} />
+              {card.shortLabel}
+              {i < activeIndex || (showProfile) ? (
+                <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-0.5" />
+              ) : null}
+            </button>
+          );
+        })}
+
+        <button
+          onClick={onJumpToProfile}
+          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all rounded-t-sm whitespace-nowrap ${
+            showProfile
+              ? "border-b-2 border-b-primary text-primary bg-muted/30"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20"
+          }`}
+        >
+          <UserCheck className="h-3.5 w-3.5" />
+          Farmer Profile
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DocReviewPanel({
   card,
   state,
@@ -746,11 +811,11 @@ function DocReviewPanel({
   const fieldCount = state.sections.reduce((n, s) => n + s.fields.filter(f => f.value && f.value !== "—").length, 0);
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col">
       <div className={`rounded-xl border-2 ${card.borderColor} ${card.bgColor} p-5 mb-5`}>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl bg-white/70 shadow-sm`}>
+            <div className="p-3 rounded-xl bg-white/70 shadow-sm">
               <Icon className={`h-6 w-6 ${card.color}`} />
             </div>
             <div>
@@ -785,7 +850,7 @@ function DocReviewPanel({
         </div>
       )}
 
-      <div className="flex-1 rounded-xl border border-border bg-card p-5 mb-6">
+      <div className="rounded-xl border border-border bg-card p-5 mb-6">
         <FieldsTable
           sections={state.sections}
           rawTables={state.rawTables}
@@ -803,21 +868,6 @@ function DocReviewPanel({
           <ArrowLeft className="h-4 w-4" />
           Previous
         </button>
-
-        <div className="flex items-center gap-1.5">
-          {Array.from({ length: total }).map((_, i) => (
-            <div
-              key={i}
-              className={`rounded-full transition-all ${
-                i === index
-                  ? `w-6 h-2 ${card.color.replace("text-", "bg-")}`
-                  : i < index
-                  ? "w-2 h-2 bg-emerald-400"
-                  : "w-2 h-2 bg-border"
-              }`}
-            />
-          ))}
-        </div>
 
         <button
           onClick={onNext}
@@ -1332,19 +1382,14 @@ export default function NewRegistration() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={handleBackToUpload}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Upload
-        </button>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium text-foreground">
-          {showProfileCard ? "Farmer Profile" : `Reviewing ${completedCards[reviewIndex]?.shortLabel ?? ""}`}
-        </span>
-      </div>
+      <ReviewTabBar
+        completedCards={completedCards}
+        activeIndex={reviewIndex}
+        showProfile={showProfileCard}
+        onJump={(i) => { setReviewIndex(i); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        onJumpToProfile={() => { setReviewIndex(completedCards.length); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+        onBack={handleBackToUpload}
+      />
 
       {!showProfileCard && completedCards[reviewIndex] && (
         <DocReviewPanel
@@ -1365,7 +1410,7 @@ export default function NewRegistration() {
           onChange={handleProfileChange}
           onApprove={handleApprove}
           approved={approved}
-          onBack={() => setReviewIndex(completedCards.length - 1)}
+          onBack={() => { setReviewIndex(completedCards.length - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         />
       )}
     </div>
