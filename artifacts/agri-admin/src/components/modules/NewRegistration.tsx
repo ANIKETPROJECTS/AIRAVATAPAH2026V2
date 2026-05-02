@@ -1683,14 +1683,6 @@ const PROFILE_SECTIONS: {
           { key: "village", label: "Village", placeholder: "Village name" },
           { key: "taluka", label: "Taluka", placeholder: "Taluka name" },
           { key: "district", label: "District", placeholder: "District name" },
-          { key: "surveyNumber", label: "Survey Number", placeholder: "e.g. 77/3" },
-          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
-        ],
-      },
-      {
-        key: "crop",
-        fields: [
-          { key: "crop", label: "Primary Crop", placeholder: "e.g. Soybean, Wheat, Cotton", span: true },
         ],
       },
     ],
@@ -1840,6 +1832,7 @@ function FarmerProfileCard({
   onCustomPhotoChange: (v: string | null) => void;
 }) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [form12EditedCells, setForm12EditedCells] = useState<Record<string, string>>({});
   const toggleSection = (id: string) =>
     setCollapsedSections(prev => {
       const next = new Set(prev);
@@ -2036,11 +2029,66 @@ function FarmerProfileCard({
                     </div>
                   )}
 
-                  {/* Form 12: Crop Inspection editable table */}
+                  {/* Form 12: Crop structured table (from sections) */}
+                  {section.id === "form12" && (() => {
+                    const form12Sections = docStates["form12"]?.sections ?? [];
+                    const cropSections = form12Sections.filter(sec => sec.tables.length > 0);
+                    if (!cropSections.length) return null;
+                    return (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {lang === "mr" ? "पीक" : lang === "hi" ? "फसल" : "Crop"}
+                        </p>
+                        {cropSections.map((sec, sIdx) => (
+                          sec.tables.map((tbl, tIdx) => tbl.rows.length > 0 && (
+                            <div key={`${sIdx}-${tIdx}`} className="border-l-4 border-l-green-400 bg-card border border-border rounded-md p-4">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-green-700 mb-3">
+                                {tSec(tbl.label || sec.title, lang)} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
+                              </p>
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full text-sm border-collapse">
+                                  <thead className="bg-muted/40">
+                                    <tr>
+                                      {tbl.columns.map(c => (
+                                        <th key={c.key} className="border border-border px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap text-xs">
+                                          {tField(c.key, lang, c.label)}
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {tbl.rows.map((row, rIdx) => {
+                                      const cellKey = (cKey: string) => `${sIdx}-${tIdx}-${rIdx}-${cKey}`;
+                                      return (
+                                        <tr key={rIdx} className="border-t border-border">
+                                          {tbl.columns.map(c => (
+                                            <td key={c.key} className="border border-border px-1 py-1 align-top">
+                                              <input
+                                                type="text"
+                                                value={form12EditedCells[cellKey(c.key)] ?? (row.values[c.key] ?? "")}
+                                                onChange={e => setForm12EditedCells(prev => ({ ...prev, [cellKey(c.key)]: e.target.value }))}
+                                                className="w-full min-w-[60px] rounded border-0 bg-transparent px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-green-400/60 transition"
+                                              />
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ))
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Form 12: Source Document Tables (raw spanned tables) */}
                   {section.id === "form12" && form12RawTables.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {lang === "mr" ? "पीक पाहणी तक्ता" : lang === "hi" ? "फसल निरीक्षण तालिका" : "Crop Inspection Table"}
+                        {ui("sourceDocTables", lang)}
                       </p>
                       {form12RawTables.map((tbl, idx) => (
                         <div key={tbl.blockId ?? idx} className="border-l-4 border-l-green-400 bg-card border border-border rounded-md p-4">
