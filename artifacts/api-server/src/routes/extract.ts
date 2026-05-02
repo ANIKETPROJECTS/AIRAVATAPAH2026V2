@@ -43,8 +43,8 @@ interface JobMeta {
 
 const jobs = new Map<string, JobMeta>();
 
-// 30 minute TTL on the in-memory job map.
-const JOB_TTL_MS = 30 * 60 * 1000;
+// 4 hour TTL — accurate mode can take several minutes; give plenty of headroom.
+const JOB_TTL_MS = 4 * 60 * 60 * 1000;
 function gcJobs() {
   const cutoff = Date.now() - JOB_TTL_MS;
   for (const [id, meta] of jobs) {

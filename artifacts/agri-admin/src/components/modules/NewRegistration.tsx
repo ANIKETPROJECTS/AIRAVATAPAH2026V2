@@ -665,12 +665,9 @@ async function pollUntilDone(
   onComplete: (result: Omit<ExtractionState, "filename">) => void,
   onError: (msg: string) => void,
 ) {
-  const maxAttempts = 600;
-  let attempts = 0;
-
-  while (attempts < maxAttempts) {
-    await sleep(3000);
-    attempts++;
+  // No cap — accurate mode can take several minutes; keep polling until done.
+  while (true) {
+    await sleep(5000);
     const pollUrl = `${BASE_URL}/api/extract/${requestId}`;
     try {
       const res = await fetch(pollUrl);
