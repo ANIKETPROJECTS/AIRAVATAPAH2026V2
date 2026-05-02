@@ -11,6 +11,7 @@ export const T: Record<string, Record<LangCode, string>> = {
   nav_reports:          { en: "Reports & Analytics",        hi: "रिपोर्ट और विश्लेषण",   mr: "अहवाल आणि विश्लेषण" },
   nav_settings:         { en: "Settings & Workflow",        hi: "सेटिंग्स और वर्कफ्लो",  mr: "सेटिंग्स आणि कार्यप्रवाह" },
   nav_farmerapp:        { en: "Farmer App Preview",         hi: "किसान ऐप पूर्वावलोकन", mr: "शेतकरी ॲप पूर्वावलोकन" },
+  nav_verifiedfarmers:  { en: "Farmers",                   hi: "किसान",                  mr: "शेतकरी" },
 
   page_dashboard:       { en: "Dashboard Overview",        hi: "डैशबोर्ड अवलोकन",       mr: "डॅशबोर्ड विहंगावलोकन" },
   page_newregistration: { en: "New Registration",          hi: "नई पंजीकरण",             mr: "नवीन नोंदणी" },
@@ -22,6 +23,7 @@ export const T: Record<string, Record<LangCode, string>> = {
   page_reports:         { en: "Reports & Analytics",       hi: "रिपोर्ट और विश्लेषण",    mr: "अहवाल आणि विश्लेषण" },
   page_settings:        { en: "Settings & Workflow",       hi: "सेटिंग्स और वर्कफ्लो",   mr: "सेटिंग्स आणि कार्यप्रवाह" },
   page_farmerapp:       { en: "Farmer App Preview",        hi: "किसान ऐप पूर्वावलोकन",  mr: "शेतकरी ॲप पूर्वावलोकन" },
+  page_verifiedfarmers: { en: "Farmers",                  hi: "किसान",                   mr: "शेतकरी" },
 
   tab_rules:            { en: "AI Workflow Rules",         hi: "AI वर्कफ्लो नियम",       mr: "AI कार्यप्रवाह नियम" },
   tab_users:            { en: "User Management",           hi: "उपयोगकर्ता प्रबंधन",     mr: "वापरकर्ता व्यवस्थापन" },

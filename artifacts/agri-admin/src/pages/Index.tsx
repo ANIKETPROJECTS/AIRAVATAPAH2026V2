@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Dashboard from "@/components/modules/Dashboard";
 import FarmerRegistry from "@/components/modules/FarmerRegistry";
+import VerifiedFarmers from "@/components/modules/VerifiedFarmers";
 import SchemeApplications from "@/components/modules/SchemeApplications";
 import SubsidyManagement from "@/components/modules/SubsidyManagement";
 import InsuranceClaims from "@/components/modules/InsuranceClaims";
@@ -16,29 +17,31 @@ import { useLang } from "@/contexts/LanguageContext";
 import { t } from "@/i18n/translations";
 
 const pageTitleKeys: Record<string, string> = {
-  dashboard:       "page_dashboard",
-  newregistration: "page_newregistration",
-  farmers:         "page_farmers",
-  applications:    "page_applications",
-  subsidies:       "page_subsidies",
-  insurance:       "page_insurance",
-  grievances:      "page_grievances",
-  reports:         "page_reports",
-  settings:        "page_settings",
-  farmerapp:       "page_farmerapp",
+  dashboard:          "page_dashboard",
+  newregistration:    "page_newregistration",
+  farmers:            "page_farmers",
+  verifiedfarmers:    "page_verifiedfarmers",
+  applications:       "page_applications",
+  subsidies:          "page_subsidies",
+  insurance:          "page_insurance",
+  grievances:         "page_grievances",
+  reports:            "page_reports",
+  settings:           "page_settings",
+  farmerapp:          "page_farmerapp",
 };
 
 const modules: Record<string, React.FC> = {
-  dashboard:       Dashboard,
-  newregistration: NewRegistration,
-  farmers:         FarmerRegistry,
-  applications:    SchemeApplications,
-  subsidies:       SubsidyManagement,
-  insurance:       InsuranceClaims,
-  grievances:      GrievanceManagement,
-  reports:         ReportsAnalytics,
-  settings:        SettingsWorkflow,
-  farmerapp:       FarmerAppPreview,
+  dashboard:          Dashboard,
+  newregistration:    NewRegistration,
+  farmers:            FarmerRegistry,
+  verifiedfarmers:    VerifiedFarmers,
+  applications:       SchemeApplications,
+  subsidies:          SubsidyManagement,
+  insurance:          InsuranceClaims,
+  grievances:         GrievanceManagement,
+  reports:            ReportsAnalytics,
+  settings:           SettingsWorkflow,
+  farmerapp:          FarmerAppPreview,
 };
 
 export default function Index() {

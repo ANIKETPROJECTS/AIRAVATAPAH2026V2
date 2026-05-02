@@ -1,18 +1,19 @@
-import { BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone, TrendingUp, Settings, ChevronLeft, ChevronRight, Smartphone, UserPlus } from "lucide-react";
+import { BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone, TrendingUp, Settings, ChevronLeft, ChevronRight, Smartphone, UserPlus, UserCheck } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { t } from "@/i18n/translations";
 
 const navItems = [
-  { key: "dashboard",       labelKey: "nav_dashboard",       icon: BarChart3 },
-  { key: "newregistration", labelKey: "nav_newregistration", icon: UserPlus },
-  { key: "farmers",         labelKey: "nav_farmers",         icon: Users },
-  { key: "applications",    labelKey: "nav_applications",    icon: ClipboardList },
-  { key: "subsidies",       labelKey: "nav_subsidies",       icon: IndianRupee },
-  { key: "insurance",       labelKey: "nav_insurance",       icon: Shield },
-  { key: "grievances",      labelKey: "nav_grievances",      icon: Megaphone },
-  { key: "reports",         labelKey: "nav_reports",         icon: TrendingUp },
-  { key: "settings",        labelKey: "nav_settings",        icon: Settings },
-  { key: "farmerapp",       labelKey: "nav_farmerapp",       icon: Smartphone },
+  { key: "dashboard",         labelKey: "nav_dashboard",         icon: BarChart3 },
+  { key: "newregistration",   labelKey: "nav_newregistration",   icon: UserPlus },
+  { key: "farmers",           labelKey: "nav_farmers",           icon: Users },
+  { key: "verifiedfarmers",   labelKey: "nav_verifiedfarmers",   icon: UserCheck },
+  { key: "applications",      labelKey: "nav_applications",      icon: ClipboardList },
+  { key: "subsidies",         labelKey: "nav_subsidies",         icon: IndianRupee },
+  { key: "insurance",         labelKey: "nav_insurance",         icon: Shield },
+  { key: "grievances",        labelKey: "nav_grievances",        icon: Megaphone },
+  { key: "reports",           labelKey: "nav_reports",           icon: TrendingUp },
+  { key: "settings",          labelKey: "nav_settings",          icon: Settings },
+  { key: "farmerapp",         labelKey: "nav_farmerapp",         icon: Smartphone },
 ];
 
 interface SidebarProps {
