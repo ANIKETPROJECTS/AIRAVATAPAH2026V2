@@ -72,7 +72,6 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "mode_of_acquisition":{ mr: "संपादनाचा प्रकार",                    hi: "अधिग्रहण का तरीका",                      en: "Mode of Acquisition" },
   "land_revenue_assessment":{ mr: "जमीन महसूल आकारणी",               hi: "भू-राजस्व आकलन",                        en: "Land Revenue Assessment" },
   "collection_charges":{ mr: "वसुली शुल्क",                           hi: "संग्रह शुल्क",                           en: "Collection Charges" },
-  "non_agricultural_area":{ mr: "अकृषिक क्षेत्र",                    hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
   "non_cultivated_area":{ mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
   "tenant_rent":       { mr: "खंड",                                    hi: "किराया",                                 en: "Tenant Rent" },
   "boundary_and_survey_marks":{ mr: "सीमा आणि सर्वेक्षण खुणा",       hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
@@ -160,7 +159,6 @@ const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
   "land":                { mr: "एकूण क्षेत्र",                        hi: "कुल क्षेत्रफल",                          en: "Total Area" },
   "landRevenue":         { mr: "जमीन महसूल आकारणी",                   hi: "भू-राजस्व आकलन",                        en: "Land Revenue Assessment" },
   "collectionCharges":   { mr: "वसुली शुल्क",                         hi: "संग्रह शुल्क",                           en: "Collection Charges" },
-  "nonAgriculturalArea": { mr: "अकृषिक क्षेत्र",                      hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
   "nonCultivatedArea":   { mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
   "boundaryMarks":       { mr: "सीमा आणि सर्वेक्षण खुणा",             hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
   "lastMutationNumber":        { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
@@ -605,7 +603,7 @@ export interface FarmerProfile {
   land: string;
   landRevenue: string;
   collectionCharges: string;
-  nonAgriculturalArea: string;
+
   nonCultivatedArea: string;
 
 
@@ -647,7 +645,7 @@ const EMPTY_PROFILE: FarmerProfile = {
   mobile: "", address: "", pincode: "", state: "", issueDate: "", enrolmentNumber: "",
   village: "", district: "", taluka: "", surveyNumber: "", puId: "",
   khateNumber: "", occupantClass: "", ownerNames: "", ownerShare: "", modeOfAcquisition: "",
-  land: "", landRevenue: "", collectionCharges: "", nonAgriculturalArea: "", nonCultivatedArea: "",
+  land: "", landRevenue: "", collectionCharges: "", nonCultivatedArea: "",
   boundaryMarks: "",
   lastMutationNumber: "", previousMutationNumbers: "",
   form8aYear: "", form8aReportDate: "", khateAccountType: "",
@@ -783,7 +781,7 @@ function extractProfileFromStates(
   pick(["total_area"], "land", ["form7", "form8a"]);
   pick(["land_revenue_assessment"], "landRevenue", ["form7"]);
   pick(["collection_charges"], "collectionCharges", ["form7"]);
-  pick(["non_agricultural_area"], "nonAgriculturalArea", ["form7"]);
+
   pick(["non_cultivated_area"], "nonCultivatedArea", ["form7"]);
 
 
@@ -1653,7 +1651,6 @@ const PROFILE_SECTIONS: {
         key: "area & assessment",
         fields: [
           { key: "land", label: "Total Area", placeholder: "e.g. 1.16.30" },
-          { key: "nonAgriculturalArea", label: "Non-Agricultural Area", placeholder: "e.g. 0,00,00" },
           { key: "nonCultivatedArea", label: "Non-Cultivated Area", placeholder: "e.g. 0.84.50" },
         ],
       },
