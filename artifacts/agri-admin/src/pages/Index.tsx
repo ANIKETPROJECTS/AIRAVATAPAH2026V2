@@ -45,6 +45,7 @@ export default function Index() {
   const [active, setActive] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const { lang } = useLang();
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function Index() {
       <Sidebar active={active} onNavigate={navigate} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
 
       <div className={`transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
-        <Header />
+        <Header onAIOpen={() => setAiOpen(true)} />
 
         <main className="p-6">
           <h1 className="font-heading text-2xl mb-6">{t(pageTitleKeys[active], lang)}</h1>
@@ -89,7 +90,7 @@ export default function Index() {
         </main>
       </div>
 
-      <AIAssistant />
+      <AIAssistant open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }
