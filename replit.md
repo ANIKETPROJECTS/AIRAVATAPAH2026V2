@@ -38,6 +38,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Data**: All data is static/dummy from `src/data/dummyData.ts`
 - **Key screens**: Dashboard, New Registration (OCR), Farmer Registry, Scheme Applications, Subsidy Management, Insurance Claims, Grievance Management, Reports & Analytics, Settings & Workflow, Farmer App Preview
 - **New Registration module**: 5 document upload cards (Form 7, Form 12, Form 8A, Aadhaar, Bank Passbook); uploads to `/api/extract`, polls `/api/extract/:requestId`, displays structured extracted fields, auto-saves to MongoDB profile when phone number is provided
+- **Language switching**: Comprehensive Marathi/Hindi/English switching on New Registration page. Single `LangSelector` (shown on every doc card) drives one `lang` state prop threaded into `DocReviewPanel` and `FarmerProfileCard`. Translation system: `SECTION_TITLE_MAP` (subsection headers), `PROFILE_FIELD_LABEL_MAP` (all profile field labels), `PROFILE_SECTION_DOC_LABELS` (section card titles), `FIELD_LABEL_MAP` (extracted doc fields/table cols), `UI_T` (static UI strings). Helper functions: `ui()`, `tSec()`, `tField()`, `tProfileField()`. No mixed-language strings anywhere in render code.
 - **AI Assistant**: Floating chat widget (purely frontend, no real API calls)
 - **No Supabase**: Original Lovable app had no Supabase usage — pure frontend migration
 

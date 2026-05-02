@@ -11,39 +11,214 @@ const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
 type LangCode = "mr" | "hi" | "en";
 
-const FORM8A_LABEL_MAP: Record<string, { mr: string; hi: string; en: string }> = {
-  "year":            { mr: "वर्ष",                              hi: "वर्ष",                              en: "Year / Financial Year" },
-  "report_date":     { mr: "अहवाल दिनांक",                     hi: "रिपोर्ट दिनांक",                    en: "Report Date" },
-  "village":         { mr: "गाव",                               hi: "गाँव",                               en: "Village" },
-  "taluka":          { mr: "तालुका",                            hi: "तहसील",                              en: "Taluka" },
-  "district":        { mr: "जिल्हा",                            hi: "जिला",                               en: "District" },
-  "khate_number":    { mr: "खाते क्रमांक",                     hi: "खाता संख्या",                        en: "Account Number" },
-  "account_type":    { mr: "खात्याचा प्रकार",                  hi: "खाते का प्रकार",                     en: "Account Type" },
-  "khatedar_names":  { mr: "खातेदाराचे नाव",                   hi: "खाताधारक का नाम",                    en: "Name of Land Holder" },
-  "khatedar_address":{ mr: "खातेदाराचा पत्ता",                 hi: "खाताधारक का पता",                    en: "Address of Land Holder" },
-  "total_area":      { mr: "एकूण क्षेत्र",                     hi: "कुल क्षेत्रफल",                     en: "Total Land Area" },
-  "total_assessment":{ mr: "एकूण आकारणी किंवा जुडी",          hi: "कुल भू-राजस्व / जमाबंदी",           en: "Total Assessment / Judi" },
-  "total_damage":    { mr: "एकूण दुमाला जमिनीवरील नुकसान",    hi: "कुल दुमाला भूमि पर कमी",            en: "Total Damage on Inherited Land" },
-  "total_zp":        { mr: "एकूण जि.प. स्थानिक उपकर",         hi: "कुल जिला परिषद स्थानीय उपकर",       en: "Total Zilla Parishad Local Cess" },
-  "total_gp":        { mr: "एकूण ग्रा.प. स्थानिक उपकर",       hi: "कुल ग्राम पंचायत स्थानीय उपकर",    en: "Total Gram Panchayat Local Cess" },
-  "total_recovery":  { mr: "एकूण वसुलीसाठी",                  hi: "कुल वसूली के लिए",                  en: "Total Recovery Amount" },
-  "grand_total":     { mr: "एकूण",                              hi: "कुल योग",                           en: "Grand Total" },
-  "village_form_6":  { mr: "गाव नमुना सहा मधील नोंद",         hi: "ग्राम प्रपत्र छह में प्रविष्टि",    en: "Entry in Village Form 6" },
-  "survey_number":   { mr: "भूमापन क्रमांक व उपविभाग क्रमांक",hi: "सर्वे नंबर और उपखंड नंबर",          en: "Survey No. & Sub-division" },
-  "land_holding":    { mr: "धारण क्षेत्र",                    hi: "धारित क्षेत्र",                     en: "Land Holding Area" },
-  "cultivable":      { mr: "लागवडी योग्य क्षेत्र",            hi: "कृषि योग्य क्षेत्र",               en: "Cultivable Area" },
-  "waste_land":      { mr: "पोटखराब क्षेत्र",                 hi: "बंजर / अनुपजाऊ भूमि",              en: "Waste Land Area" },
+type LangMap = { mr: string; hi: string; en: string };
+
+const FIELD_LABEL_MAP: Record<string, LangMap> = {
+  // Form 8A fields
+  "year":              { mr: "वर्ष",                                   hi: "वर्ष",                                   en: "Year / Financial Year" },
+  "report_date":       { mr: "अहवाल दिनांक",                          hi: "रिपोर्ट दिनांक",                         en: "Report Date" },
+  "village":           { mr: "गाव",                                    hi: "गाँव",                                    en: "Village" },
+  "taluka":            { mr: "तालुका",                                 hi: "तहसील",                                   en: "Taluka" },
+  "district":          { mr: "जिल्हा",                                 hi: "जिला",                                    en: "District" },
+  "khate_number":      { mr: "खाते क्रमांक",                          hi: "खाता संख्या",                             en: "Account Number" },
+  "account_type":      { mr: "खात्याचा प्रकार",                       hi: "खाते का प्रकार",                          en: "Account Type" },
+  "khatedar_names":    { mr: "खातेदाराचे नाव",                        hi: "खाताधारक का नाम",                         en: "Name of Land Holder" },
+  "khatedar_address":  { mr: "खातेदाराचा पत्ता",                      hi: "खाताधारक का पता",                         en: "Address of Land Holder" },
+  "total_area":        { mr: "एकूण क्षेत्र",                          hi: "कुल क्षेत्रफल",                          en: "Total Land Area" },
+  "total_assessment":  { mr: "एकूण आकारणी किंवा जुडी",               hi: "कुल भू-राजस्व / जमाबंदी",                en: "Total Assessment / Judi" },
+  "total_damage":      { mr: "एकूण दुमाला जमिनीवरील नुकसान",         hi: "कुल दुमाला भूमि पर कमी",                 en: "Total Damage on Inherited Land" },
+  "total_zp":          { mr: "एकूण जि.प. स्थानिक उपकर",              hi: "कुल जिला परिषद स्थानीय उपकर",            en: "Total Zilla Parishad Local Cess" },
+  "total_gp":          { mr: "एकूण ग्रा.प. स्थानिक उपकर",            hi: "कुल ग्राम पंचायत स्थानीय उपकर",         en: "Total Gram Panchayat Local Cess" },
+  "total_recovery":    { mr: "एकूण वसुलीसाठी",                       hi: "कुल वसूली के लिए",                       en: "Total Recovery Amount" },
+  "grand_total":       { mr: "एकूण",                                   hi: "कुल योग",                                en: "Grand Total" },
+  "village_form_6":    { mr: "गाव नमुना सहा मधील नोंद",              hi: "ग्राम प्रपत्र छह में प्रविष्टि",         en: "Entry in Village Form 6" },
+  "survey_number":     { mr: "भूमापन क्रमांक व उपविभाग क्रमांक",     hi: "सर्वे नंबर और उपखंड नंबर",               en: "Survey No. & Sub-division" },
+  "land_holding":      { mr: "धारण क्षेत्र",                          hi: "धारित क्षेत्र",                          en: "Land Holding Area" },
+  "cultivable":        { mr: "लागवडी योग्य क्षेत्र",                  hi: "कृषि योग्य क्षेत्र",                    en: "Cultivable Area" },
+  "waste_land":        { mr: "पोटखराब क्षेत्र",                       hi: "बंजर / अनुपजाऊ भूमि",                   en: "Waste Land Area" },
+  // Aadhaar fields
+  "full_name":         { mr: "पूर्ण नाव",                             hi: "पूरा नाम",                               en: "Full Name" },
+  "aadhaar_number":    { mr: "आधार क्रमांक",                          hi: "आधार संख्या",                             en: "Aadhaar Number" },
+  "virtual_id":        { mr: "व्हर्च्युअल आयडी (VID)",                hi: "वर्चुअल आईडी (VID)",                     en: "Virtual ID (VID)" },
+  "date_of_birth":     { mr: "जन्मतारीख",                             hi: "जन्म तिथि",                              en: "Date of Birth" },
+  "gender":            { mr: "लिंग",                                   hi: "लिंग",                                   en: "Gender" },
+  "father":            { mr: "वडील / पती / पालक यांचे नाव",           hi: "पिता / पति / अभिभावक का नाम",           en: "Father's / Husband's / Guardian's Name" },
+  "care_of":           { mr: "पालक",                                   hi: "देखरेख",                                 en: "Care Of" },
+  "mobile_number":     { mr: "मोबाईल क्रमांक",                        hi: "मोबाइल नंबर",                            en: "Mobile Number" },
+  "pincode":           { mr: "पिन कोड",                               hi: "पिन कोड",                                en: "PIN Code" },
+  "state":             { mr: "राज्य",                                  hi: "राज्य",                                  en: "State" },
+  "issue_date":        { mr: "जारी दिनांक",                           hi: "जारी तिथि",                              en: "Issue Date" },
+  "enrolment_number":  { mr: "नोंदणी क्रमांक",                        hi: "नामांकन संख्या",                         en: "Enrolment No." },
+  // Bank Passbook fields
+  "bank_name":         { mr: "बँकेचे नाव",                            hi: "बैंक का नाम",                            en: "Bank Name" },
+  "branch_name":       { mr: "शाखेचे नाव",                            hi: "शाखा का नाम",                            en: "Branch Name" },
+  "branch_address":    { mr: "शाखेचा पत्ता",                          hi: "शाखा का पता",                            en: "Branch Address" },
+  "ifsc_code":         { mr: "IFSC कोड",                              hi: "IFSC कोड",                               en: "IFSC Code" },
+  "micr_code":         { mr: "MICR कोड",                              hi: "MICR कोड",                               en: "MICR Code" },
+  "account_holder_name":{ mr: "खातेदाराचे नाव",                      hi: "खाताधारक का नाम",                        en: "Account Holder Name" },
+  "customer_address":  { mr: "ग्राहकाचा पत्ता",                       hi: "ग्राहक का पता",                          en: "Customer Address" },
+  "account_number":    { mr: "खाते क्रमांक",                          hi: "खाता संख्या",                             en: "Account Number" },
+  "opening_date":      { mr: "खाते उघडण्याची तारीख",                  hi: "खाता खोलने की तिथि",                    en: "Account Opening Date" },
+  "customer_id":       { mr: "ग्राहक आयडी (CIF)",                     hi: "ग्राहक आईडी (CIF)",                      en: "Customer ID (CIF)" },
+  "nominee_relationship":{ mr: "नॉमिनीचे नाते",                       hi: "नामांकित का संबंध",                      en: "Nominee Relationship" },
+  "email":             { mr: "ईमेल पत्ता",                            hi: "ईमेल पता",                               en: "Email Address" },
+  // Form 7 fields
+  "pu_id":             { mr: "PU-ID",                                  hi: "PU-ID",                                  en: "PU-ID" },
+  "occupant_class":    { mr: "भोगवटदार वर्ग",                         hi: "अधिवासी वर्ग",                           en: "Occupant Class" },
+  "owner_names":       { mr: "मालकाचे नाव",                           hi: "स्वामी का नाम",                          en: "Owner Name(s)" },
+  "owner_share":       { mr: "मालकाचा हिस्सा",                        hi: "स्वामी का हिस्सा",                       en: "Owner Share / Hissa" },
+  "mode_of_acquisition":{ mr: "संपादनाचा प्रकार",                    hi: "अधिग्रहण का तरीका",                      en: "Mode of Acquisition" },
+  "land_revenue_assessment":{ mr: "जमीन महसूल आकारणी",               hi: "भू-राजस्व आकलन",                        en: "Land Revenue Assessment" },
+  "collection_charges":{ mr: "वसुली शुल्क",                           hi: "संग्रह शुल्क",                           en: "Collection Charges" },
+  "non_agricultural_area":{ mr: "अकृषिक क्षेत्र",                    hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
+  "non_cultivated_area":{ mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
+  "tenant_name":       { mr: "कुळाचे नाव",                            hi: "किरायेदार का नाम",                       en: "Tenant Name" },
+  "tenant_rent":       { mr: "खंड",                                    hi: "किराया",                                 en: "Tenant Rent" },
+  "other_rights":      { mr: "इतर अधिकार",                            hi: "अन्य अधिकार",                            en: "Other Rights" },
+  "encumbrances":      { mr: "बोजा / तारण",                           hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
+  "boundary_and_survey_marks":{ mr: "सीमा आणि सर्वेक्षण खुणा",       hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
+  "last_mutation_number":{ mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
+  "last_mutation_date":{ mr: "शेवटचा फेरफार दिनांक",                 hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
+  "pending_mutation":  { mr: "प्रलंबित फेरफार",                       hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
+  // Form 12 fields
+  "crop_name":         { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
+  "crop":              { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
 };
 
-function translateForm8aLabel(fieldKey: string, lang: LangCode, fallback: string): string {
-  if (lang === "mr") return fallback;
+const SECTION_TITLE_MAP: Record<string, LangMap> = {
+  "header details":            { mr: "शीर्षक तपशील",                  hi: "शीर्षलेख विवरण",                         en: "Header Details" },
+  "khatedar (account holder)": { mr: "खातेदार",                       hi: "खाताधारक",                               en: "Khatedar (Account Holder)" },
+  "khatedar":                  { mr: "खातेदार",                       hi: "खाताधारक",                               en: "Khatedar" },
+  "holdings table":            { mr: "धारण तक्ता",                    hi: "जोत तालिका",                             en: "Holdings Table" },
+  "holdings":                  { mr: "धारण",                          hi: "जोत",                                    en: "Holdings" },
+  "totals":                    { mr: "एकूण बेरीज",                    hi: "कुल",                                    en: "Totals" },
+  "identity":                  { mr: "ओळख",                           hi: "पहचान",                                  en: "Identity" },
+  "location":                  { mr: "स्थान",                         hi: "स्थान",                                  en: "Location" },
+  "ownership":                 { mr: "मालकी",                         hi: "स्वामित्व",                              en: "Ownership" },
+  "area & assessment":         { mr: "क्षेत्र आणि आकारणी",            hi: "क्षेत्र और राजस्व",                      en: "Area & Assessment" },
+  "rights & encumbrances":     { mr: "अधिकार आणि बोजा",               hi: "अधिकार और भार",                         en: "Rights & Encumbrances" },
+  "mutation":                  { mr: "फेरफार",                        hi: "म्यूटेशन",                               en: "Mutation" },
+  "crop":                      { mr: "पीक",                           hi: "फसल",                                    en: "Crop" },
+  "address":                   { mr: "पत्ता",                         hi: "पता",                                    en: "Address" },
+  "document":                  { mr: "दस्तऐवज",                       hi: "दस्तावेज़",                              en: "Document" },
+  "bank & branch":             { mr: "बँक आणि शाखा",                  hi: "बैंक और शाखा",                           en: "Bank & Branch" },
+  "account holder":            { mr: "खाते धारक",                     hi: "खाताधारक",                               en: "Account Holder" },
+  "account details":           { mr: "खाते तपशील",                    hi: "खाता विवरण",                             en: "Account Details" },
+};
+
+const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
+  "name":                { mr: "पूर्ण नाव",                           hi: "पूरा नाम",                               en: "Full Name" },
+  "gender":              { mr: "लिंग",                                 hi: "लिंग",                                   en: "Gender" },
+  "dob":                 { mr: "जन्मतारीख",                           hi: "जन्म तिथि",                              en: "Date of Birth" },
+  "aadhaar":             { mr: "आधार क्रमांक",                        hi: "आधार संख्या",                             en: "Aadhaar Number" },
+  "vid":                 { mr: "व्हर्च्युअल आयडी (VID)",               hi: "वर्चुअल आईडी (VID)",                     en: "Virtual ID (VID)" },
+  "fathersName":         { mr: "वडील / पती / पालक यांचे नाव",        hi: "पिता / पति / अभिभावक का नाम",           en: "Father's / Husband's / Guardian's Name" },
+  "address":             { mr: "पत्ता",                               hi: "पता",                                    en: "Address" },
+  "pincode":             { mr: "पिन कोड",                             hi: "पिन कोड",                                en: "PIN Code" },
+  "state":               { mr: "राज्य",                               hi: "राज्य",                                  en: "State" },
+  "issueDate":           { mr: "जारी दिनांक",                         hi: "जारी तिथि",                              en: "Issue Date" },
+  "mobile":              { mr: "मोबाईल क्रमांक",                      hi: "मोबाइल नंबर",                            en: "Mobile Number" },
+  "enrolmentNumber":     { mr: "नोंदणी क्रमांक",                      hi: "नामांकन संख्या",                         en: "Enrolment No." },
+  "bankName":            { mr: "बँकेचे नाव",                          hi: "बैंक का नाम",                            en: "Bank Name" },
+  "branchName":          { mr: "शाखेचे नाव",                          hi: "शाखा का नाम",                            en: "Branch Name" },
+  "branchAddress":       { mr: "शाखेचा पत्ता",                        hi: "शाखा का पता",                            en: "Branch Address" },
+  "ifsc":                { mr: "IFSC कोड",                            hi: "IFSC कोड",                               en: "IFSC Code" },
+  "micrCode":            { mr: "MICR कोड",                            hi: "MICR कोड",                               en: "MICR Code" },
+  "bankHolderName":      { mr: "खातेदाराचे नाव",                      hi: "खाताधारक का नाम",                        en: "Account Holder Name" },
+  "nomineeRelationship": { mr: "नॉमिनीचे नाते",                       hi: "नामांकित का संबंध",                      en: "Nominee Relationship" },
+  "email":               { mr: "ईमेल पत्ता",                          hi: "ईमेल पता",                               en: "Email Address" },
+  "bankCustomerAddress": { mr: "ग्राहकाचा पत्ता",                     hi: "ग्राहक का पता",                          en: "Customer Address" },
+  "bankAccount":         { mr: "खाते क्रमांक",                        hi: "खाता संख्या",                             en: "Account Number" },
+  "accountType":         { mr: "खात्याचा प्रकार",                     hi: "खाते का प्रकार",                         en: "Account Type" },
+  "customerIdCif":       { mr: "ग्राहक आयडी (CIF)",                   hi: "ग्राहक आईडी (CIF)",                      en: "Customer ID (CIF)" },
+  "accountOpeningDate":  { mr: "खाते उघडण्याची तारीख",                hi: "खाता खोलने की तिथि",                    en: "Account Opening Date" },
+  "village":             { mr: "गाव",                                  hi: "गाँव",                                    en: "Village" },
+  "taluka":              { mr: "तालुका",                               hi: "तहसील",                                   en: "Taluka" },
+  "district":            { mr: "जिल्हा",                               hi: "जिला",                                    en: "District" },
+  "surveyNumber":        { mr: "भूमापन क्रमांक",                      hi: "सर्वे नंबर",                              en: "Survey Number" },
+  "puId":                { mr: "PU-ID",                                hi: "PU-ID",                                  en: "PU-ID" },
+  "khateNumber":         { mr: "खाते क्रमांक",                        hi: "खाता संख्या",                             en: "Khate Number" },
+  "occupantClass":       { mr: "भोगवटदार वर्ग",                       hi: "अधिवासी वर्ग",                           en: "Occupant Class" },
+  "ownerNames":          { mr: "मालकाचे नाव",                         hi: "स्वामी का नाम",                          en: "Owner Name(s)" },
+  "ownerShare":          { mr: "मालकाचा हिस्सा",                      hi: "स्वामी का हिस्सा",                       en: "Owner Share / Hissa" },
+  "modeOfAcquisition":   { mr: "संपादनाचा प्रकार",                    hi: "अधिग्रहण का तरीका",                      en: "Mode of Acquisition" },
+  "land":                { mr: "एकूण क्षेत्र",                        hi: "कुल क्षेत्रफल",                          en: "Total Area" },
+  "landRevenue":         { mr: "जमीन महसूल आकारणी",                   hi: "भू-राजस्व आकलन",                        en: "Land Revenue Assessment" },
+  "collectionCharges":   { mr: "वसुली शुल्क",                         hi: "संग्रह शुल्क",                           en: "Collection Charges" },
+  "nonAgriculturalArea": { mr: "अकृषिक क्षेत्र",                      hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
+  "nonCultivatedArea":   { mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
+  "tenantName":          { mr: "कुळाचे नाव",                          hi: "किरायेदार का नाम",                       en: "Tenant Name" },
+  "tenantRent":          { mr: "खंड",                                  hi: "किराया",                                 en: "Tenant Rent" },
+  "otherRights":         { mr: "इतर अधिकार",                          hi: "अन्य अधिकार",                            en: "Other Rights" },
+  "encumbrances":        { mr: "बोजा / तारण",                         hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
+  "boundaryMarks":       { mr: "सीमा आणि सर्वेक्षण खुणा",             hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
+  "lastMutationNumber":  { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
+  "lastMutationDate":    { mr: "शेवटचा फेरफार दिनांक",               hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
+  "pendingMutation":     { mr: "प्रलंबित फेरफार",                     hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
+  "form8aYear":          { mr: "वर्ष",                                 hi: "वर्ष",                                   en: "Year" },
+  "form8aReportDate":    { mr: "अहवाल दिनांक",                        hi: "रिपोर्ट दिनांक",                         en: "Report Date" },
+  "khateAccountType":    { mr: "खात्याचा प्रकार",                     hi: "खाते का प्रकार",                         en: "Account Type" },
+  "khatedarNames":       { mr: "खातेदाराचे नाव",                      hi: "खाताधारक का नाम",                        en: "Khatedar Name(s)" },
+  "khatedarAddress":     { mr: "खातेदाराचा पत्ता",                    hi: "खाताधारक का पता",                        en: "Khatedar Address" },
+  "totalAssessment":     { mr: "एकूण आकारणी किंवा जुडी",             hi: "कुल भू-राजस्व / जमाबंदी",               en: "Total Assessment / Judi" },
+  "totalDamageInherited":{ mr: "एकूण दुमाला जमिनीवरील नुकसान",       hi: "कुल दुमाला भूमि पर कमी",                en: "Total Damage on Inherited Land" },
+  "totalZpCess":         { mr: "एकूण जि.प. स्थानिक उपकर",            hi: "कुल जिला परिषद स्थानीय उपकर",           en: "Total ZP Local Cess" },
+  "totalGpCess":         { mr: "एकूण ग्रा.प. स्थानिक उपकर",          hi: "कुल ग्राम पंचायत स्थानीय उपकर",        en: "Total GP Local Cess" },
+  "totalRecovery":       { mr: "एकूण वसुलीसाठी",                     hi: "कुल वसूली के लिए",                       en: "Total Recovery Amount" },
+  "grandTotal":          { mr: "एकूण",                                 hi: "कुल योग",                                en: "Grand Total" },
+  "crop":                { mr: "पिकांचे नाव",                          hi: "फसल का नाम",                             en: "Primary Crop" },
+};
+
+const PROFILE_SECTION_DOC_LABELS: Record<string, LangMap> = {
+  "identity": { mr: "आधार कार्ड",                     hi: "आधार कार्ड",                          en: "Aadhaar Card" },
+  "bank":     { mr: "बँक पासबुक",                     hi: "बैंक पासबुक",                         en: "Bank Passbook" },
+  "form7":    { mr: "फॉर्म 7 — अधिकार अभिलेख",        hi: "फॉर्म 7 — स्वामित्व रजिस्टर",         en: "Form 7 — Ownership Register" },
+  "form12":   { mr: "फॉर्म 12 — पीक पाहणी",           hi: "फॉर्म 12 — फसल निरीक्षण रजिस्टर",    en: "Form 12 — Crop Inspection Register" },
+  "form8a":   { mr: "फॉर्म 8A — धारण नोंदवही",        hi: "फॉर्म 8A — जोत रजिस्टर",             en: "Form 8A — Holding Register" },
+};
+
+const UI_T: Record<string, LangMap> = {
+  sourceDocTables: { mr: "स्रोत दस्तऐवज तक्ते",                     hi: "स्रोत दस्तावेज़ तालिकाएं",              en: "Source Document Tables" },
+  table:           { mr: "तक्ता",                                    hi: "तालिका",                                 en: "Table" },
+  otherText:       { mr: "दस्तऐवजातील इतर मजकूर",                   hi: "दस्तावेज़ से अन्य पाठ",                 en: "Other Text from Document" },
+  fieldsExtracted: { mr: "माहिती काढली",                             hi: "फ़ील्ड निकाले",                          en: "fields extracted" },
+  holdingsTitle:   { mr: "धारण जमिनींची नोंदवही",                    hi: "जोत भूमि अभिलेख",                       en: "Holdings Register" },
+  clickToEdit:     { mr: "संपादनासाठी कोणत्याही सेलवर क्लिक करा",   hi: "संपादित करने हेतु किसी भी सेल पर क्लिक करें", en: "click any cell to edit" },
+  syncNote:        { mr: "हायलाइट सेल वरील एकूण फील्डशी जोडलेले आहेत", hi: "हाइलाइट सेल ऊपर के कुल फ़ील्ड के साथ सिंक हैं", en: "Highlighted cells sync with the Totals fields above" },
+  uploadToExtract: { mr: "माहिती काढण्यासाठी दस्तऐवज अपलोड करा",   hi: "डेटा निकालने के लिए दस्तावेज़ अपलोड करें", en: "Upload document to extract" },
+  filled:          { mr: "भरलेले",                                   hi: "भरे हुए",                                en: "filled" },
+  of:              { mr: "पैकी",                                     hi: "में से",                                 en: "of" },
+  verifyEdit:      { mr: "मंजुरीपूर्वी तपासा आणि संपादित करा",      hi: "अनुमोदन से पहले सत्यापित और संपादित करें", en: "Verify and edit before approving" },
+  editable:        { mr: "संपादनयोग्य",                              hi: "संपादन योग्य",                           en: "Editable" },
+  approvedMsg:     { mr: "शेतकरी प्रोफाइल मंजूर आणि नोंदणीत जतन झाली!", hi: "किसान प्रोफाइल अनुमोदित और रजिस्ट्री में सहेजी गई!", en: "Farmer profile approved and saved to the Farmer Registry!" },
+  backToDocs:      { mr: "दस्तऐवजांवर परत जा",                      hi: "दस्तावेज़ों पर वापस जाएं",               en: "Back to Documents" },
+  approveBtn:      { mr: "मंजूर करा आणि नोंदणीत जतन करा",           hi: "अनुमोदित करें और रजिस्ट्री में सहेजें", en: "Approve & Save to Farmer Registry" },
+};
+
+function ui(key: keyof typeof UI_T, lang: LangCode): string {
+  return UI_T[key]?.[lang] ?? String(key);
+}
+
+function tSec(title: string, lang: LangCode): string {
+  const key = title.toLowerCase().trim();
+  for (const [mapKey, t] of Object.entries(SECTION_TITLE_MAP)) {
+    if (key === mapKey || key.startsWith(mapKey) || mapKey.startsWith(key)) return t[lang];
+  }
+  return title;
+}
+
+function tField(fieldKey: string, lang: LangCode, fallback: string): string {
   const norm = fieldKey.toLowerCase().replace(/[\s-]/g, "_");
-  for (const [mapKey, translations] of Object.entries(FORM8A_LABEL_MAP)) {
+  for (const [mapKey, t] of Object.entries(FIELD_LABEL_MAP)) {
     if (norm === mapKey || norm.startsWith(mapKey) || mapKey.startsWith(norm.replace(/^total_/, ""))) {
-      return translations[lang];
+      return t[lang];
     }
   }
   return fallback;
+}
+
+function tProfileField(fieldKey: string, lang: LangCode): string {
+  return PROFILE_FIELD_LABEL_MAP[fieldKey]?.[lang] ?? fieldKey;
 }
 
 type DocTypeId = "form7" | "form12" | "form8a" | "aadhar" | "bank_passbook";
@@ -523,7 +698,7 @@ function FieldsTable({
     <div className="space-y-5">
       {sections.map((sec) => (
         <div key={sec.title}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{sec.title}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{tSec(sec.title, lang)}</p>
           {sec.fields.filter(f => f.value && f.value !== "—").length > 0 && (
             <div className="rounded-md border border-border overflow-hidden">
               <table className="w-full text-sm">
@@ -531,7 +706,7 @@ function FieldsTable({
                   {sec.fields.filter(f => f.value && f.value !== "—").map((f) => (
                     <tr key={f.key} className="border-b border-border last:border-0">
                       <td className="px-4 py-2.5 text-muted-foreground w-2/5 font-medium">
-                        {docId === "form8a" ? translateForm8aLabel(f.key, lang, f.label) : f.label}
+                        {tField(f.key, lang, f.label)}
                       </td>
                       <td className="px-4 py-2.5 text-foreground break-words">{f.value}</td>
                     </tr>
@@ -542,12 +717,12 @@ function FieldsTable({
           )}
           {sec.tables.map((tbl) => tbl.rows.length > 0 && (
             <div key={tbl.key} className="mt-3">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">{tbl.label}</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">{tSec(tbl.label, lang)}</p>
               <div className="overflow-x-auto rounded-md border border-border">
                 <table className="min-w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      {tbl.columns.map(c => <th key={c.key} className="px-4 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{c.label}</th>)}
+                      {tbl.columns.map(c => <th key={c.key} className="px-4 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{tField(c.key, lang, c.label)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -566,10 +741,10 @@ function FieldsTable({
 
       {rawTables.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Source document tables</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{ui("sourceDocTables", lang)}</p>
           {rawTables.map((tbl, idx) => (
             <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">Table {idx + 1}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">{ui("table", lang)} {idx + 1}</p>
               {docId === "form7" ? (
                 <SpannedTable headers={tbl.headers} rows={tbl.rows} />
               ) : (
@@ -585,7 +760,7 @@ function FieldsTable({
 
       {textBlocks.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Other text from document</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{ui("otherText", lang)}</p>
           {textBlocks.map((t, i) => (
             <div key={i} className="border-l-4 border-l-blue-400 bg-card border border-border rounded-md px-4 py-3 text-sm whitespace-pre-wrap break-words text-foreground">
               {t}
@@ -911,11 +1086,9 @@ function DocReviewPanel({
           <div className="flex-shrink-0 flex flex-col items-end gap-2">
             <div className="text-right">
               <p className={`text-2xl font-bold ${card.color}`}>{fieldCount}</p>
-              <p className="text-xs text-muted-foreground">fields extracted</p>
+              <p className="text-xs text-muted-foreground">{ui("fieldsExtracted", lang)}</p>
             </div>
-            {card.id === "form8a" && (
-              <LangSelector lang={lang} onChange={onLangChange} />
-            )}
+            <LangSelector lang={lang} onChange={onLangChange} />
           </div>
         </div>
       </div>
@@ -974,27 +1147,24 @@ function DocReviewPanel({
 }
 
 type ProfileField = { key: keyof FarmerProfile; label: string; placeholder: string; span?: boolean };
-type ProfileSubsection = { label: string; fields: ProfileField[] };
 
 const PROFILE_SECTIONS: {
   id: string;
-  label: string;
   docIds: DocTypeId[];
   headerColor: string;
   headerBg: string;
   subHeaderColor: string;
-  subsections: ProfileSubsection[];
+  subsections: { key: string; fields: ProfileField[] }[];
 }[] = [
   {
     id: "identity",
-    label: "Aadhaar Card",
     docIds: ["aadhar"],
     headerColor: "text-violet-700",
     headerBg: "bg-violet-50 border-violet-200",
     subHeaderColor: "text-violet-500",
     subsections: [
       {
-        label: "Identity",
+        key: "identity",
         fields: [
           { key: "name", label: "Full Name", placeholder: "Farmer's full name", span: true },
           { key: "gender", label: "Gender", placeholder: "Male / Female" },
@@ -1005,7 +1175,7 @@ const PROFILE_SECTIONS: {
         ],
       },
       {
-        label: "Address",
+        key: "address",
         fields: [
           { key: "address", label: "Address", placeholder: "Residential address", span: true },
           { key: "pincode", label: "PIN Code", placeholder: "6-digit PIN" },
@@ -1013,7 +1183,7 @@ const PROFILE_SECTIONS: {
         ],
       },
       {
-        label: "Document",
+        key: "document",
         fields: [
           { key: "issueDate", label: "Issue Date", placeholder: "DD/MM/YYYY" },
           { key: "mobile", label: "Mobile Number", placeholder: "10-digit number" },
@@ -1024,14 +1194,13 @@ const PROFILE_SECTIONS: {
   },
   {
     id: "bank",
-    label: "Bank Passbook",
     docIds: ["bank_passbook"],
     headerColor: "text-blue-700",
     headerBg: "bg-blue-50 border-blue-200",
     subHeaderColor: "text-blue-500",
     subsections: [
       {
-        label: "Bank & Branch",
+        key: "bank & branch",
         fields: [
           { key: "bankName", label: "Bank Name", placeholder: "e.g. State Bank of India" },
           { key: "branchName", label: "Branch Name", placeholder: "e.g. Samta Nagar Thane" },
@@ -1041,7 +1210,7 @@ const PROFILE_SECTIONS: {
         ],
       },
       {
-        label: "Account Holder",
+        key: "account holder",
         fields: [
           { key: "bankHolderName", label: "Account Holder Name", placeholder: "Full name of account holder", span: true },
           { key: "nomineeRelationship", label: "Nominee Relationship", placeholder: "e.g. S/D/H/o" },
@@ -1050,7 +1219,7 @@ const PROFILE_SECTIONS: {
         ],
       },
       {
-        label: "Account Details",
+        key: "account details",
         fields: [
           { key: "bankAccount", label: "Account Number", placeholder: "Account number" },
           { key: "accountType", label: "Account Type", placeholder: "e.g. Regular Savings Bank Account", span: true },
@@ -1062,121 +1231,118 @@ const PROFILE_SECTIONS: {
   },
   {
     id: "form7",
-    label: "Form 7 — Ownership Register",
     docIds: ["form7"],
     headerColor: "text-emerald-700",
     headerBg: "bg-emerald-50 border-emerald-200",
     subHeaderColor: "text-emerald-600",
     subsections: [
       {
-        label: "Location",
+        key: "location",
         fields: [
-          { key: "village", label: "Village (गाव)", placeholder: "Village name" },
-          { key: "taluka", label: "Taluka (तालुका)", placeholder: "Taluka name" },
-          { key: "district", label: "District (जिल्हा)", placeholder: "District name" },
-          { key: "surveyNumber", label: "Survey Number (भूमापन क्रमांक)", placeholder: "e.g. 77/3" },
+          { key: "village", label: "Village", placeholder: "Village name" },
+          { key: "taluka", label: "Taluka", placeholder: "Taluka name" },
+          { key: "district", label: "District", placeholder: "District name" },
+          { key: "surveyNumber", label: "Survey Number", placeholder: "e.g. 77/3" },
           { key: "puId", label: "PU-ID", placeholder: "Permanent Unique ID" },
         ],
       },
       {
-        label: "Ownership",
+        key: "ownership",
         fields: [
-          { key: "khateNumber", label: "Khate Number (खाते क्र.)", placeholder: "e.g. 159" },
-          { key: "occupantClass", label: "Occupant Class (भोगवटदार वर्ग)", placeholder: "e.g. Class 1" },
-          { key: "ownerNames", label: "Owner Name(s) (शेताचे स्वामिनाव)", placeholder: "Full name(s)", span: true },
+          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
+          { key: "occupantClass", label: "Occupant Class", placeholder: "e.g. Class 1" },
+          { key: "ownerNames", label: "Owner Name(s)", placeholder: "Full name(s)", span: true },
           { key: "ownerShare", label: "Owner Share / Hissa", placeholder: "e.g. 1/2" },
           { key: "modeOfAcquisition", label: "Mode of Acquisition", placeholder: "e.g. Purchase / Inheritance" },
         ],
       },
       {
-        label: "Area & Assessment",
+        key: "area & assessment",
         fields: [
-          { key: "land", label: "Total Area (क्षेत्र)", placeholder: "e.g. 2.06.00 H.R." },
-          { key: "landRevenue", label: "Land Revenue Assessment (आकार)", placeholder: "Annual tax amount" },
-          { key: "collectionCharges", label: "Collection Charges (पो.ख.)", placeholder: "Admin fee" },
-          { key: "nonAgriculturalArea", label: "Non-Agricultural Area (अकृषिक क्षेत्र)", placeholder: "Area in non-agri use" },
-          { key: "nonCultivatedArea", label: "Non-Cultivated Area (बिन शेती)", placeholder: "Uncultivated land" },
+          { key: "land", label: "Total Area", placeholder: "e.g. 2.06.00 H.R." },
+          { key: "landRevenue", label: "Land Revenue Assessment", placeholder: "Annual tax amount" },
+          { key: "collectionCharges", label: "Collection Charges", placeholder: "Admin fee" },
+          { key: "nonAgriculturalArea", label: "Non-Agricultural Area", placeholder: "Area in non-agri use" },
+          { key: "nonCultivatedArea", label: "Non-Cultivated Area", placeholder: "Uncultivated land" },
         ],
       },
       {
-        label: "Rights & Encumbrances",
+        key: "rights & encumbrances",
         fields: [
-          { key: "tenantName", label: "Tenant Name (कुळाचे नाव)", placeholder: "Tenant / kul name" },
-          { key: "tenantRent", label: "Tenant Rent (खंड)", placeholder: "Rent amount" },
-          { key: "otherRights", label: "Other Rights (इतर अधिकार)", placeholder: "Easements, water rights…", span: true },
-          { key: "encumbrances", label: "Encumbrance / Mortgage (बोजा / तारण)", placeholder: "Bank name & loan amount", span: true },
+          { key: "tenantName", label: "Tenant Name", placeholder: "Tenant / kul name" },
+          { key: "tenantRent", label: "Tenant Rent", placeholder: "Rent amount" },
+          { key: "otherRights", label: "Other Rights", placeholder: "Easements, water rights…", span: true },
+          { key: "encumbrances", label: "Encumbrance / Mortgage", placeholder: "Bank name & loan amount", span: true },
           { key: "boundaryMarks", label: "Boundary & Survey Marks", placeholder: "Boundary notes", span: true },
         ],
       },
       {
-        label: "Mutation",
+        key: "mutation",
         fields: [
-          { key: "lastMutationNumber", label: "Last Mutation No. (शेवटचा फेरफार क्र.)", placeholder: "e.g. 742" },
+          { key: "lastMutationNumber", label: "Last Mutation No.", placeholder: "e.g. 742" },
           { key: "lastMutationDate", label: "Last Mutation Date", placeholder: "Date of last mutation" },
-          { key: "pendingMutation", label: "Pending Mutation (प्रलंबित फेरफार)", placeholder: "Yes / No / None" },
+          { key: "pendingMutation", label: "Pending Mutation", placeholder: "Yes / No / None" },
         ],
       },
     ],
   },
   {
     id: "form12",
-    label: "Form 12 — Crop Inspection Register",
     docIds: ["form12"],
     headerColor: "text-green-700",
     headerBg: "bg-green-50 border-green-200",
     subHeaderColor: "text-green-600",
     subsections: [
       {
-        label: "Location",
+        key: "location",
         fields: [
-          { key: "village", label: "Village (गाव)", placeholder: "Village name" },
-          { key: "taluka", label: "Taluka (तालुका)", placeholder: "Taluka name" },
-          { key: "district", label: "District (जिल्हा)", placeholder: "District name" },
-          { key: "surveyNumber", label: "Survey Number (भूमापन क्रमांक)", placeholder: "e.g. 77/3" },
-          { key: "khateNumber", label: "Khate Number (खाते क्र.)", placeholder: "e.g. 159" },
+          { key: "village", label: "Village", placeholder: "Village name" },
+          { key: "taluka", label: "Taluka", placeholder: "Taluka name" },
+          { key: "district", label: "District", placeholder: "District name" },
+          { key: "surveyNumber", label: "Survey Number", placeholder: "e.g. 77/3" },
+          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
         ],
       },
       {
-        label: "Crop",
+        key: "crop",
         fields: [
-          { key: "crop", label: "Primary Crop (पिकांचे नाव)", placeholder: "e.g. Soybean, Wheat, Cotton", span: true },
+          { key: "crop", label: "Primary Crop", placeholder: "e.g. Soybean, Wheat, Cotton", span: true },
         ],
       },
     ],
   },
   {
     id: "form8a",
-    label: "Form 8A — Holding Register",
     docIds: ["form8a"],
     headerColor: "text-teal-700",
     headerBg: "bg-teal-50 border-teal-200",
     subHeaderColor: "text-teal-600",
     subsections: [
       {
-        label: "Header Details",
+        key: "header details",
         fields: [
-          { key: "form8aYear", label: "Year (वर्ष)", placeholder: "e.g. 2016-15" },
+          { key: "form8aYear", label: "Year", placeholder: "e.g. 2016-15" },
           { key: "form8aReportDate", label: "Report Date", placeholder: "e.g. 12/20/2016" },
         ],
       },
       {
-        label: "Khatedar (Account Holder)",
+        key: "khatedar (account holder)",
         fields: [
-          { key: "khateNumber", label: "Khate Number (खाते क्र.)", placeholder: "e.g. 159" },
-          { key: "khateAccountType", label: "Account Type (खात्याचा प्रकार)", placeholder: "e.g. अविभक्त कुटूंब खाते", span: true },
-          { key: "khatedarNames", label: "Khatedar Name(s) (खातेदाराचे नाव)", placeholder: "Names as per 8A", span: true },
+          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
+          { key: "khateAccountType", label: "Account Type", placeholder: "e.g. अविभक्त कुटूंब खाते", span: true },
+          { key: "khatedarNames", label: "Khatedar Name(s)", placeholder: "Names as per 8A", span: true },
         ],
       },
       {
-        label: "Totals",
+        key: "totals",
         fields: [
-          { key: "land", label: "Total Area (एकूण क्षेत्र)", placeholder: "Total area" },
-          { key: "totalAssessment", label: "Total Assessment / Judi (एकूण आकारणी किंवा जुडी)", placeholder: "Total assessment amount" },
-          { key: "totalDamageInherited", label: "Total Damage on Inherited Land (एकूण दुमाला जमिनीवरील नुकसान)", placeholder: "दुमाला जमिनीवरील नुकसान", span: true },
-          { key: "totalZpCess", label: "Total Zilla Parishad Local Cess (एकूण जि.प. स्थानिक उपकर)", placeholder: "Zilla Parishad cess total", span: true },
-          { key: "totalGpCess", label: "Total Gram Panchayat Local Cess (एकूण ग्रा.प. स्थानिक उपकर)", placeholder: "Gram Panchayat cess total", span: true },
-          { key: "totalRecovery", label: "Total Recovery Amount (एकूण वसुलीसाठी)", placeholder: "Recovery total" },
-          { key: "grandTotal", label: "Grand Total (एकूण)", placeholder: "Final grand total" },
+          { key: "land", label: "Total Area", placeholder: "Total area" },
+          { key: "totalAssessment", label: "Total Assessment / Judi", placeholder: "Total assessment amount" },
+          { key: "totalDamageInherited", label: "Total Damage on Inherited Land", placeholder: "दुमाला जमिनीवरील नुकसान", span: true },
+          { key: "totalZpCess", label: "Total ZP Local Cess", placeholder: "Zilla Parishad cess total", span: true },
+          { key: "totalGpCess", label: "Total GP Local Cess", placeholder: "Gram Panchayat cess total", span: true },
+          { key: "totalRecovery", label: "Total Recovery Amount", placeholder: "Recovery total" },
+          { key: "grandTotal", label: "Grand Total", placeholder: "Final grand total" },
         ],
       },
     ],
@@ -1323,16 +1489,16 @@ function FarmerProfileCard({
           )}
           <div>
             <h3 className="font-bold text-base text-foreground">
-              {profile.name || "Auto-Built Farmer Profile"}
+              {profile.name || (lang === "mr" ? "स्वयं-तयार शेतकरी प्रोफाइल" : lang === "hi" ? "स्वतः-निर्मित किसान प्रोफाइल" : "Auto-Built Farmer Profile")}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {filledCount} of {ALL_PROFILE_FIELDS.length} fields filled · Verify and edit before approving
+              {filledCount} {ui("of", lang)} {ALL_PROFILE_FIELDS.length} {ui("filled", lang)} · {ui("verifyEdit", lang)}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Pencil className="h-3.5 w-3.5" />
-          <span className="text-xs">Editable</span>
+          <span className="text-xs">{ui("editable", lang)}</span>
         </div>
       </div>
 
@@ -1342,31 +1508,32 @@ function FarmerProfileCard({
           const allFields = section.subsections.flatMap(sub => sub.fields);
           const sectionFilled = allFields.filter(f => Boolean(profile[f.key as keyof FarmerProfile])).length;
           const form8aRawTables = section.id === "form8a" ? (docStates["form8a"]?.rawTables ?? []) : [];
+          const sectionLabel = PROFILE_SECTION_DOC_LABELS[section.id]?.[lang] ?? section.id;
           return (
             <div key={section.id}>
               <div className={`flex items-center justify-between px-3 py-2 rounded-lg border mb-4 ${section.headerBg}`}>
                 <span className={`text-xs font-bold tracking-wide uppercase ${section.headerColor}`}>
-                  {section.label}
+                  {sectionLabel}
                 </span>
                 <span className={`text-xs font-medium ${section.headerColor} opacity-70`}>
-                  {isExtracted ? `${sectionFilled} / ${allFields.length} filled` : "Upload document to extract"}
+                  {isExtracted ? `${sectionFilled} / ${allFields.length} ${ui("filled", lang)}` : ui("uploadToExtract", lang)}
                 </span>
               </div>
               {section.id === "form8a" ? (
                 /* Form 8A: extraction-style row layout with editable inputs */
                 <div className="space-y-5">
                   {section.subsections.map((sub) => (
-                    <div key={sub.label}>
+                    <div key={sub.key}>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                        {sub.label}
+                        {tSec(sub.key, lang)}
                       </p>
                       <div className="rounded-md border border-border overflow-hidden">
                         <table className="w-full text-sm">
                           <tbody>
-                            {sub.fields.map(({ key, label, placeholder }) => (
+                            {sub.fields.map(({ key, placeholder }) => (
                               <tr key={key} className="border-b border-border last:border-0">
                                 <td className="px-4 py-2.5 text-muted-foreground font-medium w-2/5 align-middle whitespace-nowrap">
-                                  {label}
+                                  {tProfileField(key, lang)}
                                 </td>
                                 <td className="px-3 py-1.5 align-middle">
                                   <input
@@ -1389,12 +1556,12 @@ function FarmerProfileCard({
                   {form8aRawTables.length > 0 && form8aRawTable0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Holdings (धारण जमिनींची नोंदवही)
+                        {ui("holdingsTitle", lang)}
                       </p>
                       {form8aRawTables.map((tbl, idx) => (
                         <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
-                            Table {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— click any cell to edit</span>
+                            {ui("table", lang)} {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
                           </p>
                           <div className="overflow-x-auto">
                             <EditableHtmlTable
@@ -1406,7 +1573,7 @@ function FarmerProfileCard({
                           </div>
                           {idx === 0 && numCols > 0 && (
                             <p className="text-[10px] text-muted-foreground mt-2">
-                              Highlighted cells sync with the Totals fields above.
+                              {ui("syncNote", lang)}
                             </p>
                           )}
                         </div>
@@ -1418,14 +1585,14 @@ function FarmerProfileCard({
                 /* All other sections: standard grid input layout */
                 <div className="space-y-5">
                   {section.subsections.map((sub) => (
-                    <div key={sub.label}>
+                    <div key={sub.key}>
                       <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2 ${section.subHeaderColor}`}>
-                        {sub.label}
+                        {tSec(sub.key, lang)}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {sub.fields.map(({ key, label, placeholder, span }) => (
+                        {sub.fields.map(({ key, placeholder, span }) => (
                           <div key={key} className={span ? "sm:col-span-2" : ""}>
-                            <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">{tProfileField(key, lang)}</label>
                             <input
                               type="text"
                               value={profile[key as keyof FarmerProfile]}
@@ -1447,7 +1614,7 @@ function FarmerProfileCard({
         {approved ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-            Farmer profile approved and saved to the Farmer Registry!
+            {ui("approvedMsg", lang)}
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -1456,14 +1623,14 @@ function FarmerProfileCard({
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:bg-muted/40 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Documents
+              {ui("backToDocs", lang)}
             </button>
             <button
               onClick={onApprove}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm"
             >
               <ThumbsUp className="h-4 w-4" />
-              Approve & Save to Farmer Registry
+              {ui("approveBtn", lang)}
             </button>
           </div>
         )}
