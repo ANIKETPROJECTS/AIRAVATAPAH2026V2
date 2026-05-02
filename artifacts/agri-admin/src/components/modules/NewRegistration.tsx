@@ -83,6 +83,24 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   // Form 12 fields
   "crop_name":         { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
   "crop":              { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
+  // Raw table header aliases (API returns mixed English/Marathi headers)
+  "area_/_extent":              { mr: "क्षेत्र",                         hi: "क्षेत्रफल",                          en: "Area / Extent" },
+  "area":                       { mr: "क्षेत्र",                         hi: "क्षेत्रफल",                          en: "Area" },
+  "extent":                     { mr: "क्षेत्र",                         hi: "क्षेत्रफल",                          en: "Extent" },
+  "assessment_/_judi":          { mr: "आकारणी किंवा जुडी",              hi: "राजस्व / जमाबंदी",                   en: "Assessment / Judi" },
+  "assessment":                 { mr: "आकारणी",                          hi: "राजस्व",                              en: "Assessment" },
+  "judi":                       { mr: "जुडी",                            hi: "जमाबंदी",                             en: "Judi" },
+  "damage_on_inherited_land":   { mr: "दुमाला जमिनीवरील नुकसान",        hi: "विरासती भूमि पर क्षति",              en: "Damage on Inherited Land" },
+  "damage":                     { mr: "नुकसान",                          hi: "क्षति",                               en: "Damage" },
+  "zp_local_cess":              { mr: "जि.प. स्थानिक उपकर",             hi: "जिला परिषद स्थानीय उपकर",            en: "ZP Local Cess" },
+  "gp_local_cess":              { mr: "ग्रा.प. स्थानिक उपकर",           hi: "ग्राम पंचायत स्थानीय उपकर",          en: "GP Local Cess" },
+  "grand_total":                { mr: "एकूण",                            hi: "कुल योग",                             en: "Grand Total" },
+  "recovery":                   { mr: "वसुलीसाठी",                      hi: "वसूली",                               en: "Recovery" },
+  "cess":                       { mr: "उपकर",                            hi: "उपकर",                               en: "Cess" },
+  "total":                      { mr: "एकूण",                            hi: "कुल",                                 en: "Total" },
+  "khatedar_name":              { mr: "खातेदाराचे नाव",                 hi: "खाताधारक का नाम",                    en: "Khatedar Name" },
+  "survey_no":                  { mr: "भूमापन क्रमांक",                 hi: "सर्वे नंबर",                          en: "Survey No." },
+  "sub_division":               { mr: "उपविभाग क्रमांक",                hi: "उपखंड नंबर",                          en: "Sub-division No." },
 };
 
 const SECTION_TITLE_MAP: Record<string, LangMap> = {
@@ -178,21 +196,49 @@ const PROFILE_SECTION_DOC_LABELS: Record<string, LangMap> = {
 };
 
 const UI_T: Record<string, LangMap> = {
-  sourceDocTables: { mr: "स्रोत दस्तऐवज तक्ते",                     hi: "स्रोत दस्तावेज़ तालिकाएं",              en: "Source Document Tables" },
-  table:           { mr: "तक्ता",                                    hi: "तालिका",                                 en: "Table" },
-  otherText:       { mr: "दस्तऐवजातील इतर मजकूर",                   hi: "दस्तावेज़ से अन्य पाठ",                 en: "Other Text from Document" },
-  fieldsExtracted: { mr: "माहिती काढली",                             hi: "फ़ील्ड निकाले",                          en: "fields extracted" },
-  holdingsTitle:   { mr: "धारण जमिनींची नोंदवही",                    hi: "जोत भूमि अभिलेख",                       en: "Holdings Register" },
-  clickToEdit:     { mr: "संपादनासाठी कोणत्याही सेलवर क्लिक करा",   hi: "संपादित करने हेतु किसी भी सेल पर क्लिक करें", en: "click any cell to edit" },
-  syncNote:        { mr: "हायलाइट सेल वरील एकूण फील्डशी जोडलेले आहेत", hi: "हाइलाइट सेल ऊपर के कुल फ़ील्ड के साथ सिंक हैं", en: "Highlighted cells sync with the Totals fields above" },
-  uploadToExtract: { mr: "माहिती काढण्यासाठी दस्तऐवज अपलोड करा",   hi: "डेटा निकालने के लिए दस्तावेज़ अपलोड करें", en: "Upload document to extract" },
-  filled:          { mr: "भरलेले",                                   hi: "भरे हुए",                                en: "filled" },
-  of:              { mr: "पैकी",                                     hi: "में से",                                 en: "of" },
-  verifyEdit:      { mr: "मंजुरीपूर्वी तपासा आणि संपादित करा",      hi: "अनुमोदन से पहले सत्यापित और संपादित करें", en: "Verify and edit before approving" },
-  editable:        { mr: "संपादनयोग्य",                              hi: "संपादन योग्य",                           en: "Editable" },
-  approvedMsg:     { mr: "शेतकरी प्रोफाइल मंजूर आणि नोंदणीत जतन झाली!", hi: "किसान प्रोफाइल अनुमोदित और रजिस्ट्री में सहेजी गई!", en: "Farmer profile approved and saved to the Farmer Registry!" },
-  backToDocs:      { mr: "दस्तऐवजांवर परत जा",                      hi: "दस्तावेज़ों पर वापस जाएं",               en: "Back to Documents" },
-  approveBtn:      { mr: "मंजूर करा आणि नोंदणीत जतन करा",           hi: "अनुमोदित करें और रजिस्ट्री में सहेजें", en: "Approve & Save to Farmer Registry" },
+  sourceDocTables:   { mr: "स्रोत दस्तऐवज तक्ते",                              hi: "स्रोत दस्तावेज़ तालिकाएं",                        en: "Source Document Tables" },
+  table:             { mr: "तक्ता",                                             hi: "तालिका",                                           en: "Table" },
+  otherText:         { mr: "दस्तऐवजातील इतर मजकूर",                            hi: "दस्तावेज़ से अन्य पाठ",                            en: "Other Text from Document" },
+  fieldsExtracted:   { mr: "माहिती काढली",                                     hi: "फ़ील्ड निकाले",                                     en: "fields extracted" },
+  holdingsTitle:     { mr: "धारण जमिनींची नोंदवही",                            hi: "जोत भूमि अभिलेख",                                  en: "Holdings Register" },
+  clickToEdit:       { mr: "संपादनासाठी कोणत्याही सेलवर क्लिक करा",           hi: "संपादित करने हेतु किसी भी सेल पर क्लिक करें",     en: "click any cell to edit" },
+  syncNote:          { mr: "हायलाइट सेल वरील एकूण फील्डशी जोडलेले आहेत",      hi: "हाइलाइट सेल ऊपर के कुल फ़ील्ड के साथ सिंक हैं",  en: "Highlighted cells sync with the Totals fields above" },
+  uploadToExtract:   { mr: "माहिती काढण्यासाठी दस्तऐवज अपलोड करा",           hi: "डेटा निकालने के लिए दस्तावेज़ अपलोड करें",        en: "Upload document to extract" },
+  filled:            { mr: "भरलेले",                                            hi: "भरे हुए",                                          en: "filled" },
+  of:                { mr: "पैकी",                                              hi: "में से",                                           en: "of" },
+  verifyEdit:        { mr: "मंजुरीपूर्वी तपासा आणि संपादित करा",              hi: "अनुमोदन से पहले सत्यापित और संपादित करें",        en: "Verify and edit before approving" },
+  editable:          { mr: "संपादनयोग्य",                                      hi: "संपादन योग्य",                                     en: "Editable" },
+  approvedMsg:       { mr: "शेतकरी प्रोफाइल मंजूर आणि नोंदणीत जतन झाली!",    hi: "किसान प्रोफाइल अनुमोदित और रजिस्ट्री में सहेजी गई!", en: "Farmer profile approved and saved to the Farmer Registry!" },
+  backToDocs:        { mr: "दस्तऐवजांवर परत जा",                              hi: "दस्तावेज़ों पर वापस जाएं",                         en: "Back to Documents" },
+  approveBtn:        { mr: "मंजूर करा आणि नोंदणीत जतन करा",                  hi: "अनुमोदित करें और रजिस्ट्री में सहेजें",           en: "Approve & Save to Farmer Registry" },
+  // DocUploadCard strings
+  extracted:         { mr: "माहिती काढली",                                     hi: "डेटा निकाला",                                      en: "Extracted" },
+  uploading:         { mr: "अपलोड होत आहे…",                                   hi: "अपलोड हो रहा है…",                                 en: "Uploading…" },
+  processing:        { mr: "प्रक्रिया होत आहे…",                               hi: "प्रक्रिया हो रही है…",                              en: "Processing…" },
+  failed:            { mr: "अयशस्वी",                                          hi: "विफल",                                             en: "Failed" },
+  upload:            { mr: "अपलोड करा",                                        hi: "अपलोड करें",                                       en: "Upload" },
+  reupload:          { mr: "पुन्हा अपलोड करा",                                 hi: "पुनः अपलोड करें",                                  en: "Re-upload" },
+  dropUpload:        { mr: "PDF / प्रतिमा अपलोड करण्यासाठी ड्रॅग करा किंवा येथे क्लिक करा", hi: "PDF / छवि अपलोड करने के लिए खींचें या यहाँ क्लिक करें", en: "Drag & drop or click to upload PDF / image" },
+  reviewNext:        { mr: "पुढील टप्प्यात तपासा",                            hi: "अगले चरण में समीक्षा करें",                        en: "Review in next step" },
+  tables:            { mr: "तक्ते",                                            hi: "तालिकाएं",                                         en: "tables" },
+  // DocReviewPanel strings
+  docNo:             { mr: "दस्तऐवज",                                          hi: "दस्तावेज़",                                        en: "Document" },
+  photoExtracted:    { mr: "प्रोफाइल फोटो काढला",                              hi: "प्रोफाइल फोटो निकाला",                             en: "Profile Photo Extracted" },
+  photoFrom:         { mr: "आधार कार्डातून स्वयंचलितपणे काढला",               hi: "आधार कार्ड से स्वतः निकाला गया",                  en: "Automatically extracted from Aadhaar Card" },
+  previous:          { mr: "मागील",                                            hi: "पिछला",                                            en: "Previous" },
+  nextDoc:           { mr: "पुढील दस्तऐवज",                                   hi: "अगला दस्तावेज़",                                   en: "Next Document" },
+  reviewProfile:     { mr: "प्रोफाइल तपासा",                                  hi: "प्रोफाइल समीक्षा करें",                            en: "Review Profile" },
+  // ReviewTabBar / NewRegistration strings
+  uploadTab:         { mr: "अपलोड",                                            hi: "अपलोड",                                            en: "Upload" },
+  farmerProfileTab:  { mr: "शेतकरी प्रोफाइल",                                 hi: "किसान प्रोफाइल",                                   en: "Farmer Profile" },
+  newRegTitle:       { mr: "नवीन नोंदणी",                                     hi: "नई पंजीकरण",                                       en: "New Registration" },
+  waitingProcessing: { mr: "प्रक्रियेची प्रतीक्षा…",                          hi: "प्रक्रिया की प्रतीक्षा…",                          en: "waiting for processing…" },
+  newRegDesc:        { mr: "खालील एक किंवा अधिक दस्तऐवज अपलोड करा. कोणतेही दस्तऐवज अनिवार्य नाही. किमान एक दस्तऐवज प्रक्रिया झाल्यावर पुढे जा बटण सक्रिय होईल.", hi: "नीचे एक या अधिक दस्तावेज़ अपलोड करें। कोई भी दस्तावेज़ अनिवार्य नहीं है। कम से कम एक दस्तावेज़ संसाधित होने पर आगे बढ़ें बटन सक्रिय होगा।", en: "Upload one or more documents below. You can upload any combination — no documents are mandatory. Once at least one document is processed, the Proceed button will activate." },
+  proceedReview:     { mr: "पुनरावलोकनासाठी पुढे जा",                        hi: "समीक्षा के लिए आगे बढ़ें",                          en: "Proceed to Review" },
+  docsReady:         { mr: "दस्तऐवज तपासणीसाठी तयार",                        hi: "दस्तावेज़ समीक्षा के लिए तैयार",                   en: "document(s) ready to review" },
+  waitingProcess:    { mr: "प्रक्रियेची प्रतीक्षा…",                          hi: "प्रक्रिया की प्रतीक्षा…",                          en: "waiting for processing…" },
+  processingDocs:    { mr: "दस्तऐवज प्रक्रिया होत आहे…",                     hi: "दस्तावेज़ प्रक्रिया हो रही है…",                   en: "Processing documents…" },
+  uploadFirst:       { mr: "पुढे जाण्यासाठी किमान एक दस्तऐवज अपलोड करा",     hi: "आगे बढ़ने के लिए कम से कम एक दस्तावेज़ अपलोड करें", en: "Upload at least one document to proceed" },
 };
 
 function ui(key: keyof typeof UI_T, lang: LangCode): string {
@@ -207,14 +253,48 @@ function tSec(title: string, lang: LangCode): string {
   return title;
 }
 
+function normFieldKey(s: string): string {
+  return s
+    .replace(/\(.*?\)/g, " ")           // strip (parenthetical groups)
+    .replace(/[^\x00-\x7F]+/g, " ")     // strip non-ASCII (Devanagari)
+    .toLowerCase()
+    .replace(/[\/\\.\-]+/g, " ")        // slashes, dots, dashes → space
+    .replace(/\s+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 function tField(fieldKey: string, lang: LangCode, fallback: string): string {
-  const norm = fieldKey.toLowerCase().replace(/[\s-]/g, "_");
+  const norm = normFieldKey(fieldKey);
+  // 1. Exact match
+  if (FIELD_LABEL_MAP[norm]) return FIELD_LABEL_MAP[norm][lang];
+  // 2. Prefix / suffix match
   for (const [mapKey, t] of Object.entries(FIELD_LABEL_MAP)) {
-    if (norm === mapKey || norm.startsWith(mapKey) || mapKey.startsWith(norm.replace(/^total_/, ""))) {
-      return t[lang];
+    if (norm === mapKey || norm.startsWith(mapKey + "_") || mapKey.startsWith(norm + "_")) return t[lang];
+  }
+  // 3. Substring match (all meaningful words in norm appear in mapKey)
+  const words = norm.split("_").filter(w => w.length > 2);
+  if (words.length > 0) {
+    for (const [mapKey, t] of Object.entries(FIELD_LABEL_MAP)) {
+      if (words.every(w => mapKey.includes(w))) return t[lang];
     }
   }
   return fallback;
+}
+
+/** Convert western/ASCII digits to Devanagari for mr/hi. */
+function translateValue(value: string, lang: LangCode): string {
+  if (lang === "en" || !value) return value;
+  const d = ["०","१","२","३","४","५","६","७","८","९"];
+  return value.replace(/[0-9]/g, (ch) => d[parseInt(ch)]);
+}
+
+/** Apply digit-localisation to HTML string (only inside text nodes, not attributes). */
+function localizeHtml(html: string, lang: LangCode): string {
+  if (lang === "en" || !html) return html;
+  const d = ["०","१","२","३","४","५","६","७","८","९"];
+  return html.replace(/>([^<]+)</g, (_m, text: string) =>
+    ">" + text.replace(/[0-9]/g, (ch) => d[parseInt(ch)]) + "<",
+  );
 }
 
 function tProfileField(fieldKey: string, lang: LangCode): string {
@@ -235,6 +315,30 @@ interface DocCard {
   bgColor: string;
   borderColor: string;
 }
+
+const DOC_CARD_LABELS: Record<string, LangMap> = {
+  "form7":         { mr: "फॉर्म ७ (अधिकार अभिलेख)",     hi: "फॉर्म ७ (स्वामित्व रजिस्टर)",     en: "Form 7 (Ownership Register)" },
+  "form12":        { mr: "फॉर्म १२ (पीक पाहणी)",         hi: "फॉर्म १२ (फसल निरीक्षण रजिस्टर)", en: "Form 12 (Crop Inspection Register)" },
+  "form8a":        { mr: "फॉर्म ८A (धारण नोंदवही)",      hi: "फॉर्म ८A (जोत रजिस्टर)",          en: "Form 8A (Holding Register)" },
+  "aadhar":        { mr: "आधार कार्ड",                   hi: "आधार कार्ड",                       en: "Aadhaar Card" },
+  "bank_passbook": { mr: "बँक पासबुक",                   hi: "बैंक पासबुक",                      en: "Bank Passbook" },
+};
+
+const DOC_CARD_DESCS: Record<string, LangMap> = {
+  "form7":         { mr: "महाराष्ट्र ७/१२ — अधिकार अभिलेख",           hi: "महाराष्ट्र ७/१२ — स्वामित्व रजिस्टर",           en: "Maharashtra 7/12 — Rights Register" },
+  "form12":        { mr: "महाराष्ट्र ७/१२ — पीक पाहणी",               hi: "महाराष्ट्र ७/१२ — फसल निरीक्षण रजिस्टर",       en: "Maharashtra 7/12 — Crop Inspection Register" },
+  "form8a":        { mr: "महाराष्ट्र — धारण जमिनींची नोंदवही",         hi: "महाराष्ट्र — जोत भूमि अभिलेख",                  en: "Maharashtra — Holding Register" },
+  "aadhar":        { mr: "UIDAI आधार ओळखपत्र",                         hi: "UIDAI आधार पहचान पत्र",                          en: "UIDAI Aadhaar identity card" },
+  "bank_passbook": { mr: "बँक खाते पासबुक पहिले पान",                  hi: "बैंक खाता पासबुक का पहला पृष्ठ",                en: "Bank account passbook front page" },
+};
+
+const DOC_CARD_SHORT: Record<string, LangMap> = {
+  "form7":         { mr: "फॉर्म ७",  hi: "फॉर्म ७",  en: "Form 7" },
+  "form12":        { mr: "फॉर्म १२", hi: "फॉर्म १२", en: "Form 12" },
+  "form8a":        { mr: "फॉर्म ८A", hi: "फॉर्म ८A", en: "Form 8A" },
+  "aadhar":        { mr: "आधार",     hi: "आधार",      en: "Aadhaar" },
+  "bank_passbook": { mr: "पासबुक",   hi: "पासबुक",    en: "Passbook" },
+};
 
 const DOC_CARDS: DocCard[] = [
   {
@@ -596,7 +700,7 @@ function splitLabelValue(line: string): { label: string; value: string | null } 
   return { label: trimmed, value: null };
 }
 
-function SpannedTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+function SpannedTable({ headers, rows, lang = "mr" }: { headers: string[]; rows: string[][]; lang?: LangCode }) {
   const colCount = Math.max(headers.length, ...rows.map((r) => r.length), 1);
   type Cell = { value: string; rowspan: number };
   const grid: (Cell | null)[][] = rows.map((r) => {
@@ -643,7 +747,7 @@ function SpannedTable({ headers, rows }: { headers: string[]; rows: string[][] }
           <thead>
             <tr className="bg-muted/40">
               {headers.map((h, i) => (
-                <th key={i} className="border border-border p-2 text-left font-semibold align-top whitespace-pre-wrap">{h || ""}</th>
+                <th key={i} className="border border-border p-2 text-left font-semibold align-top whitespace-pre-wrap">{tField(h, lang, h) || ""}</th>
               ))}
             </tr>
           </thead>
@@ -661,10 +765,10 @@ function SpannedTable({ headers, rows }: { headers: string[]; rows: string[][] }
                       <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 leading-relaxed">
                         {lines.flatMap((line, lIdx) => {
                           const { label, value } = splitLabelValue(line);
-                          if (value === null) return [<div key={`${lIdx}-full`} className="col-span-2 whitespace-pre-wrap">{label.length > 0 ? label : "\u00A0"}</div>];
+                          if (value === null) return [<div key={`${lIdx}-full`} className="col-span-2 whitespace-pre-wrap">{label.length > 0 ? translateValue(label, lang) : "\u00A0"}</div>];
                           return [
-                            <div key={`${lIdx}-label`} className="whitespace-pre-wrap">{label}</div>,
-                            <div key={`${lIdx}-value`} className="whitespace-pre-wrap text-right tabular-nums">{value}</div>,
+                            <div key={`${lIdx}-label`} className="whitespace-pre-wrap">{translateValue(label, lang)}</div>,
+                            <div key={`${lIdx}-value`} className="whitespace-pre-wrap text-right tabular-nums">{translateValue(value, lang)}</div>,
                           ];
                         })}
                       </div>
@@ -708,7 +812,7 @@ function FieldsTable({
                       <td className="px-4 py-2.5 text-muted-foreground w-2/5 font-medium">
                         {tField(f.key, lang, f.label)}
                       </td>
-                      <td className="px-4 py-2.5 text-foreground break-words">{f.value}</td>
+                      <td className="px-4 py-2.5 text-foreground break-words">{translateValue(f.value, lang)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -728,7 +832,7 @@ function FieldsTable({
                   <tbody>
                     {tbl.rows.map((row, i) => (
                       <tr key={i} className="border-t border-border">
-                        {tbl.columns.map(c => <td key={c.key} className="px-4 py-2 text-foreground">{row.values[c.key] ?? "—"}</td>)}
+                        {tbl.columns.map(c => <td key={c.key} className="px-4 py-2 text-foreground">{translateValue(row.values[c.key] ?? "—", lang)}</td>)}
                       </tr>
                     ))}
                   </tbody>
@@ -746,11 +850,11 @@ function FieldsTable({
             <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">{ui("table", lang)} {idx + 1}</p>
               {docId === "form7" ? (
-                <SpannedTable headers={tbl.headers} rows={tbl.rows} />
+                <SpannedTable headers={tbl.headers} rows={tbl.rows} lang={lang} />
               ) : (
                 <div
                   className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground"
-                  dangerouslySetInnerHTML={{ __html: cleanDocHtml(tbl.html) }}
+                  dangerouslySetInnerHTML={{ __html: localizeHtml(cleanDocHtml(tbl.html), lang) }}
                 />
               )}
             </div>
@@ -778,10 +882,12 @@ function DocUploadCard({
   card,
   state,
   onStateChange,
+  lang = "mr",
 }: {
   card: DocCard;
   state: ExtractionState;
   onStateChange: (s: StateUpdater) => void;
+  lang?: LangCode;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const Icon = card.icon;
@@ -880,22 +986,22 @@ function DocUploadCard({
           <div className="flex-shrink-0 flex flex-col items-end gap-2">
             {isComplete && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                <CheckCircle2 className="h-3 w-3" /> Extracted
+                <CheckCircle2 className="h-3 w-3" /> {ui("extracted", lang)}
               </span>
             )}
             {state.status === "uploading" && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                <Loader2 className="h-3 w-3 animate-spin" /> Uploading…
+                <Loader2 className="h-3 w-3 animate-spin" /> {ui("uploading", lang)}
               </span>
             )}
             {state.status === "processing" && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                <Loader2 className="h-3 w-3 animate-spin" /> Processing…
+                <Loader2 className="h-3 w-3 animate-spin" /> {ui("processing", lang)}
               </span>
             )}
             {state.status === "error" && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                <XCircle className="h-3 w-3" /> Failed
+                <XCircle className="h-3 w-3" /> {ui("failed", lang)}
               </span>
             )}
             {!busy && (
@@ -908,7 +1014,7 @@ function DocUploadCard({
                 }`}
               >
                 <Upload className="h-3.5 w-3.5" />
-                {isComplete ? "Re-upload" : "Upload"}
+                {isComplete ? ui("reupload", lang) : ui("upload", lang)}
               </button>
             )}
           </div>
@@ -922,7 +1028,7 @@ function DocUploadCard({
             className="mt-3 border-2 border-dashed border-border rounded-lg py-5 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors"
           >
             <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
-            <p className="text-xs text-muted-foreground">Drag & drop or click to upload PDF / image</p>
+            <p className="text-xs text-muted-foreground">{ui("dropUpload", lang)}</p>
           </div>
         )}
 
@@ -936,9 +1042,9 @@ function DocUploadCard({
           <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
             <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
             <span>
-              {state.sections.reduce((n, s) => n + s.fields.filter(f => f.value && f.value !== "—").length, 0)} fields extracted
-              {state.rawTables.length > 0 ? ` · ${state.rawTables.length} table${state.rawTables.length > 1 ? "s" : ""}` : ""}
-              {" · Review in next step"}
+              {translateValue(String(state.sections.reduce((n, s) => n + s.fields.filter(f => f.value && f.value !== "—").length, 0)), lang)} {ui("fieldsExtracted", lang)}
+              {state.rawTables.length > 0 ? ` · ${translateValue(String(state.rawTables.length), lang)} ${ui("table", lang)}` : ""}
+              {" · "}{ui("reviewNext", lang)}
             </span>
           </div>
         )}
@@ -956,6 +1062,7 @@ function ReviewTabBar({
   onJump,
   onJumpToProfile,
   onBack,
+  lang,
 }: {
   completedCards: DocCard[];
   activeIndex: number;
@@ -963,6 +1070,7 @@ function ReviewTabBar({
   onJump: (i: number) => void;
   onJumpToProfile: () => void;
   onBack: () => void;
+  lang: LangCode;
 }) {
   return (
     <div className="sticky top-0 z-10 bg-background border-b border-border mb-6 -mx-6 px-6 pt-3">
@@ -972,7 +1080,7 @@ function ReviewTabBar({
           className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors rounded-t-lg mr-2"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Upload
+          {ui("uploadTab", lang)}
         </button>
         <div className="w-px h-5 bg-border flex-shrink-0 mr-2" />
 
@@ -990,7 +1098,7 @@ function ReviewTabBar({
               }`}
             >
               <Icon className={`h-3.5 w-3.5 ${isActive ? card.color : ""}`} />
-              {card.shortLabel}
+              {DOC_CARD_SHORT[card.id]?.[lang] ?? card.shortLabel}
               {i < activeIndex || (showProfile) ? (
                 <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-0.5" />
               ) : null}
@@ -1007,7 +1115,7 @@ function ReviewTabBar({
           }`}
         >
           <UserCheck className="h-3.5 w-3.5" />
-          Farmer Profile
+          {ui("farmerProfileTab", lang)}
         </button>
       </div>
     </div>
@@ -1077,10 +1185,10 @@ function DocReviewPanel({
             </div>
             <div>
               <p className={`text-xs font-semibold uppercase tracking-widest ${card.color} mb-0.5`}>
-                Document {index + 1} of {total}
+                {ui("docNo", lang)} {translateValue(String(index + 1), lang)} {ui("of", lang)} {translateValue(String(total), lang)}
               </p>
-              <h3 className="font-bold text-lg text-foreground leading-tight">{card.label}</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">{card.description}</p>
+              <h3 className="font-bold text-lg text-foreground leading-tight">{DOC_CARD_LABELS[card.id]?.[lang] ?? card.label}</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">{DOC_CARD_DESCS[card.id]?.[lang] ?? card.description}</p>
             </div>
           </div>
           <div className="flex-shrink-0 flex flex-col items-end gap-2">
@@ -1103,9 +1211,9 @@ function DocReviewPanel({
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               <Camera className="h-4 w-4 text-blue-600" />
-              <p className="text-sm font-semibold text-blue-800">Profile Photo Extracted</p>
+              <p className="text-sm font-semibold text-blue-800">{ui("photoExtracted", lang)}</p>
             </div>
-            <p className="text-sm text-blue-600">Automatically extracted from Aadhaar Card</p>
+            <p className="text-sm text-blue-600">{ui("photoFrom", lang)}</p>
           </div>
         </div>
       )}
@@ -1127,7 +1235,7 @@ function DocReviewPanel({
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:bg-muted/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ArrowLeft className="h-4 w-4" />
-          Previous
+          {ui("previous", lang)}
         </button>
 
         <button
@@ -1138,7 +1246,7 @@ function DocReviewPanel({
               : "bg-primary hover:bg-primary/90 text-primary-foreground"
           }`}
         >
-          {isLast ? "Review Profile" : "Next Document"}
+          {isLast ? ui("reviewProfile", lang) : ui("nextDoc", lang)}
           {isLast ? <ChevronRight className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
@@ -1363,18 +1471,20 @@ function EditableHtmlTable({
   colToProfile,
   profile,
   onChange,
+  lang = "mr",
 }: {
   html: string;
   colToProfile: Record<number, keyof FarmerProfile>;
   profile: FarmerProfile;
   onChange: (field: keyof FarmerProfile, value: string) => void;
+  lang?: LangCode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // On new extraction HTML: render and make all <td> cells contentEditable
   useEffect(() => {
     if (!containerRef.current) return;
-    containerRef.current.innerHTML = cleanDocHtml(html);
+    containerRef.current.innerHTML = localizeHtml(cleanDocHtml(html), lang);
     const tds = containerRef.current.querySelectorAll<HTMLTableCellElement>("td");
     tds.forEach(td => {
       td.contentEditable = "true";
@@ -1569,6 +1679,7 @@ function FarmerProfileCard({
                               colToProfile={idx === 0 ? colToProfile : {}}
                               profile={profile}
                               onChange={onChange}
+                              lang={lang}
                             />
                           </div>
                           {idx === 0 && numCols > 0 && (
@@ -1743,11 +1854,10 @@ export default function NewRegistration() {
       <div className="space-y-6 max-w-4xl">
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h2 className="font-bold text-lg">New Registration</h2>
+            <h2 className="font-bold text-lg">{ui("newRegTitle", lang)}</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-5">
-            Upload one or more documents below. You can upload any combination — no documents are mandatory.
-            Once at least one document is processed, the Proceed button will activate.
+            {ui("newRegDesc", lang)}
           </p>
 
           <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
@@ -1757,6 +1867,7 @@ export default function NewRegistration() {
                 card={card}
                 state={docStates[card.id]}
                 onStateChange={handleStateChange(card.id)}
+                lang={form8aLang}
               />
             ))}
           </div>
@@ -1767,16 +1878,16 @@ export default function NewRegistration() {
             {completedCards.length > 0 ? (
               <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
                 <CheckCircle2 className="h-4 w-4" />
-                {completedCards.length} document{completedCards.length > 1 ? "s" : ""} ready to review
-                {anyBusy && " · waiting for processing…"}
+                {translateValue(String(completedCards.length), form8aLang)} {ui("docsReady", form8aLang)}
+                {anyBusy && ` · ${ui("waitingProcessing", form8aLang)}`}
               </span>
             ) : anyBusy ? (
               <span className="flex items-center gap-1.5 text-amber-700">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing documents…
+                {ui("processingDocs", form8aLang)}
               </span>
             ) : (
-              <span>Upload at least one document to proceed</span>
+              <span>{ui("uploadFirst", form8aLang)}</span>
             )}
           </div>
           <button
@@ -1784,7 +1895,7 @@ export default function NewRegistration() {
             disabled={!canProceed}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold transition-all shadow-sm hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
           >
-            Proceed to Review
+            {ui("proceedReview", form8aLang)}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -1801,6 +1912,7 @@ export default function NewRegistration() {
         onJump={(i) => { setReviewIndex(i); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         onJumpToProfile={() => { setReviewIndex(completedCards.length); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         onBack={handleBackToUpload}
+        lang={form8aLang}
       />
 
       {!showProfileCard && completedCards[reviewIndex] && (
