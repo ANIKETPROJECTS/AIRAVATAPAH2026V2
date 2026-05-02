@@ -3,7 +3,7 @@ import {
   Upload, CheckCircle2, XCircle, Loader2, FileText,
   User, Landmark, FileStack, Sprout,
   ClipboardCheck, UserCheck, Pencil, ThumbsUp, Camera,
-  ArrowRight, ArrowLeft, ChevronRight,
+  ArrowRight, ArrowLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
 
@@ -1838,6 +1838,14 @@ function FarmerProfileCard({
   customPhoto: string | null;
   onCustomPhotoChange: (v: string | null) => void;
 }) {
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const toggleSection = (id: string) =>
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
   const filledCount = ALL_PROFILE_FIELDS.filter(f => Boolean(profile[f.key])).length;
   const photoSrc = docStates["aadhar"]?.aadharPhoto
     ? `data:${docStates["aadhar"].aadharPhoto.mimeType};base64,${docStates["aadhar"].aadharPhoto.base64}`
@@ -1924,17 +1932,25 @@ function FarmerProfileCard({
           const form8aRawTables = section.id === "form8a" ? (docStates["form8a"]?.rawTables ?? []) : [];
           const form7RawTables  = section.id === "form7"  ? (docStates["form7"]?.rawTables  ?? []) : [];
           const sectionLabel = PROFILE_SECTION_DOC_LABELS[section.id]?.[lang] ?? section.id;
+          const isCollapsed = collapsedSections.has(section.id);
           return (
             <div key={section.id}>
-              <div className={`flex items-center justify-between px-3 py-2 rounded-lg border mb-4 ${section.headerBg}`}>
-                <span className={`text-xs font-bold tracking-wide uppercase ${section.headerColor}`}>
-                  {sectionLabel}
-                </span>
+              <button
+                type="button"
+                onClick={() => toggleSection(section.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border mb-4 ${section.headerBg} cursor-pointer select-none`}
+              >
+                <div className="flex items-center gap-2">
+                  <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""} ${section.headerColor}`} />
+                  <span className={`text-xs font-bold tracking-wide uppercase ${section.headerColor}`}>
+                    {sectionLabel}
+                  </span>
+                </div>
                 <span className={`text-xs font-medium ${section.headerColor} opacity-70`}>
                   {isExtracted ? `${sectionFilled} / ${allFields.length} ${ui("filled", lang)}` : ui("uploadToExtract", lang)}
                 </span>
-              </div>
-              {(section.id === "form8a" || section.id === "form7") ? (
+              </button>
+              {!isCollapsed && ((section.id === "form8a" || section.id === "form7") ? (
                 /* Form 8A / Form 7: extraction-style row layout with editable inputs + raw table */
                 <div className="space-y-5">
                   {section.subsections.map((sub) => (
@@ -2043,7 +2059,7 @@ function FarmerProfileCard({
                     </div>
                   ))}
                 </div>
-              )}
+              ))}
             </div>
           );
         })}
