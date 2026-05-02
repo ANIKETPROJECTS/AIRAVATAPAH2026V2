@@ -92,6 +92,12 @@ export async function apiDeleteFarmer(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete farmer");
 }
 
+export async function apiDeleteAllFarmers(): Promise<{ deleted: number }> {
+  const res = await fetch(`${API}/farmers`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete all farmers");
+  return res.json();
+}
+
 export function notifyFarmerChange() {
   window.dispatchEvent(new CustomEvent("farmer-registry-changed"));
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle } from "lucide-react";
-import { apiFetchFarmers, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
+import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2 } from "lucide-react";
+import { apiFetchFarmers, apiDeleteFarmer, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
 import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
 import FarmerDetailModal from "@/components/modules/FarmerDetailModal";
 
@@ -22,6 +22,8 @@ export default function FarmerRegistry() {
   const [showAdd, setShowAdd] = useState(false);
   const [viewFarmer, setViewFarmer] = useState<FarmerRecord | null>(null);
   const [toast, setToast] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const loadFarmers = useCallback(async () => {
     try {
@@ -71,7 +73,26 @@ export default function FarmerRegistry() {
   const handleFarmerDeleted = (id: string) => {
     setFarmers(prev => prev.filter(f => f.farmerId !== id));
     setViewFarmer(null);
-    showToast("🗑️ Farmer deleted successfully");
+    showToast("Farmer deleted successfully");
+  };
+
+  const handleRowDelete = async (farmerId: string) => {
+    if (pendingDelete !== farmerId) {
+      setPendingDelete(farmerId);
+      setTimeout(() => setPendingDelete(prev => prev === farmerId ? null : prev), 3000);
+      return;
+    }
+    setPendingDelete(null);
+    setDeleting(farmerId);
+    try {
+      await apiDeleteFarmer(farmerId);
+      setFarmers(prev => prev.filter(f => f.farmerId !== farmerId));
+      showToast("Farmer deleted");
+    } catch {
+      showToast("Delete failed — please try again");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleFarmerUpdated = (updated: FarmerRecord) => {
@@ -188,7 +209,7 @@ export default function FarmerRegistry() {
                     <td className="px-4 py-2.5 font-mono text-xs">{f.aadhaar}</td>
                     <td className="px-4 py-2.5"><StatusBadge status={f.status} /></td>
                     <td className="px-4 py-2.5">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         <button
                           onClick={() => setViewFarmer(f)}
                           className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-80"
@@ -200,6 +221,22 @@ export default function FarmerRegistry() {
                           className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => handleRowDelete(f.farmerId)}
+                          disabled={deleting === f.farmerId}
+                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 transition-colors ${
+                            pendingDelete === f.farmerId
+                              ? "bg-destructive text-destructive-foreground animate-pulse"
+                              : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                          }`}
+                        >
+                          {deleting === f.farmerId ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                          {pendingDelete === f.farmerId ? "Confirm?" : "Delete"}
                         </button>
                       </div>
                     </td>

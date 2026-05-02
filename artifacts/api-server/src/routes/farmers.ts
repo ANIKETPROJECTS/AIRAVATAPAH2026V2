@@ -37,10 +37,6 @@ router.get("/farmers", async (_req, res, next) => {
   try {
     const db = getDb();
     const col = db.collection("farmers");
-    const count = await col.countDocuments();
-    if (count === 0) {
-      await col.insertMany(SEED_FARMERS);
-    }
     const farmers = await col.find({}, { projection: { _id: 0 } }).sort({ addedAt: 1 }).toArray();
     res.json(farmers);
   } catch (err) {
@@ -75,6 +71,17 @@ router.patch("/farmers/:id", async (req, res, next) => {
     const updated = await col.findOne({ farmerId: req.params["id"] }, { projection: { _id: 0 } });
     if (!updated) { res.status(404).json({ error: "Farmer not found" }); return; }
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/farmers", async (_req, res, next) => {
+  try {
+    const db = getDb();
+    const col = db.collection("farmers");
+    const result = await col.deleteMany({});
+    res.json({ success: true, deleted: result.deletedCount });
   } catch (err) {
     next(err);
   }
