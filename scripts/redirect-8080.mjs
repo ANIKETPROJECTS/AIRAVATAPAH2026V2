@@ -98,3 +98,4 @@ function startProxy(port) {
 }
 
 startProxy(8080);
+startProxy(18593);
