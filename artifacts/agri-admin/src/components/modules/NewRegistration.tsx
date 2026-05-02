@@ -6,7 +6,6 @@ import {
   ArrowRight, ArrowLeft, ChevronRight,
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
-import { useLang } from "@/contexts/LanguageContext";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -1075,8 +1074,8 @@ function DocUploadCard({
               <Icon className={`h-5 w-5 ${card.color}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-sm text-foreground leading-tight">{card.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{card.description}</p>
+              <p className="font-semibold text-sm text-foreground leading-tight">{DOC_CARD_LABELS[card.id]?.[lang] ?? card.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{DOC_CARD_DESCS[card.id]?.[lang] ?? card.description}</p>
               {state.filename && (
                 <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                   <FileText className="h-3 w-3 flex-shrink-0" />
@@ -1868,7 +1867,7 @@ const INITIAL_DOC_STATES: DocStates = Object.fromEntries(
 ) as DocStates;
 
 export default function NewRegistration() {
-  const { lang: form8aLang, setLang: setForm8aLang } = useLang();
+  const [form8aLang, setForm8aLang] = useState<LangCode>("mr");
   const [docStates, setDocStates] = useState<DocStates>(INITIAL_DOC_STATES);
   const [profile, setProfile] = useState<FarmerProfile>({ ...EMPTY_PROFILE });
   const [approved, setApproved] = useState(false);
@@ -1967,6 +1966,7 @@ export default function NewRegistration() {
         <div>
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-bold text-lg">{ui("newRegTitle", form8aLang)}</h2>
+            <LangSelector lang={form8aLang} onChange={setForm8aLang} />
           </div>
           <p className="text-sm text-muted-foreground mb-5">
             {ui("newRegDesc", form8aLang)}

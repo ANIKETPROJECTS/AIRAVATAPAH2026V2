@@ -1,16 +1,8 @@
 import { useState, useEffect } from "react";
 import { Bell, User } from "lucide-react";
-import { useLang, type LangCode } from "@/contexts/LanguageContext";
-
-const LANG_OPTS: { code: LangCode; label: string }[] = [
-  { code: "mr", label: "म" },
-  { code: "hi", label: "हि" },
-  { code: "en", label: "En" },
-];
 
 export default function Header() {
   const [time, setTime] = useState(new Date());
-  const { lang, setLang } = useLang();
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -25,22 +17,6 @@ export default function Header() {
         {time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground mr-1 uppercase tracking-wide font-semibold hidden sm:inline">भाषा:</span>
-          {LANG_OPTS.map(o => (
-            <button
-              key={o.code}
-              onClick={() => setLang(o.code)}
-              className={`px-2.5 py-1 rounded text-xs font-bold border transition-colors ${
-                lang === o.code
-                  ? "bg-orange-500 border-orange-500 text-white"
-                  : "bg-card border-border text-muted-foreground hover:bg-muted/50"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
         <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
           <Bell className="h-5 w-5 text-foreground" />
           <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
