@@ -9,6 +9,43 @@ import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
+type LangCode = "mr" | "hi" | "en";
+
+const FORM8A_LABEL_MAP: Record<string, { mr: string; hi: string; en: string }> = {
+  "year":            { mr: "वर्ष",                              hi: "वर्ष",                              en: "Year / Financial Year" },
+  "report_date":     { mr: "अहवाल दिनांक",                     hi: "रिपोर्ट दिनांक",                    en: "Report Date" },
+  "village":         { mr: "गाव",                               hi: "गाँव",                               en: "Village" },
+  "taluka":          { mr: "तालुका",                            hi: "तहसील",                              en: "Taluka" },
+  "district":        { mr: "जिल्हा",                            hi: "जिला",                               en: "District" },
+  "khate_number":    { mr: "खाते क्रमांक",                     hi: "खाता संख्या",                        en: "Account Number" },
+  "account_type":    { mr: "खात्याचा प्रकार",                  hi: "खाते का प्रकार",                     en: "Account Type" },
+  "khatedar_names":  { mr: "खातेदाराचे नाव",                   hi: "खाताधारक का नाम",                    en: "Name of Land Holder" },
+  "khatedar_address":{ mr: "खातेदाराचा पत्ता",                 hi: "खाताधारक का पता",                    en: "Address of Land Holder" },
+  "total_area":      { mr: "एकूण क्षेत्र",                     hi: "कुल क्षेत्रफल",                     en: "Total Land Area" },
+  "total_assessment":{ mr: "एकूण आकारणी किंवा जुडी",          hi: "कुल भू-राजस्व / जमाबंदी",           en: "Total Assessment / Judi" },
+  "total_damage":    { mr: "एकूण दुमाला जमिनीवरील नुकसान",    hi: "कुल दुमाला भूमि पर कमी",            en: "Total Damage on Inherited Land" },
+  "total_zp":        { mr: "एकूण जि.प. स्थानिक उपकर",         hi: "कुल जिला परिषद स्थानीय उपकर",       en: "Total Zilla Parishad Local Cess" },
+  "total_gp":        { mr: "एकूण ग्रा.प. स्थानिक उपकर",       hi: "कुल ग्राम पंचायत स्थानीय उपकर",    en: "Total Gram Panchayat Local Cess" },
+  "total_recovery":  { mr: "एकूण वसुलीसाठी",                  hi: "कुल वसूली के लिए",                  en: "Total Recovery Amount" },
+  "grand_total":     { mr: "एकूण",                              hi: "कुल योग",                           en: "Grand Total" },
+  "village_form_6":  { mr: "गाव नमुना सहा मधील नोंद",         hi: "ग्राम प्रपत्र छह में प्रविष्टि",    en: "Entry in Village Form 6" },
+  "survey_number":   { mr: "भूमापन क्रमांक व उपविभाग क्रमांक",hi: "सर्वे नंबर और उपखंड नंबर",          en: "Survey No. & Sub-division" },
+  "land_holding":    { mr: "धारण क्षेत्र",                    hi: "धारित क्षेत्र",                     en: "Land Holding Area" },
+  "cultivable":      { mr: "लागवडी योग्य क्षेत्र",            hi: "कृषि योग्य क्षेत्र",               en: "Cultivable Area" },
+  "waste_land":      { mr: "पोटखराब क्षेत्र",                 hi: "बंजर / अनुपजाऊ भूमि",              en: "Waste Land Area" },
+};
+
+function translateForm8aLabel(fieldKey: string, lang: LangCode, fallback: string): string {
+  if (lang === "mr") return fallback;
+  const norm = fieldKey.toLowerCase().replace(/[\s-]/g, "_");
+  for (const [mapKey, translations] of Object.entries(FORM8A_LABEL_MAP)) {
+    if (norm === mapKey || norm.startsWith(mapKey) || mapKey.startsWith(norm.replace(/^total_/, ""))) {
+      return translations[lang];
+    }
+  }
+  return fallback;
+}
+
 type DocTypeId = "form7" | "form12" | "form8a" | "aadhar" | "bank_passbook";
 type ExtractionStatus = "idle" | "uploading" | "processing" | "complete" | "error";
 type WorkflowStep = "upload" | "review";
@@ -473,11 +510,13 @@ function FieldsTable({
   rawTables = [],
   textBlocks = [],
   docId,
+  lang = "mr",
 }: {
   sections: SectionData[];
   rawTables?: RawTable[];
   textBlocks?: string[];
   docId?: DocTypeId;
+  lang?: LangCode;
 }) {
   if (!sections.length && !rawTables.length && !textBlocks.length) return null;
   return (
@@ -491,7 +530,9 @@ function FieldsTable({
                 <tbody>
                   {sec.fields.filter(f => f.value && f.value !== "—").map((f) => (
                     <tr key={f.key} className="border-b border-border last:border-0">
-                      <td className="px-4 py-2.5 text-muted-foreground w-2/5 font-medium">{f.label}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground w-2/5 font-medium">
+                        {docId === "form8a" ? translateForm8aLabel(f.key, lang, f.label) : f.label}
+                      </td>
                       <td className="px-4 py-2.5 text-foreground break-words">{f.value}</td>
                     </tr>
                   ))}
@@ -798,6 +839,32 @@ function ReviewTabBar({
   );
 }
 
+function LangSelector({ lang, onChange }: { lang: LangCode; onChange: (l: LangCode) => void }) {
+  const opts: { code: LangCode; label: string }[] = [
+    { code: "mr", label: "म" },
+    { code: "hi", label: "हि" },
+    { code: "en", label: "En" },
+  ];
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-[10px] text-muted-foreground mr-1 uppercase tracking-wide font-semibold">Labels:</span>
+      {opts.map(o => (
+        <button
+          key={o.code}
+          onClick={() => onChange(o.code)}
+          className={`px-2.5 py-1 rounded text-xs font-bold border transition-colors ${
+            lang === o.code
+              ? "bg-orange-500 border-orange-500 text-white"
+              : "bg-card border-border text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function DocReviewPanel({
   card,
   state,
@@ -806,6 +873,8 @@ function DocReviewPanel({
   onPrev,
   onNext,
   isLast,
+  lang,
+  onLangChange,
 }: {
   card: DocCard;
   state: ExtractionState;
@@ -814,6 +883,8 @@ function DocReviewPanel({
   onPrev: () => void;
   onNext: () => void;
   isLast: boolean;
+  lang: LangCode;
+  onLangChange: (l: LangCode) => void;
 }) {
   const Icon = card.icon;
   const photoSrc = card.id === "aadhar" && state.aadharPhoto
@@ -837,9 +908,14 @@ function DocReviewPanel({
               <p className="text-sm text-muted-foreground mt-0.5">{card.description}</p>
             </div>
           </div>
-          <div className="flex-shrink-0 text-right">
-            <p className={`text-2xl font-bold ${card.color}`}>{fieldCount}</p>
-            <p className="text-xs text-muted-foreground">fields extracted</p>
+          <div className="flex-shrink-0 flex flex-col items-end gap-2">
+            <div className="text-right">
+              <p className={`text-2xl font-bold ${card.color}`}>{fieldCount}</p>
+              <p className="text-xs text-muted-foreground">fields extracted</p>
+            </div>
+            {card.id === "form8a" && (
+              <LangSelector lang={lang} onChange={onLangChange} />
+            )}
           </div>
         </div>
       </div>
@@ -867,6 +943,7 @@ function DocReviewPanel({
           rawTables={state.rawTables}
           textBlocks={state.textBlocks}
           docId={card.id}
+          lang={lang}
         />
       </div>
 
@@ -1115,6 +1192,79 @@ const ALL_PROFILE_FIELDS = (() => {
   });
 })();
 
+function EditableHtmlTable({
+  html,
+  colToProfile,
+  profile,
+  onChange,
+}: {
+  html: string;
+  colToProfile: Record<number, keyof FarmerProfile>;
+  profile: FarmerProfile;
+  onChange: (field: keyof FarmerProfile, value: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // On new extraction HTML: render and make all <td> cells contentEditable
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.innerHTML = cleanDocHtml(html);
+    const tds = containerRef.current.querySelectorAll<HTMLTableCellElement>("td");
+    tds.forEach(td => {
+      td.contentEditable = "true";
+      td.spellcheck = false;
+      td.style.outline = "none";
+      td.style.cursor = "text";
+      td.style.minWidth = "40px";
+    });
+    // Highlight columns that are mapped to profile fields
+    const rows = containerRef.current.querySelectorAll<HTMLTableRowElement>("tr");
+    rows.forEach(row => {
+      row.querySelectorAll<HTMLTableCellElement>("td").forEach((cell, ci) => {
+        if (colToProfile[ci]) cell.style.backgroundColor = "rgba(20,184,166,0.08)";
+      });
+    });
+  }, [html]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync profile fields → table cells (DOM direct, no state)
+  const { land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal } = profile;
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.querySelectorAll<HTMLTableRowElement>("tr").forEach(row => {
+      row.querySelectorAll<HTMLTableCellElement>("td").forEach((cell, ci) => {
+        const profileKey = colToProfile[ci];
+        if (profileKey && cell !== document.activeElement) {
+          const newVal = profile[profileKey] ?? "";
+          if (cell.textContent !== newVal) cell.textContent = newVal;
+        }
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal]);
+
+  const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== "TD" || !containerRef.current) return;
+    containerRef.current.querySelectorAll<HTMLTableRowElement>("tr").forEach(row => {
+      const cells = row.querySelectorAll<HTMLTableCellElement>("td");
+      cells.forEach((cell, ci) => {
+        if (cell === target) {
+          const profileKey = colToProfile[ci];
+          if (profileKey) onChange(profileKey, target.textContent?.trim() ?? "");
+        }
+      });
+    });
+  }, [colToProfile, onChange]);
+
+  return (
+    <div
+      ref={containerRef}
+      onInput={handleInput}
+      className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground [&_td:focus]:bg-primary/5 [&_td:focus]:outline-none"
+    />
+  );
+}
+
 function FarmerProfileCard({
   docStates,
   profile,
@@ -1122,6 +1272,7 @@ function FarmerProfileCard({
   onApprove,
   approved,
   onBack,
+  lang,
 }: {
   docStates: Record<DocTypeId, ExtractionState>;
   profile: FarmerProfile;
@@ -1129,34 +1280,20 @@ function FarmerProfileCard({
   onApprove: () => void;
   approved: boolean;
   onBack: () => void;
+  lang: LangCode;
 }) {
   const filledCount = ALL_PROFILE_FIELDS.filter(f => Boolean(profile[f.key])).length;
   const photoSrc = docStates["aadhar"]?.aadharPhoto
     ? `data:${docStates["aadhar"].aadharPhoto.mimeType};base64,${docStates["aadhar"].aadharPhoto.base64}`
     : null;
 
-  // ── Form 8A editable table ──────────────────────────────────────────────
   const form8aRawTable0 = docStates["form8a"]?.rawTables?.[0] ?? null;
-
-  const [editRows, setEditRows] = useState<string[][]>(
-    () => form8aRawTable0?.rows ?? []
-  );
-
-  // Re-initialise whenever a new Form 8A extraction completes
-  useEffect(() => {
-    setEditRows(docStates["form8a"]?.rawTables?.[0]?.rows ?? []);
-  }, [docStates["form8a"]?.status]);
 
   const numCols = useMemo(() => {
     if (!form8aRawTable0) return 0;
-    return Math.max(
-      form8aRawTable0.headers.length,
-      ...form8aRawTable0.rows.map(r => r.length),
-      0,
-    );
+    return Math.max(form8aRawTable0.headers.length, ...form8aRawTable0.rows.map(r => r.length), 0);
   }, [form8aRawTable0]);
 
-  // Map column index → profile field key (anchored from the right)
   const colToProfile = useMemo((): Record<number, keyof FarmerProfile> => {
     if (numCols === 0) return {};
     return {
@@ -1168,42 +1305,6 @@ function FarmerProfileCard({
       [numCols - 6]: "land",
     };
   }, [numCols]);
-
-  const profileToCol = useMemo((): Partial<Record<keyof FarmerProfile, number>> => {
-    const m: Partial<Record<keyof FarmerProfile, number>> = {};
-    Object.entries(colToProfile).forEach(([c, k]) => { m[k] = Number(c); });
-    return m;
-  }, [colToProfile]);
-
-  // Sync: profile field input → table cell (two-way)
-  const { land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal } = profile;
-  useEffect(() => {
-    if (editRows.length === 0 || numCols === 0) return;
-    setEditRows(prev => {
-      let changed = false;
-      const next = prev.map(row => {
-        const nr = [...row];
-        (Object.entries(profileToCol) as [keyof FarmerProfile, number][]).forEach(([key, col]) => {
-          if (col >= 0 && col < nr.length && nr[col] !== "" && nr[col] !== undefined) {
-            const val = profile[key] ?? "";
-            if (nr[col] !== val) { nr[col] = val; changed = true; }
-          }
-        });
-        return nr;
-      });
-      return changed ? next : prev;
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal]);
-
-  // Handle table cell edit → update local rows + sync to profile field
-  const handleCellChange = useCallback((rowIdx: number, colIdx: number, val: string) => {
-    setEditRows(prev =>
-      prev.map((r, ri) => ri === rowIdx ? r.map((c, ci) => ci === colIdx ? val : c) : r)
-    );
-    const profileKey = colToProfile[colIdx];
-    if (profileKey) onChange(profileKey, val);
-  }, [colToProfile, onChange]);
 
   return (
     <div className="rounded-xl border-2 border-primary/30 bg-card shadow-md overflow-hidden">
@@ -1284,56 +1385,32 @@ function FarmerProfileCard({
                     </div>
                   ))}
 
-                  {/* Holdings editable table */}
-                  {form8aRawTables.length > 0 && editRows.length > 0 && (
+                  {/* Holdings editable table — original HTML visual, contentEditable cells */}
+                  {form8aRawTables.length > 0 && form8aRawTable0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Holdings (धारण जमिनींची नोंदवही)
                       </p>
-                      <div className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
-                          Table 1 <span className="normal-case font-normal text-muted-foreground ml-1">— click any cell to edit</span>
-                        </p>
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse border border-border text-xs">
-                            {form8aRawTable0 && form8aRawTable0.headers.length > 0 && (
-                              <thead>
-                                <tr className="bg-muted/40">
-                                  {Array.from({ length: numCols }).map((_, hi) => (
-                                    <th key={hi} className="border border-border px-2 py-2 text-left font-semibold align-top whitespace-pre-wrap text-muted-foreground">
-                                      {form8aRawTable0.headers[hi] ?? ""}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                            )}
-                            <tbody>
-                              {editRows.map((row, ri) => (
-                                <tr key={ri} className={ri % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                                  {Array.from({ length: numCols }).map((_, ci) => {
-                                    const isMapped = colToProfile[ci] !== undefined;
-                                    return (
-                                      <td key={ci} className={`border border-border p-0 align-top ${isMapped ? "bg-teal-50/40" : ""}`}>
-                                        <input
-                                          type="text"
-                                          value={row[ci] ?? ""}
-                                          onChange={(e) => handleCellChange(ri, ci, e.target.value)}
-                                          className={`w-full px-2 py-1.5 bg-transparent text-xs focus:outline-none focus:bg-primary/5 min-w-[56px] ${isMapped ? "font-medium" : ""}`}
-                                        />
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        {numCols > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-2">
-                            Highlighted cells sync with the Totals fields above.
+                      {form8aRawTables.map((tbl, idx) => (
+                        <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
+                            Table {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— click any cell to edit</span>
                           </p>
-                        )}
-                      </div>
+                          <div className="overflow-x-auto">
+                            <EditableHtmlTable
+                              html={tbl.html}
+                              colToProfile={idx === 0 ? colToProfile : {}}
+                              profile={profile}
+                              onChange={onChange}
+                            />
+                          </div>
+                          {idx === 0 && numCols > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-2">
+                              Highlighted cells sync with the Totals fields above.
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1406,6 +1483,7 @@ export default function NewRegistration() {
   const [approved, setApproved] = useState(false);
   const [step, setStep] = useState<WorkflowStep>("upload");
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [form8aLang, setForm8aLang] = useState<LangCode>("mr");
 
   const completedCards = DOC_CARDS.filter(c => docStates[c.id].status === "complete");
   const anyBusy = Object.values(docStates).some(s => s.status === "uploading" || s.status === "processing");
@@ -1567,6 +1645,8 @@ export default function NewRegistration() {
           onPrev={handleReviewPrev}
           onNext={handleReviewNext}
           isLast={reviewIndex === completedCards.length - 1}
+          lang={form8aLang}
+          onLangChange={setForm8aLang}
         />
       )}
 
@@ -1578,6 +1658,7 @@ export default function NewRegistration() {
           onApprove={handleApprove}
           approved={approved}
           onBack={() => { setReviewIndex(completedCards.length - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          lang={form8aLang}
         />
       )}
     </div>
