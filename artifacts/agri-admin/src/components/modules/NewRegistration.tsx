@@ -172,9 +172,10 @@ const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
   "otherRights":         { mr: "इतर अधिकार",                          hi: "अन्य अधिकार",                            en: "Other Rights" },
   "encumbrances":        { mr: "बोजा / तारण",                         hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
   "boundaryMarks":       { mr: "सीमा आणि सर्वेक्षण खुणा",             hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
-  "lastMutationNumber":  { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
-  "lastMutationDate":    { mr: "शेवटचा फेरफार दिनांक",               hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
-  "pendingMutation":     { mr: "प्रलंबित फेरफार",                     hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
+  "lastMutationNumber":        { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
+  "lastMutationDate":          { mr: "शेवटचा फेरफार दिनांक",               hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
+  "pendingMutation":           { mr: "प्रलंबित फेरफार",                     hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
+  "previousMutationNumbers":   { mr: "जुने फेरफार क्रमांक",                hi: "पिछले म्यूटेशन क्रमांक",                 en: "Previous Mutation Numbers" },
   "form8aYear":          { mr: "वर्ष",                                 hi: "वर्ष",                                   en: "Year" },
   "form8aReportDate":    { mr: "अहवाल दिनांक",                        hi: "रिपोर्ट दिनांक",                         en: "Report Date" },
   "khateAccountType":    { mr: "खात्याचा प्रकार",                     hi: "खाते का प्रकार",                         en: "Account Type" },
@@ -203,6 +204,7 @@ const UI_T: Record<string, LangMap> = {
   otherText:         { mr: "दस्तऐवजातील इतर मजकूर",                            hi: "दस्तावेज़ से अन्य पाठ",                            en: "Other Text from Document" },
   fieldsExtracted:   { mr: "माहिती काढली",                                     hi: "फ़ील्ड निकाले",                                     en: "fields extracted" },
   holdingsTitle:     { mr: "धारण जमिनींची नोंदवही",                            hi: "जोत भूमि अभिलेख",                                  en: "Holdings Register" },
+  ownershipTitle:    { mr: "मालकी तक्ता",                                       hi: "स्वामित्व तालिका",                                 en: "Ownership Table" },
   clickToEdit:       { mr: "संपादनासाठी कोणत्याही सेलवर क्लिक करा",           hi: "संपादित करने हेतु किसी भी सेल पर क्लिक करें",     en: "click any cell to edit" },
   syncNote:          { mr: "हायलाइट सेल वरील एकूण फील्डशी जोडलेले आहेत",      hi: "हाइलाइट सेल ऊपर के कुल फ़ील्ड के साथ सिंक हैं",  en: "Highlighted cells sync with the Totals fields above" },
   uploadToExtract:   { mr: "माहिती काढण्यासाठी दस्तऐवज अपलोड करा",           hi: "डेटा निकालने के लिए दस्तावेज़ अपलोड करें",        en: "Upload document to extract" },
@@ -624,6 +626,7 @@ export interface FarmerProfile {
   lastMutationNumber: string;
   lastMutationDate: string;
   pendingMutation: string;
+  previousMutationNumbers: string;
   form8aYear: string;
   form8aReportDate: string;
   khateAccountType: string;
@@ -658,7 +661,7 @@ const EMPTY_PROFILE: FarmerProfile = {
   khateNumber: "", occupantClass: "", ownerNames: "", ownerShare: "", modeOfAcquisition: "",
   land: "", landRevenue: "", collectionCharges: "", nonAgriculturalArea: "", nonCultivatedArea: "",
   tenantName: "", tenantRent: "", otherRights: "", encumbrances: "", boundaryMarks: "",
-  lastMutationNumber: "", lastMutationDate: "", pendingMutation: "",
+  lastMutationNumber: "", lastMutationDate: "", pendingMutation: "", previousMutationNumbers: "",
   form8aYear: "", form8aReportDate: "", khateAccountType: "", khatedarNames: "",
   khatedarAddress: "", totalAssessment: "", totalDamageInherited: "",
   totalZpCess: "", totalGpCess: "", totalRecovery: "", grandTotal: "", crop: "",
@@ -802,6 +805,7 @@ function extractProfileFromStates(
   pick(["last_mutation_number"], "lastMutationNumber", ["form7"]);
   pick(["last_mutation_date"], "lastMutationDate", ["form7"]);
   pick(["pending_mutation"], "pendingMutation", ["form7"]);
+  pick(["previous_mutation_numbers", "previous mutations"], "previousMutationNumbers", ["form7"]);
   pick(["year"], "form8aYear", ["form8a"]);
   pick(["report_date"], "form8aReportDate", ["form8a"]);
   pick(["account_type", "khata type", "account type"], "khateAccountType", ["form8a"]);
@@ -1542,46 +1546,39 @@ const PROFILE_SECTIONS: {
           { key: "village", label: "Village", placeholder: "Village name" },
           { key: "taluka", label: "Taluka", placeholder: "Taluka name" },
           { key: "district", label: "District", placeholder: "District name" },
-          { key: "surveyNumber", label: "Survey Number", placeholder: "e.g. 77/3" },
-          { key: "puId", label: "PU-ID", placeholder: "Permanent Unique ID" },
+          { key: "surveyNumber", label: "Survey Number", placeholder: "e.g. 392" },
         ],
       },
       {
         key: "ownership",
         fields: [
-          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
-          { key: "occupantClass", label: "Occupant Class", placeholder: "e.g. Class 1" },
+          { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 103" },
+          { key: "occupantClass", label: "Occupant Class", placeholder: "e.g. वर्ग-ग-1" },
           { key: "ownerNames", label: "Owner Name(s)", placeholder: "Full name(s)", span: true },
-          { key: "ownerShare", label: "Owner Share / Hissa", placeholder: "e.g. 1/2" },
-          { key: "modeOfAcquisition", label: "Mode of Acquisition", placeholder: "e.g. Purchase / Inheritance" },
+          { key: "ownerShare", label: "Owner Share / Hissa", placeholder: "e.g. ए" },
         ],
       },
       {
         key: "area & assessment",
         fields: [
-          { key: "land", label: "Total Area", placeholder: "e.g. 2.06.00 H.R." },
-          { key: "landRevenue", label: "Land Revenue Assessment", placeholder: "Annual tax amount" },
-          { key: "collectionCharges", label: "Collection Charges", placeholder: "Admin fee" },
-          { key: "nonAgriculturalArea", label: "Non-Agricultural Area", placeholder: "Area in non-agri use" },
-          { key: "nonCultivatedArea", label: "Non-Cultivated Area", placeholder: "Uncultivated land" },
+          { key: "land", label: "Total Area", placeholder: "e.g. 1.16.30" },
+          { key: "nonAgriculturalArea", label: "Non-Agricultural Area", placeholder: "e.g. 0,00,00" },
+          { key: "nonCultivatedArea", label: "Non-Cultivated Area", placeholder: "e.g. 0.84.50" },
         ],
       },
       {
         key: "rights & encumbrances",
         fields: [
           { key: "tenantName", label: "Tenant Name", placeholder: "Tenant / kul name" },
-          { key: "tenantRent", label: "Tenant Rent", placeholder: "Rent amount" },
-          { key: "otherRights", label: "Other Rights", placeholder: "Easements, water rights…", span: true },
-          { key: "encumbrances", label: "Encumbrance / Mortgage", placeholder: "Bank name & loan amount", span: true },
-          { key: "boundaryMarks", label: "Boundary & Survey Marks", placeholder: "Boundary notes", span: true },
+          { key: "otherRights", label: "Other Rights", placeholder: "e.g. कुलाचे नाव व खनड", span: true },
         ],
       },
       {
         key: "mutation",
         fields: [
-          { key: "lastMutationNumber", label: "Last Mutation No.", placeholder: "e.g. 742" },
-          { key: "lastMutationDate", label: "Last Mutation Date", placeholder: "Date of last mutation" },
+          { key: "lastMutationNumber", label: "Last Mutation No.", placeholder: "e.g. 1423" },
           { key: "pendingMutation", label: "Pending Mutation", placeholder: "Yes / No / None" },
+          { key: "previousMutationNumbers", label: "Previous Mutation Numbers", placeholder: "e.g. 1, 118, 715…", span: true },
         ],
       },
     ],
@@ -1838,6 +1835,7 @@ function FarmerProfileCard({
           const allFields = section.subsections.flatMap(sub => sub.fields);
           const sectionFilled = allFields.filter(f => Boolean(profile[f.key as keyof FarmerProfile])).length;
           const form8aRawTables = section.id === "form8a" ? (docStates["form8a"]?.rawTables ?? []) : [];
+          const form7RawTables  = section.id === "form7"  ? (docStates["form7"]?.rawTables  ?? []) : [];
           const sectionLabel = PROFILE_SECTION_DOC_LABELS[section.id]?.[lang] ?? section.id;
           return (
             <div key={section.id}>
@@ -1849,8 +1847,8 @@ function FarmerProfileCard({
                   {isExtracted ? `${sectionFilled} / ${allFields.length} ${ui("filled", lang)}` : ui("uploadToExtract", lang)}
                 </span>
               </div>
-              {section.id === "form8a" ? (
-                /* Form 8A: extraction-style row layout with editable inputs */
+              {(section.id === "form8a" || section.id === "form7") ? (
+                /* Form 8A / Form 7: extraction-style row layout with editable inputs + raw table */
                 <div className="space-y-5">
                   {section.subsections.map((sub) => (
                     <div key={sub.key}>
@@ -1882,8 +1880,8 @@ function FarmerProfileCard({
                     </div>
                   ))}
 
-                  {/* Holdings editable table — original HTML visual, contentEditable cells */}
-                  {form8aRawTables.length > 0 && form8aRawTable0 && (
+                  {/* Form 8A: Holdings editable table */}
+                  {section.id === "form8a" && form8aRawTables.length > 0 && form8aRawTable0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {ui("holdingsTitle", lang)}
@@ -1907,6 +1905,31 @@ function FarmerProfileCard({
                               {ui("syncNote", lang)}
                             </p>
                           )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Form 7: Ownership editable table */}
+                  {section.id === "form7" && form7RawTables.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {ui("ownershipTitle", lang)}
+                      </p>
+                      {form7RawTables.map((tbl, idx) => (
+                        <div key={tbl.blockId ?? idx} className="border-l-4 border-l-emerald-400 bg-card border border-border rounded-md p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 mb-3">
+                            {ui("table", lang)} {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
+                          </p>
+                          <div className="overflow-x-auto">
+                            <EditableHtmlTable
+                              html={tbl.html}
+                              colToProfile={{}}
+                              profile={profile}
+                              onChange={onChange}
+                              lang={lang}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
