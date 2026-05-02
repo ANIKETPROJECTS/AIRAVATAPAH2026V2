@@ -1798,6 +1798,16 @@ function FarmerProfileCard({
     prevLang.current = lang;
     if (lang === "en") return;
 
+    // Step 1: Synchronously apply dict lookups (MALE→पुरुष, Maharashtra→महाराष्ट्र)
+    // and Devanagari digit conversion to ALL profile fields
+    (Object.keys(profile) as (keyof FarmerProfile)[]).forEach((field) => {
+      const val = profile[field];
+      if (!val) return;
+      const translated = translateValue(val, lang);
+      if (translated !== val) onChange(field, translated);
+    });
+
+    // Step 2: Async API transliteration for Latin-script name/address fields
     const TEXT_FIELDS: (keyof FarmerProfile)[] = [
       "name", "fathersName", "address", "village", "district", "taluka",
       "ownerNames", "khatedarNames", "khatedarAddress",
