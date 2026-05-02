@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   User, MapPin, Landmark, Sprout, Shield, FileText, AlertCircle,
-  ChevronDown, ChevronUp, CheckCircle2, XCircle, Phone, Mail,
-  Droplets, Ticket, BadgeCheck, Info,
+  CheckCircle2, Phone, Mail,
+  Droplets, Ticket, BadgeCheck,
   Calendar, Hash, Fingerprint, CreditCard, Building2, Activity,
-  Wheat, Layers, Zap, Clock, IndianRupee, Star,
+  Wheat, Layers, Zap, Clock, IndianRupee, Star, Info,
+  ArrowRight,
 } from "lucide-react";
 import type { FarmerRecord } from "@/data/farmerApi";
 
 /* ─────────────────────────── helpers ─────────────────────────── */
-function formatLandHAR(val: number | string | undefined): string {
+export function formatLandHAR(val: number | string | undefined): string {
   if (val === undefined || val === null || val === "" || val === "0" || val === 0) return "—";
   const s = String(val).trim();
   const parts = s.split(".");
@@ -17,7 +18,7 @@ function formatLandHAR(val: number | string | undefined): string {
   if (parts.length === 2) return parts[1] === "0" || parts[1] === "00" ? `${parts[0]} हे.` : `${parts[0]} हे. ${parts[1]} आर.`;
   return `${s} हे.`;
 }
-function landToHa(val: number | string | undefined): number {
+export function landToHa(val: number | string | undefined): number {
   if (!val) return 0;
   const parts = String(val).trim().split(".");
   return parseFloat(parts[0]||"0") + parseFloat(parts[1]||"0")/100 + parseFloat(parts[2]||"0")/10000;
@@ -29,13 +30,13 @@ function calcAge(dob?: string) {
 }
 
 /* ─────────────────────────── types ─────────────────────────── */
-interface Scheme { id:string; name:string; nameMr:string; category:"central"|"state"; ministry:string; eligible:boolean; reason:string; benefit:string; maxAmount:string; frequency:string; appliedStatus?:"Applied"|"Approved"|"Rejected"|"Disbursed"|null; appliedDate?:string; totalDisbursed?:string; refNo?:string; }
-interface Grievance { id:string; title:string; category:string; date:string; status:"Open"|"In Progress"|"Resolved"|"Closed"; priority:"High"|"Medium"|"Low"; description:string; assignedTo:string; resolvedDate?:string; remarks?:string; }
-interface SupportTicket { id:string; subject:string; date:string; status:"Open"|"Pending"|"Resolved"; type:"Document"|"Payment"|"Scheme"|"Technical"|"Other"; description:string; resolvedDate?:string; handledBy?:string; }
-interface TimelineEvent { date:string; event:string; detail:string; icon:"register"|"review"|"verify"|"scheme"|"grievance"; }
+export interface Scheme { id:string; name:string; nameMr:string; category:"central"|"state"; ministry:string; eligible:boolean; reason:string; benefit:string; maxAmount:string; frequency:string; appliedStatus?:"Applied"|"Approved"|"Rejected"|"Disbursed"|null; appliedDate?:string; totalDisbursed?:string; refNo?:string; }
+export interface Grievance { id:string; title:string; category:string; date:string; status:"Open"|"In Progress"|"Resolved"|"Closed"; priority:"High"|"Medium"|"Low"; description:string; assignedTo:string; resolvedDate?:string; remarks?:string; }
+export interface SupportTicket { id:string; subject:string; date:string; status:"Open"|"Pending"|"Resolved"; type:"Document"|"Payment"|"Scheme"|"Technical"|"Other"; description:string; resolvedDate?:string; handledBy?:string; }
+export interface TimelineEvent { date:string; event:string; detail:string; icon:"register"|"review"|"verify"|"scheme"|"grievance"; }
 
 /* ─────────────────────────── data derivation ─────────────────────────── */
-function deriveSchemes(f: FarmerRecord): Scheme[] {
+export function deriveSchemes(f: FarmerRecord): Scheme[] {
   const ha = landToHa(f.land), crop=(f.crop||"").toLowerCase(), cat=(f.category||"").toUpperCase();
   const isSCSTOBC = cat==="SC"||cat==="ST"||cat==="OBC";
   const hasCrop = crop.length>0;
@@ -54,7 +55,7 @@ function deriveSchemes(f: FarmerRecord): Scheme[] {
     { id:"DRIP", name:"Drip / Sprinkler Irrigation Subsidy", nameMr:"ठिबक / तुषार सिंचन अनुदान", category:"state", ministry:"GoM — Agriculture", eligible:ha>=0.4, reason:ha<0.4?"Min 0.4 ha":"Micro-irrigation subsidy eligible", benefit:"80–100% subsidy on drip/sprinkler", maxAmount:"100% (SC/ST); 80% others", frequency:"One-time", appliedStatus:null },
   ];
 }
-function derivedGrievances(f: FarmerRecord): Grievance[] {
+export function derivedGrievances(f: FarmerRecord): Grievance[] {
   const seed = parseInt(f.farmerId.replace(/\D/g,"")||"1")%100;
   const all: Grievance[] = [
     { id:`GRV-${f.farmerId}-001`, title:"PM-KISAN instalment not credited for Q3 2024", category:"Scheme / DBT", date:"2024-11-10", status:"Resolved", priority:"High", description:"Farmer reported the 3rd instalment of ₹2,000 under PM-KISAN was not credited despite Aadhaar–bank seeding. Traced to a name mismatch between Aadhaar and bank records — corrected via NPCI portal.", assignedTo:"Taluka Agri. Officer, Haveli", resolvedDate:"2024-12-02", remarks:"Name mismatch corrected in NPCI. Instalment ₹2,000 credited on 2024-12-05." },
@@ -63,7 +64,7 @@ function derivedGrievances(f: FarmerRecord): Grievance[] {
   ];
   return seed<30?all:seed<60?all.slice(0,2):all.slice(0,1);
 }
-function derivedTickets(f: FarmerRecord): SupportTicket[] {
+export function derivedTickets(f: FarmerRecord): SupportTicket[] {
   const seed = parseInt(f.farmerId.replace(/\D/g,"")||"1")%100;
   const all: SupportTicket[] = [
     { id:`TKT-${f.farmerId}-001`, subject:"Aadhaar–Bank seeding not reflecting on PM-KISAN portal", date:"2025-02-18", status:"Resolved", type:"Technical", description:"Aadhaar seeded at NPCI but PM-KISAN portal shows 'Aadhaar not linked'. Ticket raised with PFMS helpdesk (Ref: PFMS-2025-MH-88123). Portal updated after 14 days.", resolvedDate:"2025-03-04", handledBy:"PFMS Helpdesk / Taluka IT Cell" },
@@ -72,7 +73,7 @@ function derivedTickets(f: FarmerRecord): SupportTicket[] {
   ];
   return seed<40?all:seed<70?all.slice(0,2):all.slice(0,1);
 }
-function deriveTimeline(f: FarmerRecord): TimelineEvent[] {
+export function deriveTimeline(f: FarmerRecord): TimelineEvent[] {
   const reg = new Date(f.addedAt);
   const fmt = (d: Date) => d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
   return [
@@ -82,6 +83,20 @@ function deriveTimeline(f: FarmerRecord): TimelineEvent[] {
     { date:"01 Apr 2025", event:"Enrolled in Namo Shetkari Scheme", detail:"Successfully enrolled in Namo Shetkari Maha Sanman Nidhi. First instalment ₹2,000 disbursed.", icon:"scheme" },
   ];
 }
+
+/* ─────────────────────────── shared pill components ─────────────────────────── */
+export function SchemeStatusPill({ status }: { status?:string|null }) {
+  if (!status) return <span className="text-[10px] italic text-muted-foreground/50">Not Applied</span>;
+  const c:Record<string,string> = { "Disbursed":"bg-emerald-100 text-emerald-800 border-emerald-200","Approved":"bg-teal-100 text-teal-800 border-teal-200","Applied":"bg-green-100 text-green-800 border-green-200","Rejected":"bg-slate-100 text-slate-600 border-slate-200" };
+  return <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${c[status]||"bg-muted text-muted-foreground border-border"}`}>{status}</span>;
+}
+export function Pill({ label, map }: { label:string; map:Record<string,string> }) {
+  return <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${map[label]||"bg-muted text-muted-foreground"}`}>{label}</span>;
+}
+export const GSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","In Progress":"bg-teal-100 text-teal-800","Resolved":"bg-emerald-100 text-emerald-800","Closed":"bg-slate-100 text-slate-600" };
+export const GPRIORITY:Record<string,string> = { "High":"bg-lime-200 text-lime-900 font-bold","Medium":"bg-green-100 text-green-800","Low":"bg-slate-100 text-slate-600" };
+export const TSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","Pending":"bg-green-100 text-green-800","Resolved":"bg-emerald-100 text-emerald-800" };
+export const TTYPE:Record<string,string> = { "Payment":"bg-teal-100 text-teal-800","Document":"bg-emerald-100 text-emerald-800","Technical":"bg-slate-100 text-slate-700","Scheme":"bg-green-100 text-green-800","Other":"bg-muted text-muted-foreground" };
 
 /* ─────────────────────────── small components ─────────────────────────── */
 function InfoBlock({ label, value, mono, highlight }: { label:string; value?:string|null; mono?:boolean; highlight?:boolean }) {
@@ -94,7 +109,6 @@ function InfoBlock({ label, value, mono, highlight }: { label:string; value?:str
     </div>
   );
 }
-
 function SubHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 pb-2 border-b border-border/40">
@@ -102,11 +116,10 @@ function SubHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
     </div>
   );
 }
-
-function Section({ id, title, icon, children, badge, defaultOpen=true }: {
-  id:string; title:string; icon:React.ReactNode; children:React.ReactNode; badge?:number|string; defaultOpen?:boolean;
+function Section({ id, title, icon, children, badge }: {
+  id:string; title:string; icon:React.ReactNode; children:React.ReactNode; badge?:number|string;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(true);
   return (
     <div id={id} className="border border-border rounded-xl overflow-hidden scroll-mt-4">
       <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center justify-between px-5 py-3.5 text-left bg-slate-50/70 hover:bg-slate-100/70 transition-colors">
@@ -115,53 +128,69 @@ function Section({ id, title, icon, children, badge, defaultOpen=true }: {
           {title}
           {badge!==undefined&&<span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-bold border border-secondary/20">{badge}</span>}
         </div>
-        {open?<ChevronUp className="h-4 w-4 text-muted-foreground"/>:<ChevronDown className="h-4 w-4 text-muted-foreground"/>}
+        <span className="text-xs text-muted-foreground">{open?"▲":"▼"}</span>
       </button>
       {open&&<div className="p-5 bg-white">{children}</div>}
     </div>
   );
 }
 
-function SchemeStatusPill({ status }: { status?:string|null }) {
-  if (!status) return <span className="text-[10px] italic text-muted-foreground/50">Not Applied</span>;
-  const c:Record<string,string> = { "Disbursed":"bg-emerald-100 text-emerald-800 border-emerald-200","Approved":"bg-teal-100 text-teal-800 border-teal-200","Applied":"bg-green-100 text-green-800 border-green-200","Rejected":"bg-red-100 text-red-800 border-red-200" };
-  return <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${c[status]||"bg-muted text-muted-foreground border-border"}`}>{status}</span>;
+/* ─────────────────────────── summary card (for sub-page sections) ─────────────────────────── */
+function SummaryCard({ id, title, icon, badge, onClick, children }: {
+  id:string; title:string; icon:React.ReactNode; badge?:string|number; onClick:()=>void; children:React.ReactNode;
+}) {
+  return (
+    <div id={id} className="border border-border rounded-xl overflow-hidden scroll-mt-4 group">
+      <button
+        onClick={onClick}
+        className="w-full flex items-center justify-between px-5 py-3.5 text-left bg-slate-50/70 hover:bg-secondary/5 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2.5 font-semibold text-sm text-foreground">
+          <span className="text-secondary">{icon}</span>
+          {title}
+          {badge!==undefined&&<span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-bold border border-secondary/20">{badge}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-secondary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Open page</span>
+          <ArrowRight className="h-4 w-4 text-secondary"/>
+        </div>
+      </button>
+      <div className="px-5 py-4 bg-white">{children}</div>
+    </div>
+  );
 }
-function Pill({ label, map }: { label:string; map:Record<string,string> }) {
-  return <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${map[label]||"bg-muted text-muted-foreground"}`}>{label}</span>;
-}
-const GSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","In Progress":"bg-teal-100 text-teal-800","Resolved":"bg-emerald-100 text-emerald-800","Closed":"bg-slate-100 text-slate-600" };
-const GPRIORITY:Record<string,string> = { "High":"bg-red-100 text-red-800","Medium":"bg-green-100 text-green-800","Low":"bg-slate-100 text-slate-600" };
-const TSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","Pending":"bg-green-100 text-green-800","Resolved":"bg-emerald-100 text-emerald-800" };
-const TTYPE:Record<string,string> = { "Payment":"bg-teal-100 text-teal-800","Document":"bg-emerald-100 text-emerald-800","Technical":"bg-slate-100 text-slate-700","Scheme":"bg-green-100 text-green-800","Other":"bg-muted text-muted-foreground" };
 
 /* ─────────────────────────── quick-jump nav ─────────────────────────── */
-const NAV_SECTIONS = [
-  { id:"sec-personal",   label:"Personal",   short:"Personal",  icon:<User className="h-3.5 w-3.5"/> },
-  { id:"sec-land",       label:"Land",        short:"Land",      icon:<Sprout className="h-3.5 w-3.5"/> },
-  { id:"sec-bank",       label:"Bank",        short:"Bank",      icon:<Landmark className="h-3.5 w-3.5"/> },
-  { id:"sec-schemes",    label:"Schemes",     short:"Schemes",   icon:<Shield className="h-3.5 w-3.5"/> },
-  { id:"sec-grievances", label:"Grievances",  short:"GRV",       icon:<AlertCircle className="h-3.5 w-3.5"/> },
-  { id:"sec-tickets",    label:"Tickets",     short:"TKT",       icon:<Ticket className="h-3.5 w-3.5"/> },
-  { id:"sec-docs",       label:"Documents",   short:"Docs",      icon:<FileText className="h-3.5 w-3.5"/> },
-  { id:"sec-timeline",   label:"Timeline",    short:"Timeline",  icon:<Activity className="h-3.5 w-3.5"/> },
+const SCROLL_SECTIONS = ["sec-personal","sec-land","sec-bank"];
+const NAV_ITEMS = [
+  { id:"sec-personal",   label:"Personal",   navKey:null as string|null,   icon:<User className="h-3.5 w-3.5"/> },
+  { id:"sec-land",       label:"Land",        navKey:null,                  icon:<Sprout className="h-3.5 w-3.5"/> },
+  { id:"sec-bank",       label:"Bank",        navKey:null,                  icon:<Landmark className="h-3.5 w-3.5"/> },
+  { id:"sec-schemes",    label:"Schemes",     navKey:"schemes",             icon:<Shield className="h-3.5 w-3.5"/> },
+  { id:"sec-grievances", label:"Grievances",  navKey:"grievances",          icon:<AlertCircle className="h-3.5 w-3.5"/> },
+  { id:"sec-tickets",    label:"Tickets",     navKey:"tickets",             icon:<Ticket className="h-3.5 w-3.5"/> },
+  { id:"sec-docs",       label:"Documents",   navKey:"documents",           icon:<FileText className="h-3.5 w-3.5"/> },
+  { id:"sec-timeline",   label:"Timeline",    navKey:"timeline",            icon:<Activity className="h-3.5 w-3.5"/> },
 ];
 
-function QuickNav({ activeId, onJump }: { activeId:string; onJump:(id:string)=>void }) {
+function QuickNav({ activeId, onJump, onNavigate }: { activeId:string; onJump:(id:string)=>void; onNavigate:(key:string)=>void }) {
   return (
-    <div className="flex items-center gap-1 overflow-x-auto px-4 py-2.5 bg-white border-b border-border scrollbar-hide" style={{scrollbarWidth:"none"}}>
-      <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mr-1 flex-shrink-0">Jump to:</span>
-      {NAV_SECTIONS.map(s=>(
+    <div className="flex items-center gap-1 overflow-x-auto px-4 py-2.5 bg-white border-b border-border" style={{scrollbarWidth:"none"}}>
+      <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mr-1 flex-shrink-0">JUMP TO:</span>
+      {NAV_ITEMS.map(s=>(
         <button
           key={s.id}
-          onClick={()=>onJump(s.id)}
+          onClick={()=>s.navKey?onNavigate(s.navKey):onJump(s.id)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0
-            ${activeId===s.id
-              ?"bg-secondary text-white shadow-sm"
-              :"bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800"
+            ${s.navKey
+              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+              : activeId===s.id
+                ? "bg-secondary text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800"
             }`}
         >
           {s.icon}{s.label}
+          {s.navKey && <ArrowRight className="h-2.5 w-2.5 opacity-60"/>}
         </button>
       ))}
     </div>
@@ -169,7 +198,7 @@ function QuickNav({ activeId, onJump }: { activeId:string; onJump:(id:string)=>v
 }
 
 /* ─────────────────────────── main card ─────────────────────────── */
-export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord }) {
+export default function VerifiedFarmerCard({ farmer, onNavigate }: { farmer: FarmerRecord; onNavigate?:(section:string)=>void }) {
   const schemes       = deriveSchemes(farmer);
   const grievances    = derivedGrievances(farmer);
   const tickets       = derivedTickets(farmer);
@@ -187,13 +216,12 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
   const seed            = parseInt(farmer.farmerId.replace(/\D/g,"")||"1")%100;
   const riskScore       = farmer.aiRiskScore!=null?farmer.aiRiskScore:72;
 
-  /* IntersectionObserver to track active section */
   useEffect(()=>{
     const obs = new IntersectionObserver(entries=>{
       const visible = entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
       if (visible.length>0) setActiveNav(visible[0].target.id);
     },{ threshold:0.25, rootMargin:"-40px 0px -60% 0px" });
-    NAV_SECTIONS.forEach(s=>{ const el=document.getElementById(s.id); if(el) obs.observe(el); });
+    SCROLL_SECTIONS.forEach(id=>{ const el=document.getElementById(id); if(el) obs.observe(el); });
     return ()=>obs.disconnect();
   },[]);
 
@@ -202,7 +230,8 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
     if (el) { el.scrollIntoView({ behavior:"smooth", block:"start" }); setActiveNav(id); }
   },[]);
 
-  /* stat strip items */
+  const nav = useCallback((key:string)=>{ onNavigate?.(key); },[onNavigate]);
+
   const stats = [
     { label:"AI Risk Score",     value:`${riskScore}%`,           sub:"Low Risk",           color:"text-emerald-700", bg:"bg-emerald-50",  border:"border-emerald-200" },
     { label:"Eligible Schemes",  value:String(eligibleSchemes.length), sub:"govt. schemes",  color:"text-teal-700",    bg:"bg-teal-50",     border:"border-teal-200" },
@@ -215,11 +244,9 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
   return (
     <div ref={cardRef} className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
 
-      {/* ═══════════════════ PROFESSIONAL HEADER ═══════════════════ */}
+      {/* ═══════════════════ HEADER ═══════════════════ */}
       <div className="bg-white border-b border-border px-6 py-5">
         <div className="flex flex-col sm:flex-row gap-5 items-start">
-
-          {/* Avatar */}
           <div className="relative flex-shrink-0">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-xl text-white shadow-md">
               {initials}
@@ -229,7 +256,6 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
             </div>
           </div>
 
-          {/* Name + meta */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <h2 className="text-xl font-bold text-slate-900 leading-tight">{farmer.name}</h2>
@@ -239,18 +265,15 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
               {farmer.source==="ocr"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-700 border border-teal-200 font-semibold">AI-OCR</span>}
               {farmer.source==="manual"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">Manual</span>}
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-slate-600">
               <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5 text-slate-400 flex-shrink-0"/><span className="font-mono font-semibold text-slate-800">{farmer.farmerId}</span></span>
               <span className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0"/>{farmer.village}{farmer.taluka?`, ${farmer.taluka}`:""}, {farmer.district}</span>
               {farmer.mobile&&<span className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-slate-400 flex-shrink-0"/>{farmer.mobile}</span>}
-              {farmer.altMobile&&<span className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-slate-300 flex-shrink-0"/>{farmer.altMobile} <span className="text-slate-400">(Alt.)</span></span>}
               {farmer.email&&<span className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0"/>{farmer.email}</span>}
               <span className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0"/>Reg: {regDate}</span>
             </div>
           </div>
 
-          {/* Land + crop quick boxes */}
           <div className="flex sm:flex-col gap-2 flex-shrink-0">
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
               <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-0.5">क्षेत्रफळ</div>
@@ -263,7 +286,6 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
           </div>
         </div>
 
-        {/* 6-stat strip */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-5">
           {stats.map(s=>(
             <div key={s.label} className={`rounded-xl border px-3 py-2.5 text-center ${s.bg} ${s.border}`}>
@@ -276,7 +298,7 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
       </div>
 
       {/* ═══════════════════ QUICK-JUMP NAV ═══════════════════ */}
-      <QuickNav activeId={activeNav} onJump={handleJump}/>
+      <QuickNav activeId={activeNav} onJump={handleJump} onNavigate={nav}/>
 
       {/* ═══════════════════ BODY SECTIONS ═══════════════════ */}
       <div className="p-4 space-y-3 bg-slate-50/50">
@@ -427,179 +449,185 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
           </div>
         </Section>
 
-        {/* 4 ── Schemes */}
-        <Section id="sec-schemes" title="Government Scheme Portfolio" icon={<Shield className="h-4 w-4"/>} badge={`${appliedSchemes.length}/${schemes.length}`}>
-          {appliedSchemes.filter(s=>s.appliedStatus==="Disbursed"||s.appliedStatus==="Approved").length>0&&(
-            <div className="mb-5">
-              <SubHeader icon={<Star className="h-3.5 w-3.5"/>} label="Active Schemes with Disbursement"/>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                {appliedSchemes.filter(s=>s.appliedStatus==="Disbursed"||s.appliedStatus==="Approved").map(s=>(
-                  <div key={s.id} className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-slate-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div><div className="text-[10px] font-bold text-muted-foreground">{s.nameMr}</div><div className="text-sm font-semibold text-slate-800">{s.name}</div></div>
-                      <SchemeStatusPill status={s.appliedStatus}/>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5 text-xs">
-                      <div><span className="text-muted-foreground">Max: </span><span className="font-semibold">{s.maxAmount}</span></div>
-                      <div><span className="text-muted-foreground">Freq: </span><span className="font-medium">{s.frequency}</span></div>
-                      {s.appliedDate&&<div><span className="text-muted-foreground">Applied: </span><span className="font-medium">{s.appliedDate}</span></div>}
-                      {s.totalDisbursed&&<div><span className="text-emerald-600">Disbursed: </span><span className="font-bold text-emerald-700">{s.totalDisbursed}</span></div>}
-                      {s.refNo&&<div className="col-span-2"><span className="text-muted-foreground">Ref: </span><span className="font-mono text-[11px]">{s.refNo}</span></div>}
-                    </div>
+        {/* ── DIVIDER ── */}
+        <div className="py-1 px-1">
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border"/>
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">Detailed Records — Opens in dedicated page</span>
+            <div className="h-px flex-1 bg-border"/>
+          </div>
+        </div>
+
+        {/* 4 ── Schemes summary card */}
+        <SummaryCard
+          id="sec-schemes"
+          title="Government Scheme Portfolio"
+          icon={<Shield className="h-4 w-4"/>}
+          badge={`${appliedSchemes.length}/${schemes.length}`}
+          onClick={()=>nav("schemes")}
+        >
+          <div className="flex flex-wrap gap-3 mb-3">
+            {[
+              { label:"Eligible", val:eligibleSchemes.length, color:"text-emerald-700 bg-emerald-50 border-emerald-200" },
+              { label:"Applied / Active", val:appliedSchemes.length, color:"text-teal-700 bg-teal-50 border-teal-200" },
+              { label:"Disbursed", val:appliedSchemes.filter(s=>s.appliedStatus==="Disbursed").length, color:"text-green-800 bg-green-50 border-green-200" },
+              { label:"Not Applied", val:schemes.length-appliedSchemes.length, color:"text-slate-500 bg-slate-50 border-slate-200" },
+            ].map(s=>(
+              <div key={s.label} className={`border rounded-lg px-3 py-1.5 text-center ${s.color}`}>
+                <div className="text-base font-bold">{s.val}</div>
+                <div className="text-[9px] font-medium uppercase tracking-wide">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            {appliedSchemes.slice(0,3).map(s=>(
+              <div key={s.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                <span className="font-medium text-slate-700 truncate flex-1 mr-2">{s.nameMr} — {s.name.split("(")[0].trim()}</span>
+                <SchemeStatusPill status={s.appliedStatus}/>
+              </div>
+            ))}
+            {appliedSchemes.length===0&&<p className="text-xs text-muted-foreground">No schemes applied yet — {eligibleSchemes.length} eligible. Click to view all.</p>}
+            {schemes.length>3&&<p className="text-[11px] text-secondary font-semibold mt-1">+{schemes.length-Math.min(appliedSchemes.length,3)} more schemes — Open page to view details</p>}
+          </div>
+        </SummaryCard>
+
+        {/* 5 ── Grievances summary card */}
+        <SummaryCard
+          id="sec-grievances"
+          title="Grievances"
+          icon={<AlertCircle className="h-4 w-4"/>}
+          badge={grievances.length}
+          onClick={()=>nav("grievances")}
+        >
+          <div className="flex flex-wrap gap-3 mb-3">
+            {[
+              { label:"Open", val:grievances.filter(g=>g.status==="Open").length, color:"text-lime-800 bg-lime-50 border-lime-300" },
+              { label:"In Progress", val:grievances.filter(g=>g.status==="In Progress").length, color:"text-teal-700 bg-teal-50 border-teal-200" },
+              { label:"Resolved", val:grievances.filter(g=>g.status==="Resolved").length, color:"text-emerald-700 bg-emerald-50 border-emerald-200" },
+              { label:"Closed", val:grievances.filter(g=>g.status==="Closed").length, color:"text-slate-500 bg-slate-50 border-slate-200" },
+            ].map(s=>(
+              <div key={s.label} className={`border rounded-lg px-3 py-1.5 text-center ${s.color}`}>
+                <div className="text-base font-bold">{s.val}</div>
+                <div className="text-[9px] font-medium uppercase tracking-wide">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            {openGrievances.slice(0,2).map(g=>(
+              <div key={g.id} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0 gap-2">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-slate-700 truncate block">{g.title}</span>
+                  <span className="text-muted-foreground text-[10px]">{g.id} · {g.category}</span>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Pill label={g.status} map={GSTATUS}/>
+                  <Pill label={g.priority} map={GPRIORITY}/>
+                </div>
+              </div>
+            ))}
+            {openGrievances.length===0&&<p className="text-xs text-muted-foreground flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500"/>No open grievances. Click to view full history.</p>}
+            {grievances.length>2&&<p className="text-[11px] text-secondary font-semibold mt-1">Open page for full list with search & filters</p>}
+          </div>
+        </SummaryCard>
+
+        {/* 6 ── Tickets summary card */}
+        <SummaryCard
+          id="sec-tickets"
+          title="Support Tickets"
+          icon={<Ticket className="h-4 w-4"/>}
+          badge={tickets.length}
+          onClick={()=>nav("tickets")}
+        >
+          <div className="flex flex-wrap gap-3 mb-3">
+            {[
+              { label:"Open", val:tickets.filter(t=>t.status==="Open").length, color:"text-lime-800 bg-lime-50 border-lime-300" },
+              { label:"Pending", val:tickets.filter(t=>t.status==="Pending").length, color:"text-green-700 bg-green-50 border-green-200" },
+              { label:"Resolved", val:tickets.filter(t=>t.status==="Resolved").length, color:"text-emerald-700 bg-emerald-50 border-emerald-200" },
+            ].map(s=>(
+              <div key={s.label} className={`border rounded-lg px-3 py-1.5 text-center ${s.color}`}>
+                <div className="text-base font-bold">{s.val}</div>
+                <div className="text-[9px] font-medium uppercase tracking-wide">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            {openTickets.slice(0,2).map(t=>(
+              <div key={t.id} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0 gap-2">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-slate-700 truncate block">{t.subject}</span>
+                  <span className="text-muted-foreground text-[10px]">{t.id} · {t.date}</span>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Pill label={t.status} map={TSTATUS}/>
+                  <Pill label={t.type} map={TTYPE}/>
+                </div>
+              </div>
+            ))}
+            {openTickets.length===0&&<p className="text-xs text-muted-foreground flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500"/>No open tickets. Click to view full history.</p>}
+            {tickets.length>2&&<p className="text-[11px] text-secondary font-semibold mt-1">Open page for full list with search & filters</p>}
+          </div>
+        </SummaryCard>
+
+        {/* 7 ── Documents summary card */}
+        <SummaryCard
+          id="sec-docs"
+          title="Submitted Documents"
+          icon={<FileText className="h-4 w-4"/>}
+          badge={farmer.docs?.length??0}
+          onClick={()=>nav("documents")}
+        >
+          {(!farmer.docs||farmer.docs.length===0)
+            ? <p className="text-xs text-muted-foreground">No documents on record. Click to open documents page.</p>
+            : (
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { label:"Uploaded", val:farmer.docs.filter(d=>d.status==="uploaded").length, color:"text-emerald-700 bg-emerald-50 border-emerald-200" },
+                  { label:"Failed", val:farmer.docs.filter(d=>d.status==="failed").length, color:"text-slate-600 bg-slate-50 border-slate-200" },
+                  { label:"Total", val:farmer.docs.length, color:"text-teal-700 bg-teal-50 border-teal-200" },
+                ].map(s=>(
+                  <div key={s.label} className={`border rounded-lg px-3 py-1.5 text-center ${s.color}`}>
+                    <div className="text-base font-bold">{s.val}</div>
+                    <div className="text-[9px] font-medium uppercase tracking-wide">{s.label}</div>
                   </div>
                 ))}
+                <p className="w-full text-[11px] text-secondary font-semibold mt-1">Open page to view, search, and filter documents</p>
               </div>
-            </div>
-          )}
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">All Schemes</div>
-          <div className="space-y-2">
-            {schemes.map(s=>(
-              <div key={s.id} className={`border rounded-xl p-4 transition-all ${
-                s.appliedStatus==="Disbursed"?"border-emerald-200 bg-emerald-50/40":
-                s.appliedStatus==="Approved"?"border-teal-200 bg-teal-50/20":
-                s.appliedStatus==="Applied"?"border-green-200 bg-green-50/20":
-                s.eligible?"border-slate-200 bg-white hover:bg-slate-50":
-                "border-slate-100 bg-slate-50/50 opacity-55"
-              }`}>
-                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-slate-800">{s.name}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${s.category==="central"?"bg-teal-100 text-teal-800":"bg-green-100 text-green-800"}`}>{s.category==="central"?"Central":"State — MH"}</span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">{s.ministry}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {s.eligible?<CheckCircle2 className="h-4 w-4 text-emerald-500"/>:<XCircle className="h-4 w-4 text-slate-300"/>}
-                    <SchemeStatusPill status={s.appliedStatus}/>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
-                  <div><span className="text-muted-foreground">Benefit: </span><span className="font-medium">{s.benefit}</span></div>
-                  <div><span className="text-muted-foreground">Max: </span><span className="font-medium">{s.maxAmount}</span></div>
-                  <div><span className="text-muted-foreground">Frequency: </span><span className="font-medium">{s.frequency}</span></div>
-                </div>
-                <div className={`text-xs mt-2 flex items-center gap-1.5 ${s.eligible?"text-emerald-600":"text-slate-400"}`}>
-                  <Info className="h-3 w-3 flex-shrink-0"/>{s.reason}
-                </div>
-                {s.refNo&&<div className="text-[11px] text-muted-foreground mt-1 font-mono">Ref: {s.refNo}</div>}
-              </div>
-            ))}
-          </div>
-        </Section>
+            )
+          }
+        </SummaryCard>
 
-        {/* 5 ── Grievances */}
-        <Section id="sec-grievances" title="Grievances" icon={<AlertCircle className="h-4 w-4"/>} badge={grievances.length}>
-          {grievances.length===0?(
-            <div className="text-sm text-muted-foreground text-center py-8 flex flex-col items-center gap-2">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400"/>No grievances on record.
-            </div>
-          ):(
-            <div className="space-y-3">
-              {grievances.map(g=>(
-                <div key={g.id} className={`border rounded-xl overflow-hidden ${g.status==="Open"?"border-lime-300":g.status==="In Progress"?"border-teal-200":"border-slate-200"}`}>
-                  <div className={`px-4 py-3 flex flex-wrap items-start gap-3 ${g.status==="Open"?"bg-lime-50":g.status==="In Progress"?"bg-teal-50":"bg-slate-50"}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-800 mb-1">{g.title}</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Pill label={g.status} map={GSTATUS}/><Pill label={g.priority} map={GPRIORITY}/>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-medium">{g.category}</span>
-                      </div>
-                    </div>
-                    <div className="text-right text-xs text-muted-foreground flex-shrink-0">
-                      <div className="font-mono text-[11px]">{g.id}</div>
-                      <div className="flex items-center gap-1 justify-end mt-0.5"><Calendar className="h-3 w-3"/>{g.date}</div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 space-y-2 bg-white">
-                    <p className="text-sm text-slate-700 leading-relaxed">{g.description}</p>
-                    <div className="text-xs text-muted-foreground"><span className="font-medium">Assigned To: </span>{g.assignedTo}{g.resolvedDate&&<><span className="mx-2">·</span><span className="font-medium text-emerald-600">Resolved: </span>{g.resolvedDate}</>}</div>
-                    {g.remarks&&<div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs"><span className="font-semibold text-emerald-700">Resolution: </span><span className="text-emerald-600">{g.remarks}</span></div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* 6 ── Support Tickets */}
-        <Section id="sec-tickets" title="Support Tickets" icon={<Ticket className="h-4 w-4"/>} badge={tickets.length}>
-          {tickets.length===0?(
-            <div className="text-sm text-muted-foreground text-center py-8 flex flex-col items-center gap-2">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400"/>No support tickets raised.
-            </div>
-          ):(
-            <div className="space-y-3">
-              {tickets.map(t=>(
-                <div key={t.id} className="border border-slate-200 rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-50 flex flex-wrap items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-800 mb-1">{t.subject}</div>
-                      <div className="flex flex-wrap gap-1.5"><Pill label={t.status} map={TSTATUS}/><Pill label={t.type} map={TTYPE}/></div>
-                    </div>
-                    <div className="text-right text-xs text-muted-foreground flex-shrink-0">
-                      <div className="font-mono text-[11px]">{t.id}</div>
-                      <div className="flex items-center gap-1 justify-end mt-0.5"><Calendar className="h-3 w-3"/>{t.date}</div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 bg-white space-y-1.5">
-                    <p className="text-sm text-slate-700 leading-relaxed">{t.description}</p>
-                    <div className="text-xs text-muted-foreground">{t.handledBy&&<><span className="font-medium">Handled By: </span>{t.handledBy}</>}{t.resolvedDate&&<><span className="mx-2">·</span><span className="font-medium text-emerald-600">Resolved: </span>{t.resolvedDate}</>}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* 7 ── Documents */}
-        <Section id="sec-docs" title="Submitted Documents" icon={<FileText className="h-4 w-4"/>} badge={farmer.docs?.length??0}>
-          {(!farmer.docs||farmer.docs.length===0)?(
-            <div className="text-sm text-muted-foreground text-center py-6">No documents on record.</div>
-          ):(
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {farmer.docs.map((doc,i)=>(
-                <div key={i} className={`flex items-center gap-3 p-3.5 rounded-xl border ${doc.status==="uploaded"?"border-emerald-200 bg-emerald-50/40":"border-red-200 bg-red-50/30"}`}>
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.status==="uploaded"?"bg-emerald-100":"bg-red-100"}`}>
-                    <FileText className={`h-4.5 w-4.5 ${doc.status==="uploaded"?"text-emerald-600":"text-red-500"}`}/>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-slate-800 truncate">{doc.name}</div>
-                    <div className="text-xs text-muted-foreground">{doc.fileName} · {doc.size}</div>
-                    <div className={`text-[11px] font-semibold mt-0.5 ${doc.status==="uploaded"?"text-emerald-600":"text-red-500"}`}>{doc.status==="uploaded"?"✓ Verified":"✗ Failed"}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* 8 ── Timeline */}
-        <Section id="sec-timeline" title="Activity Timeline" icon={<Activity className="h-4 w-4"/>}>
-          <div className="relative pl-8">
-            <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200"/>
-            {timeline.map((ev,i)=>(
-              <div key={i} className="relative mb-5 last:mb-0">
-                <div className={`absolute -left-5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${
-                  ev.icon==="verify"?"bg-emerald-500":ev.icon==="scheme"?"bg-teal-500":ev.icon==="grievance"?"bg-green-600":ev.icon==="review"?"bg-lime-500":"bg-secondary"
+        {/* 8 ── Timeline summary card */}
+        <SummaryCard
+          id="sec-timeline"
+          title="Activity Timeline"
+          icon={<Activity className="h-4 w-4"/>}
+          badge={timeline.length}
+          onClick={()=>nav("timeline")}
+        >
+          <div className="relative pl-6">
+            <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"/>
+            {timeline.slice(-2).reverse().map((ev,i)=>(
+              <div key={i} className="relative mb-3 last:mb-0">
+                <div className={`absolute -left-4 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${
+                  ev.icon==="verify"?"bg-emerald-500":ev.icon==="scheme"?"bg-teal-500":ev.icon==="review"?"bg-lime-500":"bg-secondary"
                 }`}>
-                  {ev.icon==="verify"&&<BadgeCheck className="h-2.5 w-2.5 text-white"/>}
-                  {ev.icon==="scheme"&&<Shield className="h-2.5 w-2.5 text-white"/>}
-                  {ev.icon==="grievance"&&<AlertCircle className="h-2.5 w-2.5 text-white"/>}
-                  {ev.icon==="review"&&<Clock className="h-2.5 w-2.5 text-white"/>}
-                  {ev.icon==="register"&&<User className="h-2.5 w-2.5 text-white"/>}
+                  {ev.icon==="verify"&&<BadgeCheck className="h-2 w-2 text-white"/>}
+                  {ev.icon==="scheme"&&<Shield className="h-2 w-2 text-white"/>}
+                  {ev.icon==="review"&&<Clock className="h-2 w-2 text-white"/>}
+                  {ev.icon==="register"&&<User className="h-2 w-2 text-white"/>}
                 </div>
-                <div className="ml-3">
+                <div className="ml-2">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-semibold text-slate-800">{ev.event}</span>
-                    <span className="text-[11px] text-muted-foreground">{ev.date}</span>
+                    <span className="text-xs font-semibold text-slate-800">{ev.event}</span>
+                    <span className="text-[10px] text-muted-foreground">{ev.date}</span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">{ev.detail}</p>
+                  <p className="text-[11px] text-slate-500 leading-snug truncate">{ev.detail}</p>
                 </div>
               </div>
             ))}
+            <p className="text-[11px] text-secondary font-semibold mt-2 ml-2">Open page to view full timeline with search & sort</p>
           </div>
-        </Section>
+        </SummaryCard>
 
       </div>
     </div>

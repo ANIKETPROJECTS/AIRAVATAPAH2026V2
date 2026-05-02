@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Search, Users, Loader2, AlertCircle, BadgeCheck, BarChart3,
   AlertTriangle, Ticket, Filter, RefreshCw, MapPin,
-  Shield, ChevronLeft, Hash,
+  Shield, ChevronLeft, Hash, Activity, FileText,
 } from "lucide-react";
 import { apiFetchFarmers, type FarmerRecord } from "@/data/farmerApi";
 import VerifiedFarmerCard from "@/components/modules/VerifiedFarmerCard";
+import { SchemesPage, GrievancesPage, TicketsPage, DocumentsPage, TimelinePage } from "@/components/modules/FarmerSubPages";
 
 /* ─── helpers ─── */
 function formatLandHAR(val: number | string | undefined): string {
@@ -48,6 +49,16 @@ function schemeCount(f: FarmerRecord) {
   return Math.min(c, 10);
 }
 
+/* ─── sub-page metadata ─── */
+type SubPageKey = "schemes" | "grievances" | "tickets" | "documents" | "timeline";
+const SUB_PAGE_META: Record<SubPageKey, { label: string; icon: React.ReactNode }> = {
+  schemes:    { label: "Scheme Portfolio",    icon: <Shield className="h-4 w-4"/> },
+  grievances: { label: "Grievances",          icon: <AlertTriangle className="h-4 w-4"/> },
+  tickets:    { label: "Support Tickets",     icon: <Ticket className="h-4 w-4"/> },
+  documents:  { label: "Documents",           icon: <FileText className="h-4 w-4"/> },
+  timeline:   { label: "Activity Timeline",   icon: <Activity className="h-4 w-4"/> },
+};
+
 /* ─── Compact card (grid item) ─── */
 function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick: () => void }) {
   const initials = farmer.name.trim().split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
@@ -65,7 +76,6 @@ function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick:
     >
       <div className={`h-1.5 w-full bg-gradient-to-r ${grad}`} />
       <div className="p-4">
-        {/* Avatar + Badges */}
         <div className="flex items-start justify-between mb-3">
           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center font-bold text-white text-base shadow-sm flex-shrink-0`}>
             {initials}
@@ -83,17 +93,14 @@ function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick:
           </div>
         </div>
 
-        {/* Name */}
         <h3 className="font-bold text-sm text-foreground leading-tight truncate mb-0.5">{farmer.name}</h3>
         <p className="text-[11px] text-muted-foreground font-mono mb-1">{farmer.farmerId}</p>
 
-        {/* Location */}
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-3">
           <MapPin className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">{farmer.village}, {farmer.district}</span>
         </div>
 
-        {/* Land + Crop */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
             <div className="text-[9px] text-emerald-600 uppercase tracking-wide mb-0.5 font-semibold">क्षेत्रफळ</div>
@@ -105,7 +112,6 @@ function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick:
           </div>
         </div>
 
-        {/* Stat pills */}
         <div className="flex gap-1.5 flex-wrap mb-3">
           <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-semibold">
             <Shield className="h-2.5 w-2.5" />{eligible} Schemes
@@ -118,7 +124,6 @@ function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick:
           </span>
         </div>
 
-        {/* Footer */}
         <div className="pt-3 border-t border-border/50 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground">Reg: {regDate}</span>
           <span className="text-[10px] font-semibold text-secondary group-hover:underline">
@@ -130,29 +135,91 @@ function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick:
   );
 }
 
+/* ─── Breadcrumb ─── */
+function Breadcrumb({ farmer, subPage, onBack, onBackToProfile }: {
+  farmer: FarmerRecord;
+  subPage: SubPageKey | null;
+  onBack: () => void;
+  onBackToProfile: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-5 flex-wrap">
+      <button
+        onClick={subPage ? onBackToProfile : onBack}
+        className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-secondary/80 bg-secondary/8 hover:bg-secondary/15 border border-secondary/20 px-4 py-2 rounded-xl transition-all flex-shrink-0"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        {subPage ? `Back to ${farmer.name.split(" ")[0]}'s Profile` : "Back to Farmers"}
+      </button>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+        <button onClick={onBack} className="hover:text-foreground transition-colors">Farmers</button>
+        <span className="text-muted-foreground/40">›</span>
+        <button onClick={onBackToProfile} className={`${subPage ? "hover:text-foreground" : "font-semibold text-foreground"} transition-colors`}>
+          {farmer.name}
+          <span className="font-mono text-xs text-muted-foreground ml-1">({farmer.farmerId})</span>
+        </button>
+        {subPage && <>
+          <span className="text-muted-foreground/40">›</span>
+          <span className="font-semibold text-foreground flex items-center gap-1.5">
+            {SUB_PAGE_META[subPage].icon}
+            {SUB_PAGE_META[subPage].label}
+          </span>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Sub-page wrapper ─── */
+function SubPageView({ farmer, subPage }: { farmer: FarmerRecord; subPage: SubPageKey }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [subPage]);
+  const meta = SUB_PAGE_META[subPage];
+  return (
+    <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      <div className="border-b border-border px-6 py-4 flex items-center gap-3 bg-slate-50/70">
+        <span className="text-secondary">{meta.icon}</span>
+        <div>
+          <h2 className="font-bold text-base text-foreground">{meta.label}</h2>
+          <p className="text-xs text-muted-foreground">{farmer.name} · {farmer.farmerId}</p>
+        </div>
+      </div>
+      <div className="p-5">
+        {subPage === "schemes"    && <SchemesPage    farmer={farmer}/>}
+        {subPage === "grievances" && <GrievancesPage farmer={farmer}/>}
+        {subPage === "tickets"    && <TicketsPage    farmer={farmer}/>}
+        {subPage === "documents"  && <DocumentsPage  farmer={farmer}/>}
+        {subPage === "timeline"   && <TimelinePage   farmer={farmer}/>}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Profile page view ─── */
-function ProfileView({ farmer, onBack }: { farmer: FarmerRecord; onBack: () => void }) {
+function ProfileView({ farmer, onBack, onNavigate }: {
+  farmer: FarmerRecord;
+  onBack: () => void;
+  onNavigate: (key: string) => void;
+}) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   return (
     <div>
-      {/* Breadcrumb / back bar */}
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-5 flex-wrap">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-secondary/80 bg-secondary/8 hover:bg-secondary/15 border border-secondary/20 px-4 py-2 rounded-xl transition-all"
+          className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-secondary/80 bg-secondary/8 hover:bg-secondary/15 border border-secondary/20 px-4 py-2 rounded-xl transition-all flex-shrink-0"
         >
           <ChevronLeft className="h-4 w-4" /> Back to Farmers
         </button>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Farmers</span>
+          <button onClick={onBack} className="hover:text-foreground transition-colors">Farmers</button>
           <span className="text-muted-foreground/40">›</span>
-          <span className="font-semibold text-foreground">{farmer.name}</span>
-          <span className="font-mono text-xs text-muted-foreground">({farmer.farmerId})</span>
+          <span className="font-semibold text-foreground">
+            {farmer.name}
+            <span className="font-mono text-xs text-muted-foreground ml-1">({farmer.farmerId})</span>
+          </span>
         </div>
       </div>
-
-      {/* Full profile card */}
-      <VerifiedFarmerCard farmer={farmer} />
+      <VerifiedFarmerCard farmer={farmer} onNavigate={onNavigate}/>
     </div>
   );
 }
@@ -165,6 +232,7 @@ export default function VerifiedFarmers() {
   const [search, setSearch] = useState("");
   const [distFilter, setDistFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [subPage, setSubPage] = useState<SubPageKey | null>(null);
 
   const loadFarmers = useCallback(async () => {
     try {
@@ -197,6 +265,21 @@ export default function VerifiedFarmers() {
   const selectedFarmer = farmers.find(f => f.farmerId === selectedId) ?? null;
   const totalEligibleSchemes = farmers.reduce((acc, f) => acc + schemeCount(f), 0);
 
+  const handleNavigate = useCallback((key: string) => {
+    setSubPage(key as SubPageKey);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleBackToGrid = useCallback(() => {
+    setSelectedId(null);
+    setSubPage(null);
+  }, []);
+
+  const handleBackToProfile = useCallback(() => {
+    setSubPage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   /* ── Loading ── */
   if (loading) {
     return (
@@ -220,12 +303,33 @@ export default function VerifiedFarmers() {
     );
   }
 
-  /* ── Profile detail page ── */
-  if (selectedFarmer) {
-    return <ProfileView farmer={selectedFarmer} onBack={() => setSelectedId(null)} />;
+  /* ── Sub-page (level 3) ── */
+  if (selectedFarmer && subPage) {
+    return (
+      <div>
+        <Breadcrumb
+          farmer={selectedFarmer}
+          subPage={subPage}
+          onBack={handleBackToGrid}
+          onBackToProfile={handleBackToProfile}
+        />
+        <SubPageView farmer={selectedFarmer} subPage={subPage}/>
+      </div>
+    );
   }
 
-  /* ── Grid page ── */
+  /* ── Profile page (level 2) ── */
+  if (selectedFarmer) {
+    return (
+      <ProfileView
+        farmer={selectedFarmer}
+        onBack={handleBackToGrid}
+        onNavigate={handleNavigate}
+      />
+    );
+  }
+
+  /* ── Grid page (level 1) ── */
   return (
     <div className="space-y-5">
 
@@ -306,7 +410,7 @@ export default function VerifiedFarmers() {
             <CompactFarmerCard
               key={f.farmerId}
               farmer={f}
-              onClick={() => setSelectedId(f.farmerId)}
+              onClick={() => { setSelectedId(f.farmerId); setSubPage(null); }}
             />
           ))}
         </div>
