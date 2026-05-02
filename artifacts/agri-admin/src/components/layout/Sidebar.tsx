@@ -1,16 +1,18 @@
 import { BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone, TrendingUp, Settings, ChevronLeft, ChevronRight, Smartphone, UserPlus } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
+import { t } from "@/i18n/translations";
 
 const navItems = [
-  { key: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { key: "newregistration", label: "New Registration", icon: UserPlus },
-  { key: "farmers", label: "Farmer Registry", icon: Users },
-  { key: "applications", label: "Scheme Applications", icon: ClipboardList },
-  { key: "subsidies", label: "Subsidy Management", icon: IndianRupee },
-  { key: "insurance", label: "Insurance Claims", icon: Shield },
-  { key: "grievances", label: "Grievance Management", icon: Megaphone },
-  { key: "reports", label: "Reports & Analytics", icon: TrendingUp },
-  { key: "settings", label: "Settings & Workflow", icon: Settings },
-  { key: "farmerapp", label: "Farmer App Preview", icon: Smartphone },
+  { key: "dashboard",       labelKey: "nav_dashboard",       icon: BarChart3 },
+  { key: "newregistration", labelKey: "nav_newregistration", icon: UserPlus },
+  { key: "farmers",         labelKey: "nav_farmers",         icon: Users },
+  { key: "applications",    labelKey: "nav_applications",    icon: ClipboardList },
+  { key: "subsidies",       labelKey: "nav_subsidies",       icon: IndianRupee },
+  { key: "insurance",       labelKey: "nav_insurance",       icon: Shield },
+  { key: "grievances",      labelKey: "nav_grievances",      icon: Megaphone },
+  { key: "reports",         labelKey: "nav_reports",         icon: TrendingUp },
+  { key: "settings",        labelKey: "nav_settings",        icon: Settings },
+  { key: "farmerapp",       labelKey: "nav_farmerapp",       icon: Smartphone },
 ];
 
 interface SidebarProps {
@@ -21,12 +23,13 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ active, onNavigate, collapsed, onToggle }: SidebarProps) {
+  const { lang } = useLang();
+
   return (
     <aside
       className={`fixed left-0 top-0 h-screen z-40 flex flex-col transition-all duration-300 ${collapsed ? "w-16" : "w-60"}`}
       style={{ backgroundColor: "#0D2B1E" }}
     >
-      {/* Logo */}
       <div className="border-b border-sidebar-border overflow-hidden" style={{ padding: "0 10px" }}>
         <img
           src="/krishi-suvidha-logo.png"
@@ -36,10 +39,10 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle }: Sid
         />
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = active === item.key;
+          const label = t(item.labelKey, lang);
           return (
             <button
               key={item.key}
@@ -49,16 +52,15 @@ export default function Sidebar({ active, onNavigate, collapsed, onToggle }: Sid
                   ? "bg-secondary/15 text-secondary border-r-2 border-secondary"
                   : "text-sidebar-foreground hover:bg-sidebar-accent"
               } ${collapsed ? "justify-center" : ""}`}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
             >
               <item.icon className="h-4.5 w-4.5 flex-shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span>{label}</span>}
             </button>
           );
         })}
       </nav>
 
-      {/* Collapse toggle */}
       <button
         onClick={onToggle}
         className="p-3 text-sidebar-foreground hover:text-secondary transition-colors border-t border-sidebar-border"

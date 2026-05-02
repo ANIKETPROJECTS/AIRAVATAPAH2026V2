@@ -12,39 +12,41 @@ import SettingsWorkflow from "@/components/modules/SettingsWorkflow";
 import FarmerAppPreview from "@/components/modules/FarmerAppPreview";
 import NewRegistration from "@/components/modules/NewRegistration";
 import AIAssistant from "@/components/AIAssistant";
+import { useLang } from "@/contexts/LanguageContext";
+import { t } from "@/i18n/translations";
 
-const titles: Record<string, string> = {
-  dashboard: "Dashboard Overview",
-  newregistration: "New Registration",
-  farmers: "Farmer Registry",
-  applications: "Scheme Applications",
-  subsidies: "Subsidy Management",
-  insurance: "Insurance Claims",
-  grievances: "Grievance Management",
-  reports: "Reports & Analytics",
-  settings: "Settings & Workflow",
-  farmerapp: "📱 Farmer App Preview",
+const pageTitleKeys: Record<string, string> = {
+  dashboard:       "page_dashboard",
+  newregistration: "page_newregistration",
+  farmers:         "page_farmers",
+  applications:    "page_applications",
+  subsidies:       "page_subsidies",
+  insurance:       "page_insurance",
+  grievances:      "page_grievances",
+  reports:         "page_reports",
+  settings:        "page_settings",
+  farmerapp:       "page_farmerapp",
 };
 
 const modules: Record<string, React.FC> = {
-  dashboard: Dashboard,
+  dashboard:       Dashboard,
   newregistration: NewRegistration,
-  farmers: FarmerRegistry,
-  applications: SchemeApplications,
-  subsidies: SubsidyManagement,
-  insurance: InsuranceClaims,
-  grievances: GrievanceManagement,
-  reports: ReportsAnalytics,
-  settings: SettingsWorkflow,
-  farmerapp: FarmerAppPreview,
+  farmers:         FarmerRegistry,
+  applications:    SchemeApplications,
+  subsidies:       SubsidyManagement,
+  insurance:       InsuranceClaims,
+  grievances:      GrievanceManagement,
+  reports:         ReportsAnalytics,
+  settings:        SettingsWorkflow,
+  farmerapp:       FarmerAppPreview,
 };
 
 export default function Index() {
   const [active, setActive] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { lang } = useLang();
 
-  // Auto-collapse on small screens
   useEffect(() => {
     const check = () => setCollapsed(window.innerWidth < 1280);
     check();
@@ -71,7 +73,7 @@ export default function Index() {
         <Header />
 
         <main className="p-6">
-          <h1 className="font-heading text-2xl mb-6">{titles[active]}</h1>
+          <h1 className="font-heading text-2xl mb-6">{t(pageTitleKeys[active], lang)}</h1>
 
           {loading ? (
             <div className="space-y-4">
