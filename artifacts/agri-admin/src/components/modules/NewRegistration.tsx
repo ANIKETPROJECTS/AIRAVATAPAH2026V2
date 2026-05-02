@@ -933,6 +933,93 @@ function SpannedTable({ headers, rows, lang = "mr" }: { headers: string[]; rows:
   );
 }
 
+function EditableSpannedTable({
+  headers,
+  rows,
+  lang = "mr",
+}: {
+  headers: string[];
+  rows: string[][];
+  lang?: LangCode;
+}) {
+  const colCount = Math.max(headers.length, ...rows.map((r) => r.length), 1);
+  type Cell = { value: string; rowspan: number };
+  const grid: (Cell | null)[][] = rows.map((r) => {
+    const padded: (Cell | null)[] = r.map((c) => ({ value: c ?? "", rowspan: 1 }));
+    while (padded.length < colCount) padded.push({ value: "", rowspan: 1 });
+    return padded;
+  });
+  for (let c = 0; c < colCount; c++) {
+    let anchorRow = -1;
+    for (let r = 0; r < grid.length; r++) {
+      const cell = grid[r][c];
+      if (cell === null) continue;
+      const isEmpty = !cell.value || cell.value.trim() === "";
+      if (!isEmpty) { anchorRow = r; }
+      else if (anchorRow >= 0) {
+        const anchor = grid[anchorRow][c];
+        if (anchor) anchor.rowspan += 1;
+        grid[r][c] = null;
+      }
+    }
+  }
+  if (colCount > 0) {
+    let sectionAnchorRow = -1;
+    for (let r = 0; r < grid.length; r++) {
+      const cell = grid[r][0];
+      if (cell === null) continue;
+      if (isSectionAnchorLabel(cell.value)) {
+        sectionAnchorRow = r;
+      } else if (sectionAnchorRow >= 0) {
+        const anchor = grid[sectionAnchorRow][0];
+        if (anchor) {
+          const sub = (cell.value ?? "").trim();
+          if (sub.length > 0) anchor.value = anchor.value ? `${anchor.value}\n${sub}` : sub;
+          anchor.rowspan += 1;
+        }
+        grid[r][0] = null;
+      }
+    }
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse border border-border text-xs">
+        {headers.length > 0 && (
+          <thead>
+            <tr className="bg-muted/40">
+              {headers.map((h, i) => (
+                <th key={i} className="border border-border p-2 text-left font-semibold align-top whitespace-pre-wrap">
+                  {tField(h, lang, h) || ""}
+                </th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {grid.map((row, rIdx) => (
+            <tr key={rIdx}>
+              {row.map((cell, cIdx) => {
+                if (cell === null) return null;
+                return (
+                  <td
+                    key={cIdx}
+                    rowSpan={cell.rowspan > 1 ? cell.rowspan : undefined}
+                    contentEditable
+                    suppressContentEditableWarning
+                    spellCheck={false}
+                    className="border border-border px-2 py-1.5 align-top break-words whitespace-pre-wrap focus:bg-primary/5 focus:outline-none cursor-text min-w-[40px]"
+                    dangerouslySetInnerHTML={{ __html: (cell.value ?? "").replace(/\n/g, "<br/>") }}
+                  />
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function FieldsTable({
   sections,
   rawTables = [],
@@ -1921,15 +2008,11 @@ function FarmerProfileCard({
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 mb-3">
                             {ui("table", lang)} {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
                           </p>
-                          <div className="overflow-x-auto">
-                            <EditableHtmlTable
-                              html={tbl.html}
-                              colToProfile={{}}
-                              profile={profile}
-                              onChange={onChange}
-                              lang={lang}
-                            />
-                          </div>
+                          <EditableSpannedTable
+                            headers={tbl.headers}
+                            rows={tbl.rows}
+                            lang={lang}
+                          />
                         </div>
                       ))}
                     </div>
