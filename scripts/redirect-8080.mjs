@@ -66,13 +66,13 @@ function startProxy(port) {
     });
   });
 
-  // Handle WebSocket upgrade (Vite HMR and any WS connections)
+  // Handle WebSocket upgrade (Vite HMR)
   server.on("upgrade", (req, clientSocket, head) => {
     const upstreamSocket = net.connect(APP_PORT, "127.0.0.1", () => {
       const upgradeHeaders = { ...req.headers };
       upgradeHeaders["host"] = `localhost:${APP_PORT}`;
 
-      let requestLine = `${req.method} ${req.url} HTTP/1.1\r\n`;
+      const requestLine = `${req.method} ${req.url} HTTP/1.1\r\n`;
       const headerLines = Object.entries(upgradeHeaders)
         .map(([k, v]) => `${k}: ${v}`)
         .join("\r\n");
@@ -89,10 +89,7 @@ function startProxy(port) {
       clientSocket.destroy();
     });
 
-    clientSocket.on("error", (err) => {
-      console.error(`[Proxy:${port}] WebSocket client error:`, err.message);
-      upstreamSocket.destroy();
-    });
+    clientSocket.on("error", () => upstreamSocket.destroy());
   });
 
   server.listen(port, "0.0.0.0", () => {
@@ -101,4 +98,3 @@ function startProxy(port) {
 }
 
 startProxy(8080);
-startProxy(18593);

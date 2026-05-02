@@ -74,6 +74,7 @@ export default defineConfig({
           host: process.env.REPLIT_DEV_DOMAIN,
           protocol: "wss",
           clientPort: 443,
+          path: `/__hmr_${port}`,
         }
       : true,
     fs: {
