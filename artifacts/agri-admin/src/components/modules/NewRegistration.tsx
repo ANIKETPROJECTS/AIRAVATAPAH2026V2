@@ -39,9 +39,11 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "full_name":         { mr: "पूर्ण नाव",                             hi: "पूरा नाम",                               en: "Full Name" },
   "aadhaar_number":    { mr: "आधार क्रमांक",                          hi: "आधार संख्या",                             en: "Aadhaar Number" },
   "virtual_id":        { mr: "व्हर्च्युअल आयडी (VID)",                hi: "वर्चुअल आईडी (VID)",                     en: "Virtual ID (VID)" },
+  "vid":               { mr: "व्हर्च्युअल आयडी (VID)",                hi: "वर्चुअल आईडी (VID)",                     en: "Virtual ID (VID)" },
   "date_of_birth":     { mr: "जन्मतारीख",                             hi: "जन्म तिथि",                              en: "Date of Birth" },
   "gender":            { mr: "लिंग",                                   hi: "लिंग",                                   en: "Gender" },
   "father":            { mr: "वडील / पती / पालक यांचे नाव",           hi: "पिता / पति / अभिभावक का नाम",           en: "Father's / Husband's / Guardian's Name" },
+  "fathers_or_husbands_name": { mr: "वडील / पती / पालक यांचे नाव",   hi: "पिता / पति / अभिभावक का नाम",           en: "Father's / Husband's / Guardian's Name" },
   "care_of":           { mr: "पालक",                                   hi: "देखरेख",                                 en: "Care Of" },
   "mobile_number":     { mr: "मोबाईल क्रमांक",                        hi: "मोबाइल नंबर",                            en: "Mobile Number" },
   "pincode":           { mr: "पिन कोड",                               hi: "पिन कोड",                                en: "PIN Code" },
@@ -350,11 +352,42 @@ const TERM_MAP: Record<string, { en: string; hi: string }> = {
 
 const _SORTED_TERMS = Object.keys(TERM_MAP).sort((a, b) => b.length - a.length);
 
+/**
+ * English values returned by OCR → Marathi / Hindi equivalents.
+ * Keys are matched case-insensitively.
+ */
+const ENG_VALUE_MAP: Record<string, { mr: string; hi: string }> = {
+  // Gender
+  "male":               { mr: "पुरुष",         hi: "पुरुष" },
+  "female":             { mr: "महिला",          hi: "महिला" },
+  "transgender":        { mr: "तृतीयपंथी",      hi: "तृतीय लिंग" },
+  // States (common)
+  "maharashtra":        { mr: "महाराष्ट्र",     hi: "महाराष्ट्र" },
+  "gujarat":            { mr: "गुजरात",         hi: "गुजरात" },
+  "karnataka":          { mr: "कर्नाटक",        hi: "कर्नाटक" },
+  "madhya pradesh":     { mr: "मध्य प्रदेश",    hi: "मध्य प्रदेश" },
+  "uttar pradesh":      { mr: "उत्तर प्रदेश",   hi: "उत्तर प्रदेश" },
+  "rajasthan":          { mr: "राजस्थान",       hi: "राजस्थान" },
+  "goa":                { mr: "गोवा",           hi: "गोवा" },
+  // Boolean
+  "yes":                { mr: "होय",            hi: "हाँ" },
+  "no":                 { mr: "नाही",           hi: "नहीं" },
+  // Account types
+  "savings":            { mr: "बचत",            hi: "बचत" },
+  "current":            { mr: "चालू",           hi: "चालू" },
+};
+
 function translateValue(value: string, lang: LangCode): string {
   if (!value) return value;
   const trimmed = value.trim();
 
-  // 1. Exact-match lookup (whole value is a known term)
+  // 0. English common values → Marathi / Hindi
+  if (lang !== "en") {
+    const engEntry = ENG_VALUE_MAP[trimmed.toLowerCase()];
+    if (engEntry) return engEntry[lang];
+  }
+
+  // 1. Exact-match lookup (whole value is a known Marathi term)
   if (TERM_MAP[trimmed]) {
     const entry = TERM_MAP[trimmed];
     const translated = lang === "en" ? entry.en : lang === "hi" ? entry.hi : trimmed;
