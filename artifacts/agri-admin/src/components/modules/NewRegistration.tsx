@@ -910,7 +910,7 @@ function SpannedTable({ headers, rows, lang = "mr" }: { headers: string[]; rows:
                       <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 leading-relaxed">
                         {lines.flatMap((line, lIdx) => {
                           const { label, value } = splitLabelValue(line);
-                          if (value === null) return [<div key={`${lIdx}-full`} className="col-span-2 whitespace-pre-wrap">{label.length > 0 ? translateValue(label, lang) : "\u00A0"}</div>];
+                          if (value === null) return [<div key={`${lIdx}-full`} className="col-span-2 whitespace-pre-wrap">{label.length > 0 ? label : "\u00A0"}</div>];
                           return [
                             <div key={`${lIdx}-label`} className="whitespace-pre-wrap">{translateValue(label, lang)}</div>,
                             <div key={`${lIdx}-value`} className="whitespace-pre-wrap text-right tabular-nums">{value}</div>,
@@ -1002,7 +1002,7 @@ function FieldsTable({
               ) : (
                 <div
                   className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground"
-                  dangerouslySetInnerHTML={{ __html: localizeHtml(cleanDocHtml(tbl.html), lang) }}
+                  dangerouslySetInnerHTML={{ __html: cleanDocHtml(tbl.html) }}
                 />
               )}
             </div>
@@ -1676,7 +1676,7 @@ function EditableHtmlTable({
   // On new extraction HTML: render and make all <td> cells contentEditable
   useEffect(() => {
     if (!containerRef.current) return;
-    containerRef.current.innerHTML = localizeHtml(cleanDocHtml(html), lang);
+    containerRef.current.innerHTML = cleanDocHtml(html);
     const tds = containerRef.current.querySelectorAll<HTMLTableCellElement>("td");
     tds.forEach(td => {
       td.contentEditable = "true";
