@@ -1867,7 +1867,7 @@ const INITIAL_DOC_STATES: DocStates = Object.fromEntries(
 ) as DocStates;
 
 export default function NewRegistration() {
-  const [form8aLang, setForm8aLang] = useState<LangCode>("mr");
+  const [form8aLang, setForm8aLang] = useState<LangCode>("en");
   const [docStates, setDocStates] = useState<DocStates>(INITIAL_DOC_STATES);
   const [profile, setProfile] = useState<FarmerProfile>({ ...EMPTY_PROFILE });
   const [approved, setApproved] = useState(false);
