@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Home, FileText, Wallet, Megaphone, User, Bell, ChevronRight, Check, Sun, Cloud, CloudRain, Phone, Download, ArrowLeft, Camera, MapPin, LogOut, HelpCircle, Lock, Globe, Settings } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
 
 // Translations
 const translations: Record<string, Record<string, string>> = {
@@ -83,14 +84,14 @@ const screens = [
 ];
 
 export default function FarmerAppPreview() {
-  const [lang, setLang] = useState<"en" | "hi" | "mr">("en");
+  const { lang } = useLang();
   const [activeScreen, setActiveScreen] = useState("Home / Dashboard");
   const [bottomTab, setBottomTab] = useState("home");
   const [loginState, setLoginState] = useState<"splash" | "login" | "otp" | "done">("done");
   const [grCategory, setGrCategory] = useState("");
   const [grSubmitted, setGrSubmitted] = useState(false);
 
-  const t = (key: string) => translations[lang][key] || key;
+  const t = (key: string) => translations[lang]?.[key] || translations["en"][key] || key;
 
   const switchScreen = (screen: string) => {
     setActiveScreen(screen);
@@ -124,17 +125,6 @@ export default function FarmerAppPreview() {
       <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
         {/* Controls */}
         <div className="space-y-4 lg:w-64">
-          <div>
-            <label className="block text-sm font-medium mb-1">Language / भाषा</label>
-            <div className="flex gap-1">
-              {([["en", "English"], ["hi", "हिंदी"], ["mr", "मराठी"]] as const).map(([code, label]) => (
-                <button key={code} onClick={() => setLang(code)}
-                  className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${lang === code ? "bg-secondary text-secondary-foreground" : "bg-muted hover:bg-muted/80"}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
           <div>
             <label className="block text-sm font-medium mb-1">Screen</label>
             <select value={activeScreen} onChange={e => switchScreen(e.target.value)}

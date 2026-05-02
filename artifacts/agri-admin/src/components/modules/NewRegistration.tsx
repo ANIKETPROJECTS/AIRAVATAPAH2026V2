@@ -6,6 +6,7 @@ import {
   ArrowRight, ArrowLeft, ChevronRight,
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
+import { useLang } from "@/contexts/LanguageContext";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -1867,12 +1868,12 @@ const INITIAL_DOC_STATES: DocStates = Object.fromEntries(
 ) as DocStates;
 
 export default function NewRegistration() {
+  const { lang: form8aLang, setLang: setForm8aLang } = useLang();
   const [docStates, setDocStates] = useState<DocStates>(INITIAL_DOC_STATES);
   const [profile, setProfile] = useState<FarmerProfile>({ ...EMPTY_PROFILE });
   const [approved, setApproved] = useState(false);
   const [step, setStep] = useState<WorkflowStep>("upload");
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [form8aLang, setForm8aLang] = useState<LangCode>("mr");
 
   const completedCards = DOC_CARDS.filter(c => docStates[c.id].status === "complete");
   const anyBusy = Object.values(docStates).some(s => s.status === "uploading" || s.status === "processing");
