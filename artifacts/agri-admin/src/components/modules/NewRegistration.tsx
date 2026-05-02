@@ -74,12 +74,9 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "collection_charges":{ mr: "वसुली शुल्क",                           hi: "संग्रह शुल्क",                           en: "Collection Charges" },
   "non_agricultural_area":{ mr: "अकृषिक क्षेत्र",                    hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
   "non_cultivated_area":{ mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
-  "tenant_name":       { mr: "कुळाचे नाव",                            hi: "किरायेदार का नाम",                       en: "Tenant Name" },
   "tenant_rent":       { mr: "खंड",                                    hi: "किराया",                                 en: "Tenant Rent" },
-  "encumbrances":      { mr: "बोजा / तारण",                           hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
   "boundary_and_survey_marks":{ mr: "सीमा आणि सर्वेक्षण खुणा",       hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
   "last_mutation_number":{ mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
-  "pending_mutation":  { mr: "प्रलंबित फेरफार",                       hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
   // Form 12 fields
   "crop_name":         { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
   "crop":              { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
@@ -165,12 +162,8 @@ const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
   "collectionCharges":   { mr: "वसुली शुल्क",                         hi: "संग्रह शुल्क",                           en: "Collection Charges" },
   "nonAgriculturalArea": { mr: "अकृषिक क्षेत्र",                      hi: "गैर-कृषि क्षेत्र",                       en: "Non-Agricultural Area" },
   "nonCultivatedArea":   { mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
-  "tenantName":          { mr: "कुळाचे नाव",                          hi: "किरायेदार का नाम",                       en: "Tenant Name" },
-  "tenantRent":          { mr: "खंड",                                  hi: "किराया",                                 en: "Tenant Rent" },
-  "encumbrances":        { mr: "बोजा / तारण",                         hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
   "boundaryMarks":       { mr: "सीमा आणि सर्वेक्षण खुणा",             hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
   "lastMutationNumber":        { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
-  "pendingMutation":           { mr: "प्रलंबित फेरफार",                     hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
   "previousMutationNumbers":   { mr: "जुने फेरफार क्रमांक",                hi: "पिछले म्यूटेशन क्रमांक",                 en: "Previous Mutation Numbers" },
   "form8aYear":          { mr: "वर्ष",                                 hi: "वर्ष",                                   en: "Year" },
   "form8aReportDate":    { mr: "अहवाल दिनांक",                        hi: "रिपोर्ट दिनांक",                         en: "Report Date" },
@@ -614,14 +607,13 @@ export interface FarmerProfile {
   collectionCharges: string;
   nonAgriculturalArea: string;
   nonCultivatedArea: string;
-  tenantName: string;
-  tenantRent: string;
 
-  encumbrances: string;
+
+
   boundaryMarks: string;
   lastMutationNumber: string;
 
-  pendingMutation: string;
+
   previousMutationNumbers: string;
   form8aYear: string;
   form8aReportDate: string;
@@ -656,8 +648,8 @@ const EMPTY_PROFILE: FarmerProfile = {
   village: "", district: "", taluka: "", surveyNumber: "", puId: "",
   khateNumber: "", occupantClass: "", ownerNames: "", ownerShare: "", modeOfAcquisition: "",
   land: "", landRevenue: "", collectionCharges: "", nonAgriculturalArea: "", nonCultivatedArea: "",
-  tenantName: "", tenantRent: "", encumbrances: "", boundaryMarks: "",
-  lastMutationNumber: "", pendingMutation: "", previousMutationNumbers: "",
+  boundaryMarks: "",
+  lastMutationNumber: "", previousMutationNumbers: "",
   form8aYear: "", form8aReportDate: "", khateAccountType: "",
   khatedarAddress: "", totalAssessment: "", totalDamageInherited: "",
   totalZpCess: "", totalGpCess: "", totalRecovery: "", grandTotal: "", crop: "",
@@ -793,14 +785,13 @@ function extractProfileFromStates(
   pick(["collection_charges"], "collectionCharges", ["form7"]);
   pick(["non_agricultural_area"], "nonAgriculturalArea", ["form7"]);
   pick(["non_cultivated_area"], "nonCultivatedArea", ["form7"]);
-  pick(["tenant_name"], "tenantName", ["form7"]);
-  pick(["tenant_rent"], "tenantRent", ["form7"]);
 
-  pick(["encumbrances"], "encumbrances", ["form7"]);
+
+
   pick(["boundary_and_survey_marks"], "boundaryMarks", ["form7"]);
   pick(["last_mutation_number"], "lastMutationNumber", ["form7"]);
 
-  pick(["pending_mutation"], "pendingMutation", ["form7"]);
+
   pick(["old_mutation_numbers", "previous mutation"], "previousMutationNumbers", ["form7"]);
   pick(["year"], "form8aYear", ["form8a"]);
   pick(["report_date"], "form8aReportDate", ["form8a"]);
@@ -1669,8 +1660,6 @@ const PROFILE_SECTIONS: {
       {
         key: "rights & encumbrances",
         fields: [
-          { key: "tenantName", label: "Tenant Name", placeholder: "Tenant / kul name" },
-          { key: "encumbrances", label: "Encumbrances", placeholder: "e.g. बोजा / तारण", span: true },
           { key: "boundaryMarks", label: "Boundary & Survey Marks", placeholder: "e.g. सीमा आणी भूमापन चिन्ह", span: true },
         ],
       },
@@ -1678,7 +1667,7 @@ const PROFILE_SECTIONS: {
         key: "mutation",
         fields: [
           { key: "lastMutationNumber", label: "Last Mutation No.", placeholder: "e.g. 1423" },
-          { key: "pendingMutation", label: "Pending Mutation", placeholder: "Yes / No / None" },
+
           { key: "previousMutationNumbers", label: "Previous Mutation Numbers", placeholder: "e.g. 1, 118, 715…", span: true },
         ],
       },
