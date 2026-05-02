@@ -79,6 +79,8 @@ export default function Index() {
                 <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />
               ))}
             </div>
+          ) : active === "farmers" ? (
+            <FarmerRegistry onNavigate={navigate} />
           ) : (
             <ActiveModule />
           )}

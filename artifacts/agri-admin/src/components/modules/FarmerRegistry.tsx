@@ -11,7 +11,7 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${cls}`}>{status}</span>;
 }
 
-export default function FarmerRegistry() {
+export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: string) => void }) {
   const [farmers, setFarmers] = useState<FarmerRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -137,7 +137,7 @@ export default function FarmerRegistry() {
           <option value="">All Crops</option>
           {crops.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 text-sm px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">
+        <button onClick={() => onNavigate ? onNavigate("newregistration") : setShowAdd(true)} className="flex items-center gap-1.5 text-sm px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">
           <Plus className="h-4 w-4" /> Add Farmer
         </button>
         <button onClick={() => showToast("✅ CSV imported successfully — 24 records added")} className="flex items-center gap-1.5 text-sm px-3 py-2 bg-card border border-border rounded-lg hover:bg-muted">
