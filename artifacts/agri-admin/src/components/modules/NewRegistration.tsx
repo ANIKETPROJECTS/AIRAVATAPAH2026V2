@@ -1000,6 +1000,8 @@ function EditableSpannedTable({
             <tr key={rIdx}>
               {row.map((cell, cIdx) => {
                 if (cell === null) return null;
+                const lines = (cell.value ?? "").split("\n");
+                const hasContent = lines.some(l => l.trim().length > 0);
                 return (
                   <td
                     key={cIdx}
@@ -1007,8 +1009,23 @@ function EditableSpannedTable({
                     contentEditable
                     suppressContentEditableWarning
                     spellCheck={false}
-                    className="border border-border px-2 py-1.5 align-top break-words whitespace-pre-wrap focus:bg-primary/5 focus:outline-none cursor-text min-w-[40px]"
-                    dangerouslySetInnerHTML={{ __html: (cell.value ?? "").replace(/\n/g, "<br/>") }}
+                    className="border border-border px-2 py-1.5 align-top break-words focus:bg-primary/5 focus:outline-none cursor-text min-w-[40px]"
+                    dangerouslySetInnerHTML={{
+                      __html: hasContent
+                        ? `<div style="display:grid;grid-template-columns:1fr auto;column-gap:0.75rem;row-gap:0.25rem;line-height:1.625;">${
+                            lines.flatMap((line) => {
+                              const { label, value } = splitLabelValue(line);
+                              if (value === null) {
+                                return [`<div style="grid-column:1/-1;white-space:pre-wrap;">${label.length > 0 ? label : "\u00A0"}</div>`];
+                              }
+                              return [
+                                `<div style="white-space:pre-wrap;">${label}</div>`,
+                                `<div style="white-space:pre-wrap;text-align:right;font-variant-numeric:tabular-nums;">${value}</div>`,
+                              ];
+                            }).join("")
+                          }</div>`
+                        : ""
+                    }}
                   />
                 );
               })}
