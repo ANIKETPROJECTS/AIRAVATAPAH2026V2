@@ -1963,7 +1963,7 @@ export default function NewRegistration() {
 
   if (step === "upload") {
     return (
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6">
         <div>
           <div className="flex items-center justify-between mb-1">
             <h2 className="font-bold text-lg">{ui("newRegTitle", form8aLang)}</h2>
@@ -1972,7 +1972,7 @@ export default function NewRegistration() {
             {ui("newRegDesc", form8aLang)}
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
             {DOC_CARDS.map((card) => (
               <DocUploadCard
                 key={card.id}
