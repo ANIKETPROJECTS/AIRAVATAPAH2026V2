@@ -1819,6 +1819,7 @@ export function FarmerProfileCard({
   onLangChange,
   customPhoto,
   onCustomPhotoChange,
+  hideFooter = false,
 }: {
   docStates: Record<DocTypeId, ExtractionState>;
   profile: FarmerProfile;
@@ -1830,6 +1831,7 @@ export function FarmerProfileCard({
   onLangChange: (l: LangCode) => void;
   customPhoto: string | null;
   onCustomPhotoChange: (v: string | null) => void;
+  hideFooter?: boolean;
 }) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [form12EditedCells, setForm12EditedCells] = useState<Record<string, string>>({});
@@ -2135,7 +2137,7 @@ export function FarmerProfileCard({
           );
         })}
 
-        {approved ? (
+        {!hideFooter && (approved ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
             {ui("approvedMsg", lang)}
@@ -2157,7 +2159,7 @@ export function FarmerProfileCard({
               {ui("approveBtn", lang)}
             </button>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
