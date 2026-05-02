@@ -1076,33 +1076,29 @@ const PROFILE_SECTIONS: {
     subHeaderColor: "text-teal-600",
     subsections: [
       {
-        label: "Header",
+        label: "Header Details",
         fields: [
-          { key: "village", label: "Village (गाव)", placeholder: "Village name" },
-          { key: "taluka", label: "Taluka (तालुका)", placeholder: "Taluka name" },
-          { key: "district", label: "District (जिल्हा)", placeholder: "District name" },
           { key: "form8aYear", label: "Year (वर्ष)", placeholder: "e.g. 2016-15" },
           { key: "form8aReportDate", label: "Report Date", placeholder: "e.g. 12/20/2016" },
         ],
       },
       {
-        label: "Khatedar",
+        label: "Khatedar (Account Holder)",
         fields: [
           { key: "khateNumber", label: "Khate Number (खाते क्र.)", placeholder: "e.g. 159" },
           { key: "khateAccountType", label: "Account Type (खात्याचा प्रकार)", placeholder: "e.g. अविभक्त कुटूंब खाते", span: true },
-          { key: "khatedarNames", label: "Khatedar Name(s)", placeholder: "Names as per 8A", span: true },
-          { key: "khatedarAddress", label: "Khatedar Address", placeholder: "Address of khatedar", span: true },
+          { key: "khatedarNames", label: "Khatedar Name(s) (खातेदाराचे नाव)", placeholder: "Names as per 8A", span: true },
         ],
       },
       {
         label: "Totals",
         fields: [
           { key: "land", label: "Total Area (एकूण क्षेत्र)", placeholder: "Total area" },
-          { key: "totalAssessment", label: "Total Assessment / Judi (एकूण आकारणी)", placeholder: "Total assessment amount" },
-          { key: "totalDamageInherited", label: "Total Damage on Inherited Land (दुमाला)", placeholder: "दुमाला जमिनीवरील नुकसान" },
-          { key: "totalZpCess", label: "Total ZP Local Cess (जि.प.)", placeholder: "Zilla Parishad cess total" },
-          { key: "totalGpCess", label: "Total GP Local Cess (ग्रा.प.)", placeholder: "Gram Panchayat cess total" },
-          { key: "totalRecovery", label: "Total Recovery Amount (वसुलीसाठी)", placeholder: "Recovery total" },
+          { key: "totalAssessment", label: "Total Assessment / Judi (एकूण आकारणी किंवा जुडी)", placeholder: "Total assessment amount" },
+          { key: "totalDamageInherited", label: "Total Damage on Inherited Land (एकूण दुमाला जमिनीवरील नुकसान)", placeholder: "दुमाला जमिनीवरील नुकसान", span: true },
+          { key: "totalZpCess", label: "Total Zilla Parishad Local Cess (एकूण जि.प. स्थानिक उपकर)", placeholder: "Zilla Parishad cess total", span: true },
+          { key: "totalGpCess", label: "Total Gram Panchayat Local Cess (एकूण ग्रा.प. स्थानिक उपकर)", placeholder: "Gram Panchayat cess total", span: true },
+          { key: "totalRecovery", label: "Total Recovery Amount (एकूण वसुलीसाठी)", placeholder: "Recovery total" },
           { key: "grandTotal", label: "Grand Total (एकूण)", placeholder: "Final grand total" },
         ],
       },
@@ -1174,6 +1170,7 @@ function FarmerProfileCard({
           const isExtracted = section.docIds.some(id => docStates[id]?.status === "complete");
           const allFields = section.subsections.flatMap(sub => sub.fields);
           const sectionFilled = allFields.filter(f => Boolean(profile[f.key as keyof FarmerProfile])).length;
+          const form8aRawTables = section.id === "form8a" ? (docStates["form8a"]?.rawTables ?? []) : [];
           return (
             <div key={section.id}>
               <div className={`flex items-center justify-between px-3 py-2 rounded-lg border mb-4 ${section.headerBg}`}>
@@ -1206,6 +1203,47 @@ function FarmerProfileCard({
                     </div>
                   </div>
                 ))}
+
+                {/* Holdings Table — rendered only for form8a when raw tables are available */}
+                {section.id === "form8a" && form8aRawTables.length > 0 && (
+                  <div>
+                    <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2 ${section.subHeaderColor}`}>
+                      Holdings (धारण जमिनींची नोंदवही)
+                    </p>
+                    <div className="overflow-x-auto rounded-lg border border-teal-200">
+                      {form8aRawTables.map((table, ti) => (
+                        <table key={ti} className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-teal-50">
+                              {table.headers.map((h, hi) => (
+                                <th
+                                  key={hi}
+                                  className="px-3 py-2 text-left font-semibold text-teal-700 border-b border-teal-200 whitespace-nowrap"
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {table.rows.map((row, ri) => (
+                              <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-teal-50/30"}>
+                                {row.map((cell, ci) => (
+                                  <td
+                                    key={ci}
+                                    className="px-3 py-2 text-foreground border-b border-teal-100 align-top"
+                                  >
+                                    {cell}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
