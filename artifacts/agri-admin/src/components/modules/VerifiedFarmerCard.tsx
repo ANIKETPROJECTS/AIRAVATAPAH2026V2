@@ -369,7 +369,7 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
                     <div className="flex flex-wrap gap-2">
                       {lp.irrigationSources&&lp.irrigationSources.length>0
                         ?lp.irrigationSources.map(src=>(
-                          <span key={src} className="text-xs px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1.5 font-medium">
+                          <span key={src} className="text-xs px-3 py-1 rounded-full bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1.5 font-medium">
                             <Droplets className="h-3 w-3"/>{src}
                           </span>))
                         :<span className="text-sm text-muted-foreground/60">Not specified</span>}

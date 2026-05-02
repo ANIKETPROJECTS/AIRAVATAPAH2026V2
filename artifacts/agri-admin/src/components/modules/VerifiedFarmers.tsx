@@ -97,10 +97,10 @@ function CompactFarmerCard({
               <BadgeCheck className="h-2.5 w-2.5" /> Verified
             </span>
             {farmer.source === "ocr" && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold border border-purple-200">AI-OCR</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 font-semibold border border-teal-200">AI-OCR</span>
             )}
             {farmer.source === "manual" && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold border border-blue-200">Manual</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold border border-green-200">Manual</span>
             )}
           </div>
         </div>
@@ -136,14 +136,14 @@ function CompactFarmerCard({
           </span>
           <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
             openGrievances > 0
-              ? "bg-orange-50 text-orange-700 border-orange-200"
+              ? "bg-lime-50 text-lime-700 border-lime-300"
               : "bg-muted/30 text-muted-foreground border-border"
           }`}>
             <AlertTriangle className="h-2.5 w-2.5" />{openGrievances} GRV
           </span>
           <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
             openTickets > 0
-              ? "bg-red-50 text-red-700 border-red-200"
+              ? "bg-green-50 text-green-800 border-green-300"
               : "bg-muted/30 text-muted-foreground border-border"
           }`}>
             <Ticket className="h-2.5 w-2.5" />{openTickets} TKT
