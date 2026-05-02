@@ -1269,6 +1269,8 @@ function DocReviewPanel({
   isLast,
   lang,
   onLangChange,
+  customPhoto,
+  onCustomPhotoChange,
 }: {
   card: DocCard;
   state: ExtractionState;
@@ -1279,11 +1281,23 @@ function DocReviewPanel({
   isLast: boolean;
   lang: LangCode;
   onLangChange: (l: LangCode) => void;
+  customPhoto: string | null;
+  onCustomPhotoChange: (v: string | null) => void;
 }) {
   const Icon = card.icon;
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onCustomPhotoChange(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
   const photoSrc = card.id === "aadhar" && state.aadharPhoto
     ? `data:${state.aadharPhoto.mimeType};base64,${state.aadharPhoto.base64}`
     : null;
+  const displayPhoto = customPhoto ?? photoSrc;
   const fieldCount = state.sections.reduce((n, s) => n + s.fields.filter(f => f.value && f.value !== "—").length, 0);
 
   return (
@@ -1307,24 +1321,43 @@ function DocReviewPanel({
               <p className={`text-2xl font-bold ${card.color}`}>{fieldCount}</p>
               <p className="text-xs text-muted-foreground">{ui("fieldsExtracted", lang)}</p>
             </div>
-            <LangSelector lang={lang} onChange={onLangChange} />
           </div>
         </div>
       </div>
 
+      <div className="flex justify-end mb-4 -mt-2">
+        <LangSelector lang={lang} onChange={onLangChange} />
+      </div>
+
       {photoSrc && (
-        <div className="mb-5 flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-          <img
-            src={photoSrc}
-            alt="Aadhaar profile photo"
-            className="w-24 h-28 object-cover rounded-lg border-2 border-white shadow-md flex-shrink-0"
-          />
+        <div className="mb-5 flex items-center gap-4 p-4 bg-muted/30 rounded-xl border border-border">
+          <div className="relative group flex-shrink-0">
+            <img
+              src={displayPhoto!}
+              alt="Aadhaar profile photo"
+              className="w-24 h-28 object-cover rounded-lg border-2 border-white shadow-md"
+            />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="absolute inset-0 rounded-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white"
+            >
+              <Camera className="h-4 w-4" />
+              <span className="text-[10px] font-semibold">Change</span>
+            </button>
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </div>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <Camera className="h-4 w-4 text-blue-600" />
-              <p className="text-sm font-semibold text-blue-800">{ui("photoExtracted", lang)}</p>
+              <Camera className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">{ui("photoExtracted", lang)}</p>
             </div>
-            <p className="text-sm text-blue-600">{ui("photoFrom", lang)}</p>
+            <p className="text-sm text-muted-foreground">{ui("photoFrom", lang)}</p>
+            {customPhoto && (
+              <button type="button" onClick={() => onCustomPhotoChange(null)} className="mt-2 text-xs text-destructive hover:underline">
+                Reset to extracted
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1660,6 +1693,9 @@ function FarmerProfileCard({
   approved,
   onBack,
   lang,
+  onLangChange,
+  customPhoto,
+  onCustomPhotoChange,
 }: {
   docStates: Record<DocTypeId, ExtractionState>;
   profile: FarmerProfile;
@@ -1668,11 +1704,24 @@ function FarmerProfileCard({
   approved: boolean;
   onBack: () => void;
   lang: LangCode;
+  onLangChange: (l: LangCode) => void;
+  customPhoto: string | null;
+  onCustomPhotoChange: (v: string | null) => void;
 }) {
   const filledCount = ALL_PROFILE_FIELDS.filter(f => Boolean(profile[f.key])).length;
   const photoSrc = docStates["aadhar"]?.aadharPhoto
     ? `data:${docStates["aadhar"].aadharPhoto.mimeType};base64,${docStates["aadhar"].aadharPhoto.base64}`
     : null;
+  const displayPhoto = customPhoto ?? photoSrc;
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
+  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onCustomPhotoChange(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const form8aRawTable0 = docStates["form8a"]?.rawTables?.[0] ?? null;
 
@@ -1697,17 +1746,27 @@ function FarmerProfileCard({
     <div className="rounded-xl border-2 border-primary/30 bg-card shadow-md overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 bg-primary/5 border-b border-primary/20">
         <div className="flex items-center gap-4">
-          {photoSrc ? (
-            <img
-              src={photoSrc}
-              alt="Farmer photo"
-              className="w-14 h-16 object-cover rounded-xl border-2 border-white shadow-md"
-            />
-          ) : (
-            <div className="w-14 h-16 rounded-xl bg-primary/15 flex items-center justify-center border-2 border-white shadow-md">
-              <UserCheck className="h-7 w-7 text-primary" />
-            </div>
-          )}
+          <div className="relative group flex-shrink-0">
+            {displayPhoto ? (
+              <img
+                src={displayPhoto}
+                alt="Farmer photo"
+                className="w-14 h-16 object-cover rounded-xl border-2 border-white shadow-md"
+              />
+            ) : (
+              <div className="w-14 h-16 rounded-xl bg-primary/15 flex items-center justify-center border-2 border-white shadow-md">
+                <UserCheck className="h-7 w-7 text-primary" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => profilePhotoInputRef.current?.click()}
+              className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+            <input ref={profilePhotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfilePhotoUpload} />
+          </div>
           <div>
             <h3 className="font-bold text-base text-foreground">
               {profile.name || (lang === "mr" ? "स्वयं-तयार शेतकरी प्रोफाइल" : lang === "hi" ? "स्वतः-निर्मित किसान प्रोफाइल" : "Auto-Built Farmer Profile")}
@@ -1717,9 +1776,12 @@ function FarmerProfileCard({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Pencil className="h-3.5 w-3.5" />
-          <span className="text-xs">{ui("editable", lang)}</span>
+        <div className="flex flex-col items-end gap-2">
+          <LangSelector lang={lang} onChange={onLangChange} />
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="text-xs">{ui("editable", lang)}</span>
+          </div>
         </div>
       </div>
 
@@ -1868,6 +1930,7 @@ const INITIAL_DOC_STATES: DocStates = Object.fromEntries(
 
 export default function NewRegistration() {
   const [form8aLang, setForm8aLang] = useState<LangCode>("en");
+  const [customPhoto, setCustomPhoto] = useState<string | null>(null);
   const [docStates, setDocStates] = useState<DocStates>(INITIAL_DOC_STATES);
   const [profile, setProfile] = useState<FarmerProfile>({ ...EMPTY_PROFILE });
   const [approved, setApproved] = useState(false);
@@ -2038,6 +2101,8 @@ export default function NewRegistration() {
           isLast={reviewIndex === completedCards.length - 1}
           lang={form8aLang}
           onLangChange={setForm8aLang}
+          customPhoto={customPhoto}
+          onCustomPhotoChange={setCustomPhoto}
         />
       )}
 
@@ -2050,6 +2115,9 @@ export default function NewRegistration() {
           approved={approved}
           onBack={() => { setReviewIndex(completedCards.length - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           lang={form8aLang}
+          onLangChange={setForm8aLang}
+          customPhoto={customPhoto}
+          onCustomPhotoChange={setCustomPhoto}
         />
       )}
     </div>
