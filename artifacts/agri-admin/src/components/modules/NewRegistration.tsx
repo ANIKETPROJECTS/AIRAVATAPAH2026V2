@@ -23,7 +23,7 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "district":          { mr: "जिल्हा",                                 hi: "जिला",                                    en: "District" },
   "khate_number":      { mr: "खाते क्रमांक",                          hi: "खाता संख्या",                             en: "Account Number" },
   "account_type":      { mr: "खात्याचा प्रकार",                       hi: "खाते का प्रकार",                          en: "Account Type" },
-  "khatedar_names":    { mr: "खातेदाराचे नाव",                        hi: "खाताधारक का नाम",                         en: "Name of Land Holder" },
+
   "khatedar_address":  { mr: "खातेदाराचा पत्ता",                      hi: "खाताधारक का पता",                         en: "Address of Land Holder" },
   "total_area":        { mr: "एकूण क्षेत्र",                          hi: "कुल क्षेत्रफल",                          en: "Total Land Area" },
   "total_assessment":  { mr: "एकूण आकारणी किंवा जुडी",               hi: "कुल भू-राजस्व / जमाबंदी",                en: "Total Assessment / Judi" },
@@ -179,7 +179,7 @@ const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
   "form8aYear":          { mr: "वर्ष",                                 hi: "वर्ष",                                   en: "Year" },
   "form8aReportDate":    { mr: "अहवाल दिनांक",                        hi: "रिपोर्ट दिनांक",                         en: "Report Date" },
   "khateAccountType":    { mr: "खात्याचा प्रकार",                     hi: "खाते का प्रकार",                         en: "Account Type" },
-  "khatedarNames":       { mr: "खातेदाराचे नाव",                      hi: "खाताधारक का नाम",                        en: "Khatedar Name(s)" },
+
   "khatedarAddress":     { mr: "खातेदाराचा पत्ता",                    hi: "खाताधारक का पता",                        en: "Khatedar Address" },
   "totalAssessment":     { mr: "एकूण आकारणी किंवा जुडी",             hi: "कुल भू-राजस्व / जमाबंदी",               en: "Total Assessment / Judi" },
   "totalDamageInherited":{ mr: "एकूण दुमाला जमिनीवरील नुकसान",       hi: "कुल दुमाला भूमि पर कमी",                en: "Total Damage on Inherited Land" },
@@ -630,7 +630,7 @@ export interface FarmerProfile {
   form8aYear: string;
   form8aReportDate: string;
   khateAccountType: string;
-  khatedarNames: string;
+
   khatedarAddress: string;
   totalAssessment: string;
   totalDamageInherited: string;
@@ -662,7 +662,7 @@ const EMPTY_PROFILE: FarmerProfile = {
   land: "", landRevenue: "", collectionCharges: "", nonAgriculturalArea: "", nonCultivatedArea: "",
   tenantName: "", tenantRent: "", otherRights: "", encumbrances: "", boundaryMarks: "",
   lastMutationNumber: "", lastMutationDate: "", pendingMutation: "", previousMutationNumbers: "",
-  form8aYear: "", form8aReportDate: "", khateAccountType: "", khatedarNames: "",
+  form8aYear: "", form8aReportDate: "", khateAccountType: "",
   khatedarAddress: "", totalAssessment: "", totalDamageInherited: "",
   totalZpCess: "", totalGpCess: "", totalRecovery: "", grandTotal: "", crop: "",
   bankName: "", branchName: "", branchAddress: "", ifsc: "", micrCode: "",
@@ -809,7 +809,7 @@ function extractProfileFromStates(
   pick(["year"], "form8aYear", ["form8a"]);
   pick(["report_date"], "form8aReportDate", ["form8a"]);
   pick(["account_type", "khata type", "account type"], "khateAccountType", ["form8a"]);
-  pick(["khatedar_names", "khatedar name"], "khatedarNames", ["form8a"]);
+
   pick(["khatedar_address"], "khatedarAddress", ["form8a"]);
   pick(["total_assessment_or_judi", "total assessment"], "totalAssessment", ["form8a"]);
   pick(["total_damage_on_inherited_land", "total damage"], "totalDamageInherited", ["form8a"]);

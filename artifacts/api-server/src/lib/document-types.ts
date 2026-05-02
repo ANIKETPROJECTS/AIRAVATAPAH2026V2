@@ -731,14 +731,7 @@ const FORM8A: DocumentTypeDef = {
       type: "string",
       section: "Khatedar (Account Holder)",
     },
-    {
-      key: "khatedar_names",
-      label: "Khatedar Name(s) (खातेदाराचे नाव)",
-      description:
-        "Full name(s) of the khatedar / account holder(s), if printed. Return as a list of names exactly as printed. Many 8A pages do not list names — leave empty if absent.",
-      type: "string[]",
-      section: "Khatedar (Account Holder)",
-    },
+
     {
       key: "khatedar_address",
       label: "Khatedar Address (खातेदाराचा पत्ता)",
