@@ -1807,11 +1807,14 @@ function FarmerProfileCard({
       if (translated !== val) onChange(field, translated);
     });
 
-    // Step 2: Async API transliteration for Latin-script name/address fields
+    // Step 2: Async API transliteration for Latin-script name/address/text fields
     const TEXT_FIELDS: (keyof FarmerProfile)[] = [
       "name", "fathersName", "address", "village", "district", "taluka",
       "ownerNames", "khatedarNames", "khatedarAddress",
       "bankName", "branchName", "branchAddress", "bankHolderName", "bankCustomerAddress",
+      "nomineeRelationship", "accountType", "occupantClass", "modeOfAcquisition",
+      "otherRights", "encumbrances", "boundaryMarks", "pendingMutation",
+      "tenantName", "crop",
     ];
 
     TEXT_FIELDS.forEach((field) => {
