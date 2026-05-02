@@ -908,6 +908,7 @@ function FieldsTable({
   docId?: DocTypeId;
   lang?: LangCode;
 }) {
+  const [textOpen, setTextOpen] = useState(false);
   if (!sections.length && !rawTables.length && !textBlocks.length) return null;
   return (
     <div className="space-y-5">
@@ -974,13 +975,25 @@ function FieldsTable({
       )}
 
       {textBlocks.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{ui("otherText", lang)}</p>
-          {textBlocks.map((t, i) => (
-            <div key={i} className="border-l-4 border-l-blue-400 bg-card border border-border rounded-md px-4 py-3 text-sm whitespace-pre-wrap break-words text-foreground">
-              {translateValue(t, lang)}
+        <div>
+          <button
+            type="button"
+            onClick={() => setTextOpen(o => !o)}
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+          >
+            <ChevronRight className={`h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 ${textOpen ? "rotate-90" : ""}`} />
+            {ui("otherText", lang)}
+            <span className="ml-1 text-muted-foreground/60 normal-case font-normal tracking-normal">({textBlocks.length})</span>
+          </button>
+          {textOpen && (
+            <div className="mt-2 space-y-2">
+              {textBlocks.map((t, i) => (
+                <div key={i} className="border-l-4 border-l-border bg-card border border-border rounded-md px-4 py-3 text-sm whitespace-pre-wrap break-words text-foreground">
+                  {translateValue(t, lang)}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
