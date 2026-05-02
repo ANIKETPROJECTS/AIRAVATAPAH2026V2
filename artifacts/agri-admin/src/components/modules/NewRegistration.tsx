@@ -665,7 +665,7 @@ async function pollUntilDone(
   onComplete: (result: Omit<ExtractionState, "filename">) => void,
   onError: (msg: string) => void,
 ) {
-  const maxAttempts = 60;
+  const maxAttempts = 600;
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -1090,7 +1090,7 @@ function FieldsTable({
           {rawTables.map((tbl, idx) => (
             <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">{ui("table", lang)} {idx + 1}</p>
-              {docId === "form7" ? (
+              {docId === "form7" || docId === "form12" ? (
                 <SpannedTable headers={tbl.headers} rows={tbl.rows} lang={lang} />
               ) : (
                 <div
@@ -1930,8 +1930,9 @@ function FarmerProfileCard({
           const isExtracted = section.docIds.some(id => docStates[id]?.status === "complete");
           const allFields = section.subsections.flatMap(sub => sub.fields);
           const sectionFilled = allFields.filter(f => Boolean(profile[f.key as keyof FarmerProfile])).length;
-          const form8aRawTables = section.id === "form8a" ? (docStates["form8a"]?.rawTables ?? []) : [];
-          const form7RawTables  = section.id === "form7"  ? (docStates["form7"]?.rawTables  ?? []) : [];
+          const form8aRawTables  = section.id === "form8a"  ? (docStates["form8a"]?.rawTables  ?? []) : [];
+          const form7RawTables   = section.id === "form7"   ? (docStates["form7"]?.rawTables   ?? []) : [];
+          const form12RawTables  = section.id === "form12"  ? (docStates["form12"]?.rawTables  ?? []) : [];
           const sectionLabel = PROFILE_SECTION_DOC_LABELS[section.id]?.[lang] ?? section.id;
           const isCollapsed = collapsedSections.has(section.id);
           return (
@@ -1951,8 +1952,8 @@ function FarmerProfileCard({
                   {isExtracted ? `${sectionFilled} / ${allFields.length} ${ui("filled", lang)}` : ui("uploadToExtract", lang)}
                 </span>
               </button>
-              {!isCollapsed && ((section.id === "form8a" || section.id === "form7") ? (
-                /* Form 8A / Form 7: extraction-style row layout with editable inputs + raw table */
+              {!isCollapsed && ((section.id === "form8a" || section.id === "form7" || section.id === "form12") ? (
+                /* Form 8A / Form 7 / Form 12: extraction-style row layout with editable inputs + raw table */
                 <div className="space-y-5">
                   {section.subsections.map((sub) => (
                     <div key={sub.key}>
@@ -2023,6 +2024,27 @@ function FarmerProfileCard({
                       {form7RawTables.map((tbl, idx) => (
                         <div key={tbl.blockId ?? idx} className="border-l-4 border-l-emerald-400 bg-card border border-border rounded-md p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 mb-3">
+                            {ui("table", lang)} {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
+                          </p>
+                          <EditableSpannedTable
+                            headers={tbl.headers}
+                            rows={tbl.rows}
+                            lang={lang}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Form 12: Crop Inspection editable table */}
+                  {section.id === "form12" && form12RawTables.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {lang === "mr" ? "पीक पाहणी तक्ता" : lang === "hi" ? "फसल निरीक्षण तालिका" : "Crop Inspection Table"}
+                      </p>
+                      {form12RawTables.map((tbl, idx) => (
+                        <div key={tbl.blockId ?? idx} className="border-l-4 border-l-green-400 bg-card border border-border rounded-md p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-green-700 mb-3">
                             {ui("table", lang)} {idx + 1} <span className="normal-case font-normal text-muted-foreground ml-1">— {ui("clickToEdit", lang)}</span>
                           </p>
                           <EditableSpannedTable
