@@ -1630,7 +1630,6 @@ const PROFILE_SECTIONS: {
         fields: [
           { key: "khateNumber", label: "Khate Number", placeholder: "e.g. 159" },
           { key: "khateAccountType", label: "Account Type", placeholder: "e.g. अविभक्त कुटूंब खाते", span: true },
-          { key: "khatedarNames", label: "Khatedar Name(s)", placeholder: "Names as per 8A", span: true },
         ],
       },
       {
@@ -1641,7 +1640,6 @@ const PROFILE_SECTIONS: {
           { key: "totalDamageInherited", label: "Total Damage on Inherited Land", placeholder: "दुमाला जमिनीवरील नुकसान", span: true },
           { key: "totalZpCess", label: "Total ZP Local Cess", placeholder: "Zilla Parishad cess total", span: true },
           { key: "totalGpCess", label: "Total GP Local Cess", placeholder: "Gram Panchayat cess total", span: true },
-          { key: "totalRecovery", label: "Total Recovery Amount", placeholder: "Recovery total" },
           { key: "grandTotal", label: "Grand Total", placeholder: "Final grand total" },
         ],
       },
