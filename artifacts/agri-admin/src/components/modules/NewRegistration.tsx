@@ -1854,10 +1854,10 @@ export default function NewRegistration() {
       <div className="space-y-6 max-w-4xl">
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h2 className="font-bold text-lg">{ui("newRegTitle", lang)}</h2>
+            <h2 className="font-bold text-lg">{ui("newRegTitle", form8aLang)}</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-5">
-            {ui("newRegDesc", lang)}
+            {ui("newRegDesc", form8aLang)}
           </p>
 
           <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
