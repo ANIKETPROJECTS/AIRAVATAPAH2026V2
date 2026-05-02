@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
 import { TransliteratedText } from "@/components/TransliteratedText";
+import { transliterateText, hasLatinText } from "@/lib/transliterate";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -1790,6 +1791,29 @@ function FarmerProfileCard({
       [numCols - 6]: "land",
     };
   }, [numCols]);
+
+  const prevLang = useRef<LangCode>("en");
+  useEffect(() => {
+    if (lang === prevLang.current) return;
+    prevLang.current = lang;
+    if (lang === "en") return;
+
+    const TEXT_FIELDS: (keyof FarmerProfile)[] = [
+      "name", "fathersName", "address", "village", "district", "taluka",
+      "ownerNames", "khatedarNames", "khatedarAddress",
+      "bankName", "branchName", "branchAddress", "bankHolderName", "bankCustomerAddress",
+    ];
+
+    TEXT_FIELDS.forEach((field) => {
+      const val = profile[field];
+      if (val && hasLatinText(val)) {
+        transliterateText(val, lang as "mr" | "hi").then((translated) => {
+          if (translated !== val) onChange(field, translated);
+        });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   return (
     <div className="rounded-xl border-2 border-primary/30 bg-card shadow-md overflow-hidden">
