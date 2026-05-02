@@ -32,13 +32,13 @@ function landToHectares(val: number | string | undefined): number {
 
 const AVATAR_GRADIENTS = [
   "from-emerald-500 to-teal-600",
-  "from-blue-500 to-indigo-600",
-  "from-violet-500 to-purple-600",
-  "from-orange-500 to-red-500",
-  "from-pink-500 to-rose-600",
-  "from-amber-500 to-yellow-600",
-  "from-cyan-500 to-sky-600",
+  "from-green-500 to-emerald-700",
+  "from-teal-500 to-emerald-600",
   "from-lime-500 to-green-600",
+  "from-emerald-400 to-green-700",
+  "from-teal-400 to-teal-700",
+  "from-green-600 to-emerald-800",
+  "from-lime-400 to-teal-600",
 ];
 
 function farmerGradient(id: string) {
@@ -244,9 +244,9 @@ export default function VerifiedFarmers() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { icon: <BadgeCheck className="h-5 w-5 text-emerald-600" />, bg: "bg-emerald-100", value: farmers.length, label: "Verified Farmers" },
-          { icon: <BarChart3 className="h-5 w-5 text-blue-600" />, bg: "bg-blue-100", value: totalEligibleSchemes, label: "Total Scheme Eligibilities" },
-          { icon: <AlertTriangle className="h-5 w-5 text-orange-500" />, bg: "bg-orange-100", value: farmers.length > 0 ? 2 : 0, label: "Open Grievances" },
-          { icon: <Ticket className="h-5 w-5 text-red-500" />, bg: "bg-red-100", value: farmers.length > 0 ? 1 : 0, label: "Open Support Tickets" },
+          { icon: <BarChart3 className="h-5 w-5 text-teal-600" />, bg: "bg-teal-100", value: totalEligibleSchemes, label: "Total Scheme Eligibilities" },
+          { icon: <AlertTriangle className="h-5 w-5 text-green-700" />, bg: "bg-green-100", value: farmers.length > 0 ? 2 : 0, label: "Open Grievances" },
+          { icon: <Ticket className="h-5 w-5 text-lime-700" />, bg: "bg-lime-100", value: farmers.length > 0 ? 1 : 0, label: "Open Support Tickets" },
         ].map(s => (
           <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}>{s.icon}</div>

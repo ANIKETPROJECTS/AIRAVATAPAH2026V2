@@ -124,16 +124,16 @@ function Section({ id, title, icon, children, badge, defaultOpen=true }: {
 
 function SchemeStatusPill({ status }: { status?:string|null }) {
   if (!status) return <span className="text-[10px] italic text-muted-foreground/50">Not Applied</span>;
-  const c:Record<string,string> = { "Disbursed":"bg-emerald-100 text-emerald-800 border-emerald-200","Approved":"bg-blue-100 text-blue-800 border-blue-200","Applied":"bg-amber-100 text-amber-800 border-amber-200","Rejected":"bg-red-100 text-red-800 border-red-200" };
+  const c:Record<string,string> = { "Disbursed":"bg-emerald-100 text-emerald-800 border-emerald-200","Approved":"bg-teal-100 text-teal-800 border-teal-200","Applied":"bg-green-100 text-green-800 border-green-200","Rejected":"bg-red-100 text-red-800 border-red-200" };
   return <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${c[status]||"bg-muted text-muted-foreground border-border"}`}>{status}</span>;
 }
 function Pill({ label, map }: { label:string; map:Record<string,string> }) {
   return <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${map[label]||"bg-muted text-muted-foreground"}`}>{label}</span>;
 }
-const GSTATUS:Record<string,string> = { "Open":"bg-orange-100 text-orange-800","In Progress":"bg-blue-100 text-blue-800","Resolved":"bg-emerald-100 text-emerald-800","Closed":"bg-slate-100 text-slate-600" };
-const GPRIORITY:Record<string,string> = { "High":"bg-red-100 text-red-800","Medium":"bg-amber-100 text-amber-800","Low":"bg-slate-100 text-slate-600" };
-const TSTATUS:Record<string,string> = { "Open":"bg-orange-100 text-orange-800","Pending":"bg-amber-100 text-amber-800","Resolved":"bg-emerald-100 text-emerald-800" };
-const TTYPE:Record<string,string> = { "Payment":"bg-purple-100 text-purple-800","Document":"bg-sky-100 text-sky-800","Technical":"bg-slate-100 text-slate-700","Scheme":"bg-teal-100 text-teal-800","Other":"bg-muted text-muted-foreground" };
+const GSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","In Progress":"bg-teal-100 text-teal-800","Resolved":"bg-emerald-100 text-emerald-800","Closed":"bg-slate-100 text-slate-600" };
+const GPRIORITY:Record<string,string> = { "High":"bg-red-100 text-red-800","Medium":"bg-green-100 text-green-800","Low":"bg-slate-100 text-slate-600" };
+const TSTATUS:Record<string,string> = { "Open":"bg-lime-100 text-lime-800","Pending":"bg-green-100 text-green-800","Resolved":"bg-emerald-100 text-emerald-800" };
+const TTYPE:Record<string,string> = { "Payment":"bg-teal-100 text-teal-800","Document":"bg-emerald-100 text-emerald-800","Technical":"bg-slate-100 text-slate-700","Scheme":"bg-green-100 text-green-800","Other":"bg-muted text-muted-foreground" };
 
 /* ─────────────────────────── quick-jump nav ─────────────────────────── */
 const NAV_SECTIONS = [
@@ -204,12 +204,12 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
 
   /* stat strip items */
   const stats = [
-    { label:"AI Risk Score",     value:`${riskScore}%`,           sub:"Low Risk",           color:"text-emerald-600", bg:"bg-emerald-50",  border:"border-emerald-200" },
-    { label:"Eligible Schemes",  value:String(eligibleSchemes.length), sub:"govt. schemes",  color:"text-blue-600",    bg:"bg-blue-50",     border:"border-blue-200" },
-    { label:"Active / Applied",  value:String(appliedSchemes.length),  sub:"enrolled",       color:"text-indigo-600",  bg:"bg-indigo-50",   border:"border-indigo-200" },
-    { label:"Open Grievances",   value:String(openGrievances.length),  sub:openGrievances.length>0?"action needed":"clear", color:openGrievances.length>0?"text-orange-600":"text-slate-400", bg:openGrievances.length>0?"bg-orange-50":"bg-slate-50", border:openGrievances.length>0?"border-orange-200":"border-slate-200" },
-    { label:"Open Tickets",      value:String(openTickets.length),     sub:openTickets.length>0?"open":"all resolved",  color:openTickets.length>0?"text-red-600":"text-slate-400",    bg:openTickets.length>0?"bg-red-50":"bg-slate-50",     border:openTickets.length>0?"border-red-200":"border-slate-200" },
-    { label:"Land (hectares)",   value:`${ha.toFixed(2)} ha`,          sub:formatLandHAR(farmer.land), color:"text-amber-600",   bg:"bg-amber-50",    border:"border-amber-200" },
+    { label:"AI Risk Score",     value:`${riskScore}%`,           sub:"Low Risk",           color:"text-emerald-700", bg:"bg-emerald-50",  border:"border-emerald-200" },
+    { label:"Eligible Schemes",  value:String(eligibleSchemes.length), sub:"govt. schemes",  color:"text-teal-700",    bg:"bg-teal-50",     border:"border-teal-200" },
+    { label:"Active / Applied",  value:String(appliedSchemes.length),  sub:"enrolled",       color:"text-green-700",   bg:"bg-green-50",    border:"border-green-200" },
+    { label:"Open Grievances",   value:String(openGrievances.length),  sub:openGrievances.length>0?"action needed":"clear", color:openGrievances.length>0?"text-lime-700":"text-slate-400", bg:openGrievances.length>0?"bg-lime-50":"bg-slate-50", border:openGrievances.length>0?"border-lime-300":"border-slate-200" },
+    { label:"Open Tickets",      value:String(openTickets.length),     sub:openTickets.length>0?"open":"all resolved",  color:openTickets.length>0?"text-green-900":"text-slate-400",    bg:openTickets.length>0?"bg-green-100":"bg-slate-50",     border:openTickets.length>0?"border-green-300":"border-slate-200" },
+    { label:"Land (hectares)",   value:`${ha.toFixed(2)} ha`,          sub:formatLandHAR(farmer.land), color:"text-teal-800",   bg:"bg-teal-50",    border:"border-teal-200" },
   ];
 
   return (
@@ -236,8 +236,8 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
               <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold">
                 <BadgeCheck className="h-3 w-3"/> Verified
               </span>
-              {farmer.source==="ocr"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 font-semibold">AI-OCR</span>}
-              {farmer.source==="manual"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200 font-semibold">Manual</span>}
+              {farmer.source==="ocr"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-700 border border-teal-200 font-semibold">AI-OCR</span>}
+              {farmer.source==="manual"&&<span className="text-[11px] px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-semibold">Manual</span>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-slate-600">
@@ -256,9 +256,9 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
               <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-0.5">क्षेत्रफळ</div>
               <div className="font-mono font-bold text-sm text-emerald-800 leading-snug">{formatLandHAR(farmer.land)}</div>
             </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
-              <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-0.5">मुख्य पीक</div>
-              <div className="font-semibold text-sm text-amber-800">{farmer.crop||"—"}</div>
+            <div className="bg-lime-50 border border-lime-200 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
+              <div className="text-[10px] text-lime-700 font-bold uppercase tracking-wider mb-0.5">मुख्य पीक</div>
+              <div className="font-semibold text-sm text-lime-900">{farmer.crop||"—"}</div>
             </div>
           </div>
         </div>
@@ -456,8 +456,8 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
             {schemes.map(s=>(
               <div key={s.id} className={`border rounded-xl p-4 transition-all ${
                 s.appliedStatus==="Disbursed"?"border-emerald-200 bg-emerald-50/40":
-                s.appliedStatus==="Approved"?"border-blue-200 bg-blue-50/20":
-                s.appliedStatus==="Applied"?"border-amber-200 bg-amber-50/20":
+                s.appliedStatus==="Approved"?"border-teal-200 bg-teal-50/20":
+                s.appliedStatus==="Applied"?"border-green-200 bg-green-50/20":
                 s.eligible?"border-slate-200 bg-white hover:bg-slate-50":
                 "border-slate-100 bg-slate-50/50 opacity-55"
               }`}>
@@ -465,7 +465,7 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-0.5">
                       <span className="text-sm font-semibold text-slate-800">{s.name}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${s.category==="central"?"bg-orange-100 text-orange-700":"bg-violet-100 text-violet-700"}`}>{s.category==="central"?"Central":"State — MH"}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${s.category==="central"?"bg-teal-100 text-teal-800":"bg-green-100 text-green-800"}`}>{s.category==="central"?"Central":"State — MH"}</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">{s.ministry}</div>
                   </div>
@@ -497,8 +497,8 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
           ):(
             <div className="space-y-3">
               {grievances.map(g=>(
-                <div key={g.id} className={`border rounded-xl overflow-hidden ${g.status==="Open"?"border-orange-200":g.status==="In Progress"?"border-blue-200":"border-slate-200"}`}>
-                  <div className={`px-4 py-3 flex flex-wrap items-start gap-3 ${g.status==="Open"?"bg-orange-50":g.status==="In Progress"?"bg-blue-50":"bg-slate-50"}`}>
+                <div key={g.id} className={`border rounded-xl overflow-hidden ${g.status==="Open"?"border-lime-300":g.status==="In Progress"?"border-teal-200":"border-slate-200"}`}>
+                  <div className={`px-4 py-3 flex flex-wrap items-start gap-3 ${g.status==="Open"?"bg-lime-50":g.status==="In Progress"?"bg-teal-50":"bg-slate-50"}`}>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-bold text-slate-800 mb-1">{g.title}</div>
                       <div className="flex flex-wrap gap-1.5">
@@ -581,7 +581,7 @@ export default function VerifiedFarmerCard({ farmer }: { farmer: FarmerRecord })
             {timeline.map((ev,i)=>(
               <div key={i} className="relative mb-5 last:mb-0">
                 <div className={`absolute -left-5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${
-                  ev.icon==="verify"?"bg-emerald-500":ev.icon==="scheme"?"bg-blue-500":ev.icon==="grievance"?"bg-orange-500":ev.icon==="review"?"bg-amber-500":"bg-secondary"
+                  ev.icon==="verify"?"bg-emerald-500":ev.icon==="scheme"?"bg-teal-500":ev.icon==="grievance"?"bg-green-600":ev.icon==="review"?"bg-lime-500":"bg-secondary"
                 }`}>
                   {ev.icon==="verify"&&<BadgeCheck className="h-2.5 w-2.5 text-white"/>}
                   {ev.icon==="scheme"&&<Shield className="h-2.5 w-2.5 text-white"/>}
