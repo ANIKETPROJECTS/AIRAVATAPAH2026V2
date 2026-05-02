@@ -1670,6 +1670,7 @@ const PROFILE_SECTIONS: {
         key: "rights & encumbrances",
         fields: [
           { key: "tenantName", label: "Tenant Name", placeholder: "Tenant / kul name" },
+          { key: "encumbrances", label: "Encumbrances", placeholder: "e.g. बोजा / तारण", span: true },
           { key: "boundaryMarks", label: "Boundary & Survey Marks", placeholder: "e.g. सीमा आणी भूमापन चिन्ह", span: true },
         ],
       },
