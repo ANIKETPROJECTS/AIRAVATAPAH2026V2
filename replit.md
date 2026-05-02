@@ -62,6 +62,21 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Port 18593**: Transparent proxy → localhost:5000 (Vite). Also maps to `externalPort = 80` in `.replit`. Both 8080 and 18593 run via `scripts/redirect-8080.mjs`.
 - **Key insight**: The root cause of "API server unavailable" on uploads was that port 8080 was a redirect server (returning 301 for all requests). Changing it to a transparent proxy fixed multipart POST upload from the browser.
 
+### Verified Farmers Section (below Farmer Registry table)
+- **Component**: `src/components/modules/VerifiedFarmerCard.tsx`
+- **Trigger**: Auto-renders below registry table whenever any farmer has status `"Verified"`
+- **Card contents** (collapsible expand/collapse):
+  - Header: initials avatar, full name, farmer ID, village/district, phone/email, क्षेत्रफळ + crop, Verified badge, OCR badge
+  - Summary strip: eligible schemes count, applied/active schemes, open grievances, open tickets
+  - **Personal Details**: father, DOB, gender, category, religion, Aadhaar, mobile, email, disability info
+  - **Land & Farm Details**: per-parcel — survey no., village, district, taluka, total/irrigated area (हे.आर.चौ.मी.), ownership, soil type, crops, farming type, irrigation sources
+  - **Bank & Financial**: bank name, branch, IFSC, account no., type, Aadhaar linkage, NPCI/DBT status
+  - **Scheme Eligibility & Applications**: 10 schemes (PM-KISAN, PMFBY, KCC, SHC, PKVY, PMAY-G, MMS, NMSA, GKY, Drip irrigation). Smart eligibility logic based on land area, category (SC/ST/OBC), bank linkage, crop type. Shows applied status (Applied / Approved / Disbursed / Rejected), application date, disbursed amount.
+  - **Grievances**: per-farmer list with status (Open/In Progress/Resolved/Closed), priority, description, filed/resolved dates
+  - **Support Tickets**: type (Document/Payment/Scheme/Technical), status, description, date
+  - **Documents**: uploaded document list with status indicators
+- **Land format helper**: `formatLandHAR()` used throughout — "1.16.30" → "1 हे. 16 आर. 30 चौ.मी."
+
 ### Canvas / Mockup Sandbox (`artifacts/mockup-sandbox`)
 - **Type**: Design mockup sandbox (pre-existing scaffold)
 - **Preview path**: `/__mockup`

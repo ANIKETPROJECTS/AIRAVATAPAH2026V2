@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2, Eye, XCircle, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2, Eye, XCircle, CheckCircle2, Users, SlidersHorizontal } from "lucide-react";
 import { apiFetchFarmers, apiDeleteFarmer, apiUpdateFarmer, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
 import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
 import FarmerDetailModal from "@/components/modules/FarmerDetailModal";
 import FarmerReviewModal from "@/components/modules/FarmerReviewModal";
+import VerifiedFarmerCard from "@/components/modules/VerifiedFarmerCard";
 
 function formatLandHAR(val: number | string | undefined): string {
   if (val === undefined || val === null || val === "" || val === "0" || val === 0) return "—";
@@ -365,6 +366,42 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
           </div>
         </div>
       )}
+
+      {/* ── Verified Farmers Section ── */}
+      {!loading && !error && (() => {
+        const verifiedFarmers = farmers.filter(f => f.status === "Verified");
+        if (verifiedFarmers.length === 0) return null;
+        return (
+          <div className="space-y-4 pt-2">
+            {/* Section header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-1 rounded-full bg-emerald-500" />
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Users className="h-5 w-5 text-emerald-600" />
+                    Verified Farmers
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {verifiedFarmers.length} farmer{verifiedFarmers.length !== 1 ? "s" : ""} verified — full profiles, scheme eligibility, grievances & tickets
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {verifiedFarmers.length} Verified
+              </span>
+            </div>
+
+            {/* Cards grid */}
+            <div className="grid grid-cols-1 gap-4">
+              {verifiedFarmers.map(f => (
+                <VerifiedFarmerCard key={f.farmerId} farmer={f} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Full review modal for OCR/Pending/Verified/Cancelled farmers */}
       {reviewFarmer && (
