@@ -320,6 +320,24 @@ function nonEmpty(v: string | undefined): string | undefined {
   return trimmed;
 }
 
+/**
+ * Strip trailing administrative annotations from a survey number string.
+ * Form 8A cells often print notes like 'भूमिअभिलेख निर्णयात्' in the same
+ * cell as the survey number (e.g. '77/3 भूमिअभिलेख निर्णयात्').
+ * We keep only the leading numeric/alphanumeric survey number token.
+ */
+function cleanSurveyNumber(v: string | undefined): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const trimmed = v.trim();
+  if (!trimmed) return undefined;
+  // Match the survey number: digits optionally followed by "/" and more digits/letters
+  const match = trimmed.match(/^(\d+(?:\/[\dA-Za-z]+)*)/);
+  if (match) return match[1];
+  // Fallback: strip anything after the first Devanagari character
+  const devanagariIdx = trimmed.search(/[\u0900-\u097F]/);
+  return (devanagariIdx > 0 ? trimmed.slice(0, devanagariIdx) : trimmed).trim() || undefined;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Mapping: extractor output -> profile sub-document.                        */
 /* ------------------------------------------------------------------------- */
@@ -971,7 +989,7 @@ export function mapExtractionToSection(
         village: nonEmpty(fields["village"]),
         taluka: nonEmpty(fields["taluka"]),
         district: nonEmpty(fields["district"]),
-        surveyNumber: nonEmpty(fields["survey_number"]),
+        surveyNumber: cleanSurveyNumber(fields["survey_number"]),
         puId: nonEmpty(fields["pu_id"]),
         occupantClass: nonEmpty(fields["occupant_class"]),
         ownerNames,
@@ -1046,7 +1064,7 @@ export function mapExtractionToSection(
         village: nonEmpty(fields["village"]),
         taluka: nonEmpty(fields["taluka"]),
         district: nonEmpty(fields["district"]),
-        surveyNumber: nonEmpty(fields["survey_number"]),
+        surveyNumber: cleanSurveyNumber(fields["survey_number"]),
         khateNumber: nonEmpty(fields["khate_number"]),
         cropEntries: cropEntries.length > 0 ? cropEntries : undefined,
         tables: tablesFromBlocks.length > 0 ? tablesFromBlocks : undefined,
@@ -1078,7 +1096,7 @@ export function mapExtractionToSection(
           const v = row.values as Record<string, string>;
           const entry = stripUndefined({
             villageForm6Entry: nonEmpty(v["village_form_6_entry"]),
-            surveyNumberWithSubdivision: nonEmpty(
+            surveyNumberWithSubdivision: cleanSurveyNumber(
               v["survey_number_with_subdivision"],
             ),
             areaOrExtent: nonEmpty(v["area_or_extent"]),

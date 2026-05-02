@@ -809,7 +809,7 @@ const FORM8A: DocumentTypeDef = {
       label: "Holdings (धारण जमिनींची नोंदवही)",
       section: "Holdings Table",
       description:
-        "Each non-total row of the धारण जमिनींची नोंदवही table — one row per survey-number holding held under this khate. SKIP the bold 'एकूण' totals row entirely (it is captured in the top-level totals fields instead). Preserve every printed cell verbatim, including units and any embedded notes (e.g. 'भूमिअभिलेख निर्णयात्').",
+        "Each non-total row of the धारण जमिनींची नोंदवही table — one row per survey-number holding held under this khate. SKIP the bold 'एकूण' totals row entirely (it is captured in the top-level totals fields instead). Preserve every printed cell verbatim, including units. Do NOT include administrative annotations printed in the same cell (e.g. 'भूमिअभिलेख निर्णयात्') — those are legal status notes, not part of the survey number.",
       columns: [
         {
           key: "village_form_6_entry",
@@ -822,7 +822,7 @@ const FORM8A: DocumentTypeDef = {
           key: "survey_number_with_subdivision",
           label: "Survey No. / Sub-Division (भूमापन क्रमांक व उपविभाग क्रमांक)",
           description:
-            "Column (२) — survey number with sub-division, plus any inline note printed in the same cell (e.g. '77/3 भूमिअभिलेख निर्णयात्').",
+            "Column (२) — survey number with sub-division only (e.g. '77/3'). Extract only the numeric survey number and sub-division code. Do NOT include any inline administrative notes printed alongside it (e.g. 'भूमिअभिलेख निर्णयात्') — strip those entirely.",
           type: "string",
         },
         {
