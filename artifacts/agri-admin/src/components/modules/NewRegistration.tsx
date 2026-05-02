@@ -6,6 +6,7 @@ import {
   ArrowRight, ArrowLeft, ChevronRight,
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
+import { TransliteratedText } from "@/components/TransliteratedText";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -957,7 +958,9 @@ function FieldsTable({
                       <td className="px-4 py-2.5 text-muted-foreground w-2/5 font-medium">
                         {tField(f.key, lang, f.label)}
                       </td>
-                      <td className="px-4 py-2.5 text-foreground break-words">{translateValue(f.value, lang)}</td>
+                      <td className="px-4 py-2.5 text-foreground break-words">
+                        <TransliteratedText value={translateValue(f.value, lang)} lang={lang} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
