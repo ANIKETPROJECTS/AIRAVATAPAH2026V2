@@ -183,13 +183,7 @@ const FORM7: DocumentTypeDef = {
       type: "string",
       section: "Mutation",
     },
-    {
-      key: "last_mutation_date",
-      label: "Last Mutation Date",
-      description: "Date of the most recent mutation entry.",
-      type: "string",
-      section: "Mutation",
-    },
+
     {
       key: "pending_mutation",
       label: "Pending Mutation (प्रलंबित फेरफार)",

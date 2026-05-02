@@ -76,11 +76,9 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "non_cultivated_area":{ mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
   "tenant_name":       { mr: "कुळाचे नाव",                            hi: "किरायेदार का नाम",                       en: "Tenant Name" },
   "tenant_rent":       { mr: "खंड",                                    hi: "किराया",                                 en: "Tenant Rent" },
-  "other_rights":      { mr: "इतर अधिकार",                            hi: "अन्य अधिकार",                            en: "Other Rights" },
   "encumbrances":      { mr: "बोजा / तारण",                           hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
   "boundary_and_survey_marks":{ mr: "सीमा आणि सर्वेक्षण खुणा",       hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
   "last_mutation_number":{ mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
-  "last_mutation_date":{ mr: "शेवटचा फेरफार दिनांक",                 hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
   "pending_mutation":  { mr: "प्रलंबित फेरफार",                       hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
   // Form 12 fields
   "crop_name":         { mr: "पिकांचे नाव",                           hi: "फसल का नाम",                             en: "Primary Crop" },
@@ -169,11 +167,9 @@ const PROFILE_FIELD_LABEL_MAP: Record<string, LangMap> = {
   "nonCultivatedArea":   { mr: "बिन शेती क्षेत्र",                    hi: "अकृषित क्षेत्र",                         en: "Non-Cultivated Area" },
   "tenantName":          { mr: "कुळाचे नाव",                          hi: "किरायेदार का नाम",                       en: "Tenant Name" },
   "tenantRent":          { mr: "खंड",                                  hi: "किराया",                                 en: "Tenant Rent" },
-  "otherRights":         { mr: "इतर अधिकार",                          hi: "अन्य अधिकार",                            en: "Other Rights" },
   "encumbrances":        { mr: "बोजा / तारण",                         hi: "भार / बंधक",                             en: "Encumbrance / Mortgage" },
   "boundaryMarks":       { mr: "सीमा आणि सर्वेक्षण खुणा",             hi: "सीमा और सर्वेक्षण चिह्न",               en: "Boundary & Survey Marks" },
   "lastMutationNumber":        { mr: "शेवटचा फेरफार क्र.",                  hi: "अंतिम म्यूटेशन क्र.",                    en: "Last Mutation No." },
-  "lastMutationDate":          { mr: "शेवटचा फेरफार दिनांक",               hi: "अंतिम म्यूटेशन तिथि",                    en: "Last Mutation Date" },
   "pendingMutation":           { mr: "प्रलंबित फेरफार",                     hi: "लंबित म्यूटेशन",                         en: "Pending Mutation" },
   "previousMutationNumbers":   { mr: "जुने फेरफार क्रमांक",                hi: "पिछले म्यूटेशन क्रमांक",                 en: "Previous Mutation Numbers" },
   "form8aYear":          { mr: "वर्ष",                                 hi: "वर्ष",                                   en: "Year" },
@@ -620,11 +616,11 @@ export interface FarmerProfile {
   nonCultivatedArea: string;
   tenantName: string;
   tenantRent: string;
-  otherRights: string;
+
   encumbrances: string;
   boundaryMarks: string;
   lastMutationNumber: string;
-  lastMutationDate: string;
+
   pendingMutation: string;
   previousMutationNumbers: string;
   form8aYear: string;
@@ -660,8 +656,8 @@ const EMPTY_PROFILE: FarmerProfile = {
   village: "", district: "", taluka: "", surveyNumber: "", puId: "",
   khateNumber: "", occupantClass: "", ownerNames: "", ownerShare: "", modeOfAcquisition: "",
   land: "", landRevenue: "", collectionCharges: "", nonAgriculturalArea: "", nonCultivatedArea: "",
-  tenantName: "", tenantRent: "", otherRights: "", encumbrances: "", boundaryMarks: "",
-  lastMutationNumber: "", lastMutationDate: "", pendingMutation: "", previousMutationNumbers: "",
+  tenantName: "", tenantRent: "", encumbrances: "", boundaryMarks: "",
+  lastMutationNumber: "", pendingMutation: "", previousMutationNumbers: "",
   form8aYear: "", form8aReportDate: "", khateAccountType: "",
   khatedarAddress: "", totalAssessment: "", totalDamageInherited: "",
   totalZpCess: "", totalGpCess: "", totalRecovery: "", grandTotal: "", crop: "",
@@ -799,11 +795,11 @@ function extractProfileFromStates(
   pick(["non_cultivated_area"], "nonCultivatedArea", ["form7"]);
   pick(["tenant_name"], "tenantName", ["form7"]);
   pick(["tenant_rent"], "tenantRent", ["form7"]);
-  pick(["other_rights"], "otherRights", ["form7"]);
+
   pick(["encumbrances"], "encumbrances", ["form7"]);
   pick(["boundary_and_survey_marks"], "boundaryMarks", ["form7"]);
   pick(["last_mutation_number"], "lastMutationNumber", ["form7"]);
-  pick(["last_mutation_date"], "lastMutationDate", ["form7"]);
+
   pick(["pending_mutation"], "pendingMutation", ["form7"]);
   pick(["old_mutation_numbers", "previous mutation"], "previousMutationNumbers", ["form7"]);
   pick(["year"], "form8aYear", ["form8a"]);
@@ -1674,7 +1670,7 @@ const PROFILE_SECTIONS: {
         key: "rights & encumbrances",
         fields: [
           { key: "tenantName", label: "Tenant Name", placeholder: "Tenant / kul name" },
-          { key: "otherRights", label: "Other Rights", placeholder: "e.g. कुलाचे नाव व खनड", span: true },
+
         ],
       },
       {
