@@ -1514,7 +1514,6 @@ const PROFILE_SECTIONS: {
         key: "account holder",
         fields: [
           { key: "bankHolderName", label: "Account Holder Name", placeholder: "Full name of account holder", span: true },
-          { key: "nomineeRelationship", label: "Nominee Relationship", placeholder: "e.g. S/D/H/o" },
           { key: "email", label: "Email Address", placeholder: "e.g. name@bank.in" },
           { key: "bankCustomerAddress", label: "Customer Address", placeholder: "Customer's mailing address", span: true },
         ],
