@@ -1,32 +1,24 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Search, Users, Loader2, AlertCircle, BadgeCheck, BarChart3,
-  AlertTriangle, Ticket, Filter, RefreshCw, MapPin, Phone,
-  Sprout, X, ChevronUp, Hash, Shield, FileText, Landmark, CreditCard
+  AlertTriangle, Ticket, Filter, RefreshCw, MapPin,
+  Shield, ChevronLeft, Hash,
 } from "lucide-react";
 import { apiFetchFarmers, type FarmerRecord } from "@/data/farmerApi";
 import VerifiedFarmerCard from "@/components/modules/VerifiedFarmerCard";
 
+/* ─── helpers ─── */
 function formatLandHAR(val: number | string | undefined): string {
   if (val === undefined || val === null || val === "" || val === "0" || val === 0) return "—";
   const s = String(val).trim();
   const parts = s.split(".");
-  if (parts.length === 3) {
-    const [h, a, sm] = parts;
-    return `${h} हे. ${a} आर. ${sm} चौ.मी.`;
-  }
-  if (parts.length === 2) {
-    const [h, a] = parts;
-    if (a === "0" || a === "00") return `${h} हे.`;
-    return `${h} हे. ${a} आर.`;
-  }
+  if (parts.length === 3) return `${parts[0]} हे. ${parts[1]} आर. ${parts[2]} चौ.मी.`;
+  if (parts.length === 2) return parts[1] === "0" || parts[1] === "00" ? `${parts[0]} हे.` : `${parts[0]} हे. ${parts[1]} आर.`;
   return `${s} हे.`;
 }
-
 function landToHectares(val: number | string | undefined): number {
   if (!val) return 0;
-  const s = String(val).trim();
-  const parts = s.split(".");
+  const parts = String(val).trim().split(".");
   return parseFloat(parts[0] || "0") + parseFloat(parts[1] || "0") / 100 + parseFloat(parts[2] || "0") / 10000;
 }
 
@@ -40,32 +32,24 @@ const AVATAR_GRADIENTS = [
   "from-green-600 to-emerald-800",
   "from-lime-400 to-teal-600",
 ];
-
 function farmerGradient(id: string) {
-  const n = parseInt(id.replace(/\D/g, "") || "0") % AVATAR_GRADIENTS.length;
-  return AVATAR_GRADIENTS[n];
+  return AVATAR_GRADIENTS[parseInt(id.replace(/\D/g, "") || "0") % AVATAR_GRADIENTS.length];
 }
-
 function schemeCount(f: FarmerRecord) {
   const ha = landToHectares(f.land);
   const hasBank = !!(f.bankAccount && f.bankAccount !== "—" && f.bankAccount.length > 4);
-  let count = 0;
-  if (ha > 0 && ha <= 2 && hasBank) count += 2; // PM-KISAN + NMSA
-  if (ha > 0) count += 3; // PMFBY, SHC, GKY
-  if (ha > 0 && hasBank) count++; // KCC
-  if (ha >= 0.5) count++; // PKVY
-  if (ha >= 0.6) count++; // MMS
-  if (ha >= 0.4) count++; // DRIP
-  return Math.min(count, 10);
+  let c = 0;
+  if (ha > 0 && ha <= 2 && hasBank) c += 2;
+  if (ha > 0) c += 3;
+  if (ha > 0 && hasBank) c++;
+  if (ha >= 0.5) c++;
+  if (ha >= 0.6) c++;
+  if (ha >= 0.4) c++;
+  return Math.min(c, 10);
 }
 
-function CompactFarmerCard({
-  farmer, selected, onClick,
-}: {
-  farmer: FarmerRecord;
-  selected: boolean;
-  onClick: () => void;
-}) {
+/* ─── Compact card (grid item) ─── */
+function CompactFarmerCard({ farmer, onClick }: { farmer: FarmerRecord; onClick: () => void }) {
   const initials = farmer.name.trim().split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const grad = farmerGradient(farmer.farmerId);
   const eligible = schemeCount(farmer);
@@ -77,17 +61,11 @@ function CompactFarmerCard({
   return (
     <button
       onClick={onClick}
-      className={`group w-full text-left rounded-2xl border-2 transition-all duration-200 overflow-hidden cursor-pointer
-        ${selected
-          ? "border-secondary shadow-lg shadow-secondary/15 scale-[1.01]"
-          : "border-border hover:border-secondary/50 hover:shadow-md hover:scale-[1.005]"
-        } bg-card`}
+      className="group w-full text-left rounded-2xl border-2 border-border hover:border-secondary/60 hover:shadow-lg hover:shadow-secondary/10 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden bg-card cursor-pointer"
     >
-      {/* Card top color bar */}
       <div className={`h-1.5 w-full bg-gradient-to-r ${grad}`} />
-
       <div className="p-4">
-        {/* Avatar + Badges row */}
+        {/* Avatar + Badges */}
         <div className="flex items-start justify-between mb-3">
           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center font-bold text-white text-base shadow-sm flex-shrink-0`}>
             {initials}
@@ -106,55 +84,45 @@ function CompactFarmerCard({
         </div>
 
         {/* Name */}
-        <div className="mb-0.5">
-          <h3 className="font-bold text-sm text-foreground leading-tight truncate">{farmer.name}</h3>
-          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{farmer.farmerId}</p>
-        </div>
+        <h3 className="font-bold text-sm text-foreground leading-tight truncate mb-0.5">{farmer.name}</h3>
+        <p className="text-[11px] text-muted-foreground font-mono mb-1">{farmer.farmerId}</p>
 
         {/* Location */}
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-3 mt-1">
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-3">
           <MapPin className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">{farmer.village}, {farmer.district}</span>
         </div>
 
-        {/* Crop + Land */}
+        {/* Land + Crop */}
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="bg-muted/40 rounded-lg px-2.5 py-1.5">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">क्षेत्रफळ</div>
-            <div className="text-[11px] font-semibold text-foreground font-mono leading-tight">{formatLandHAR(farmer.land)}</div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
+            <div className="text-[9px] text-emerald-600 uppercase tracking-wide mb-0.5 font-semibold">क्षेत्रफळ</div>
+            <div className="text-[11px] font-semibold text-emerald-900 font-mono leading-tight">{formatLandHAR(farmer.land)}</div>
           </div>
-          <div className="bg-muted/40 rounded-lg px-2.5 py-1.5">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">पीक</div>
-            <div className="text-[11px] font-semibold text-foreground truncate leading-tight">{farmer.crop || "—"}</div>
+          <div className="bg-lime-50 border border-lime-200 rounded-lg px-2.5 py-1.5">
+            <div className="text-[9px] text-lime-700 uppercase tracking-wide mb-0.5 font-semibold">पीक</div>
+            <div className="text-[11px] font-semibold text-lime-900 truncate leading-tight">{farmer.crop || "—"}</div>
           </div>
         </div>
 
         {/* Stat pills */}
-        <div className="flex gap-1.5 flex-wrap">
-          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-semibold">
             <Shield className="h-2.5 w-2.5" />{eligible} Schemes
           </span>
-          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
-            openGrievances > 0
-              ? "bg-lime-50 text-lime-700 border-lime-300"
-              : "bg-muted/30 text-muted-foreground border-border"
-          }`}>
+          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${openGrievances > 0 ? "bg-lime-50 text-lime-700 border-lime-300" : "bg-muted/30 text-muted-foreground border-border"}`}>
             <AlertTriangle className="h-2.5 w-2.5" />{openGrievances} GRV
           </span>
-          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
-            openTickets > 0
-              ? "bg-green-50 text-green-800 border-green-300"
-              : "bg-muted/30 text-muted-foreground border-border"
-          }`}>
+          <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${openTickets > 0 ? "bg-green-50 text-green-800 border-green-300" : "bg-muted/30 text-muted-foreground border-border"}`}>
             <Ticket className="h-2.5 w-2.5" />{openTickets} TKT
           </span>
         </div>
 
         {/* Footer */}
-        <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+        <div className="pt-3 border-t border-border/50 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground">Reg: {regDate}</span>
-          <span className={`text-[10px] font-semibold transition-colors ${selected ? "text-secondary" : "text-muted-foreground group-hover:text-secondary"}`}>
-            {selected ? "▲ Hide Profile" : "▼ View Profile"}
+          <span className="text-[10px] font-semibold text-secondary group-hover:underline">
+            View Profile →
           </span>
         </div>
       </div>
@@ -162,6 +130,34 @@ function CompactFarmerCard({
   );
 }
 
+/* ─── Profile page view ─── */
+function ProfileView({ farmer, onBack }: { farmer: FarmerRecord; onBack: () => void }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
+  return (
+    <div>
+      {/* Breadcrumb / back bar */}
+      <div className="flex items-center gap-3 mb-5">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-secondary/80 bg-secondary/8 hover:bg-secondary/15 border border-secondary/20 px-4 py-2 rounded-xl transition-all"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back to Farmers
+        </button>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Farmers</span>
+          <span className="text-muted-foreground/40">›</span>
+          <span className="font-semibold text-foreground">{farmer.name}</span>
+          <span className="font-mono text-xs text-muted-foreground">({farmer.farmerId})</span>
+        </div>
+      </div>
+
+      {/* Full profile card */}
+      <VerifiedFarmerCard farmer={farmer} />
+    </div>
+  );
+}
+
+/* ─── Main page ─── */
 export default function VerifiedFarmers() {
   const [farmers, setFarmers] = useState<FarmerRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,7 +165,6 @@ export default function VerifiedFarmers() {
   const [search, setSearch] = useState("");
   const [distFilter, setDistFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
 
   const loadFarmers = useCallback(async () => {
     try {
@@ -195,27 +190,14 @@ export default function VerifiedFarmers() {
 
   const filtered = useMemo(() => farmers.filter(f => {
     const s = search.toLowerCase();
-    const matchSearch = !s || f.name.toLowerCase().includes(s)
-      || f.farmerId.toLowerCase().includes(s)
-      || f.aadhaar.includes(s)
-      || f.village.toLowerCase().includes(s);
-    const matchDist = !distFilter || f.district === distFilter;
-    return matchSearch && matchDist;
+    const matchSearch = !s || f.name.toLowerCase().includes(s) || f.farmerId.toLowerCase().includes(s) || f.aadhaar.includes(s) || f.village.toLowerCase().includes(s);
+    return matchSearch && (!distFilter || f.district === distFilter);
   }), [search, distFilter, farmers]);
 
-  const selectedFarmer = filtered.find(f => f.farmerId === selectedId) ?? null;
-
-  const handleSelect = (id: string) => {
-    if (selectedId === id) {
-      setSelectedId(null);
-    } else {
-      setSelectedId(id);
-      setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-    }
-  };
-
+  const selectedFarmer = farmers.find(f => f.farmerId === selectedId) ?? null;
   const totalEligibleSchemes = farmers.reduce((acc, f) => acc + schemeCount(f), 0);
 
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground gap-3">
@@ -225,6 +207,7 @@ export default function VerifiedFarmers() {
     );
   }
 
+  /* ── Error ── */
   if (error) {
     return (
       <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
@@ -237,10 +220,16 @@ export default function VerifiedFarmers() {
     );
   }
 
-  return (
-    <div className="space-y-5 animate-fade-in" style={{ opacity: 0 }}>
+  /* ── Profile detail page ── */
+  if (selectedFarmer) {
+    return <ProfileView farmer={selectedFarmer} onBack={() => setSelectedId(null)} />;
+  }
 
-      {/* ── Summary strip ── */}
+  /* ── Grid page ── */
+  return (
+    <div className="space-y-5">
+
+      {/* Summary strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { icon: <BadgeCheck className="h-5 w-5 text-emerald-600" />, bg: "bg-emerald-100", value: farmers.length, label: "Verified Farmers" },
@@ -258,13 +247,13 @@ export default function VerifiedFarmers() {
         ))}
       </div>
 
-      {/* ── Search + filter bar ── */}
+      {/* Search + filter */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             value={search}
-            onChange={e => { setSearch(e.target.value); setSelectedId(null); }}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, ID, Aadhaar, village..."
             className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/40"
           />
@@ -273,7 +262,7 @@ export default function VerifiedFarmers() {
           <Filter className="h-4 w-4 text-muted-foreground" />
           <select
             value={distFilter}
-            onChange={e => { setDistFilter(e.target.value); setSelectedId(null); }}
+            onChange={e => setDistFilter(e.target.value)}
             className="text-sm bg-card border border-border rounded-lg px-3 py-2"
           >
             <option value="">All Districts</option>
@@ -285,7 +274,7 @@ export default function VerifiedFarmers() {
         </span>
       </div>
 
-      {/* ── Empty states ── */}
+      {/* Empty states */}
       {farmers.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center">
@@ -304,49 +293,22 @@ export default function VerifiedFarmers() {
         <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
           <Search className="h-8 w-8 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">No farmers match your search.</p>
-          <button
-            onClick={() => { setSearch(""); setDistFilter(""); }}
-            className="text-xs text-secondary underline"
-          >
+          <button onClick={() => { setSearch(""); setDistFilter(""); }} className="text-xs text-secondary underline">
             Clear filters
           </button>
         </div>
       )}
 
-      {/* ── 4-column compact card grid ── */}
+      {/* 4-column grid */}
       {filtered.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map(f => (
             <CompactFarmerCard
               key={f.farmerId}
               farmer={f}
-              selected={selectedId === f.farmerId}
-              onClick={() => handleSelect(f.farmerId)}
+              onClick={() => setSelectedId(f.farmerId)}
             />
           ))}
-        </div>
-      )}
-
-      {/* ── Expanded full profile ── */}
-      {selectedFarmer && (
-        <div ref={detailRef} className="mt-2">
-          {/* Detail header bar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-secondary/8 border border-secondary/20 rounded-t-2xl">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <BadgeCheck className="h-4 w-4 text-secondary" />
-              Full Profile — {selectedFarmer.name}
-              <span className="font-mono text-xs text-muted-foreground">({selectedFarmer.farmerId})</span>
-            </div>
-            <button
-              onClick={() => setSelectedId(null)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-card border border-border rounded-lg px-3 py-1.5 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" /> Close
-            </button>
-          </div>
-          <div className="border border-t-0 border-secondary/20 rounded-b-2xl overflow-hidden">
-            <VerifiedFarmerCard farmer={selectedFarmer} />
-          </div>
         </div>
       )}
 
