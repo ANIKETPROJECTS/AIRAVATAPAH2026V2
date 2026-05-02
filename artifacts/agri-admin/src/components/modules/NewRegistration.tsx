@@ -30,7 +30,6 @@ const FIELD_LABEL_MAP: Record<string, LangMap> = {
   "total_zp":          { mr: "एकूण जि.प. स्थानिक उपकर",              hi: "कुल जिला परिषद स्थानीय उपकर",            en: "Total Zilla Parishad Local Cess" },
   "total_gp":          { mr: "एकूण ग्रा.प. स्थानिक उपकर",            hi: "कुल ग्राम पंचायत स्थानीय उपकर",         en: "Total Gram Panchayat Local Cess" },
   "total_recovery":    { mr: "एकूण वसुलीसाठी",                       hi: "कुल वसूली के लिए",                       en: "Total Recovery Amount" },
-  "grand_total":       { mr: "एकूण",                                   hi: "कुल योग",                                en: "Grand Total" },
   "village_form_6":    { mr: "गाव नमुना सहा मधील नोंद",              hi: "ग्राम प्रपत्र छह में प्रविष्टि",         en: "Entry in Village Form 6" },
   "survey_number":     { mr: "भूमापन क्रमांक व उपविभाग क्रमांक",     hi: "सर्वे नंबर और उपखंड नंबर",               en: "Survey No. & Sub-division" },
   "land_holding":      { mr: "धारण क्षेत्र",                          hi: "धारित क्षेत्र",                          en: "Land Holding Area" },
@@ -281,20 +280,132 @@ function tField(fieldKey: string, lang: LangCode, fallback: string): string {
   return fallback;
 }
 
-/** Convert western/ASCII digits to Devanagari for mr/hi. */
+/**
+ * Domain-specific phrase map for Maharashtra land-record terms.
+ * Keys are canonical Marathi phrases. Values provide Hindi and English equivalents.
+ * Sorted longest-first at runtime so longer phrases are matched before sub-phrases.
+ */
+const TERM_MAP: Record<string, { en: string; hi: string }> = {
+  // Account types
+  "अविभक्त कुटुम्ब खाते":          { en: "Joint Family Account",              hi: "अविभाजित परिवार खाता" },
+  "अविभक्त कुटूम्ब खाते":          { en: "Joint Family Account",              hi: "अविभाजित परिवार खाता" },
+  "अविभक्त कुटुंब खाते":           { en: "Joint Family Account",              hi: "अविभाजित परिवार खाता" },
+  "वैयक्तिक खाते":                  { en: "Individual Account",                hi: "व्यक्तिगत खाता" },
+  "संस्था खाते":                    { en: "Institution Account",               hi: "संस्था खाता" },
+  "सरकारी खाते":                    { en: "Government Account",                hi: "सरकारी खाता" },
+  // Yes / No
+  "होय":                             { en: "Yes",                               hi: "हाँ" },
+  "नाही":                            { en: "No",                                hi: "नहीं" },
+  // Land / cultivation types
+  "बागायत":                          { en: "Irrigated",                         hi: "सिंचित" },
+  "जिरायत":                          { en: "Rainfed",                           hi: "वर्षाधारित" },
+  "कोरडवाहू":                        { en: "Dryland",                           hi: "असिंचित" },
+  "लागवड योग्य":                     { en: "Cultivable",                        hi: "कृषि योग्य" },
+  "लागवड":                           { en: "Cultivation",                       hi: "खेती" },
+  "पडीत जमीन":                       { en: "Fallow Land",                       hi: "परती भूमि" },
+  "पडीत":                            { en: "Fallow",                            hi: "परती" },
+  "वन जमीन":                         { en: "Forest Land",                       hi: "वन भूमि" },
+  // Rights / holders
+  "इतर हक्क":                        { en: "Other Rights",                      hi: "अन्य अधिकार" },
+  "कब्जेदार":                        { en: "Occupant",                          hi: "काबिज़दार" },
+  "भाडेकरू":                         { en: "Tenant",                            hi: "किराएदार" },
+  "वारस":                            { en: "Heir",                              hi: "उत्तराधिकारी" },
+  "खातेदार":                         { en: "Account Holder",                    hi: "खाताधारक" },
+  // Notice / instructions
+  "सुचना":                           { en: "Notice",                            hi: "सूचना" },
+  "सूचना":                           { en: "Notice",                            hi: "सूचना" },
+  "शेरा":                            { en: "Remarks",                           hi: "टिप्पणी" },
+  // Totals / amounts
+  "एकूण रक्कम":                      { en: "Total Amount",                      hi: "कुल राशि" },
+  "एकूण क्षेत्र":                    { en: "Total Area",                        hi: "कुल क्षेत्र" },
+  "एकूण":                            { en: "Total",                             hi: "कुल" },
+  "रक्कम":                           { en: "Amount",                            hi: "राशि" },
+  // Geography
+  "गाव":                             { en: "Village",                           hi: "गाँव" },
+  "तालुका":                          { en: "Taluka",                            hi: "तालुका" },
+  "जिल्हा":                          { en: "District",                          hi: "जिला" },
+  // Seasons / crops
+  "खरीप":                            { en: "Kharif",                            hi: "खरीफ" },
+  "रब्बी":                           { en: "Rabi",                              hi: "रबी" },
+  "उन्हाळी":                         { en: "Summer",                            hi: "गर्मी" },
+  // Common crop names
+  "गहू":                             { en: "Wheat",                             hi: "गेहूँ" },
+  "ज्वारी":                          { en: "Sorghum",                           hi: "ज्वार" },
+  "बाजरी":                           { en: "Pearl Millet",                      hi: "बाजरा" },
+  "कापूस":                           { en: "Cotton",                            hi: "कपास" },
+  "सोयाबीन":                         { en: "Soybean",                           hi: "सोयाबीन" },
+  "ऊस":                              { en: "Sugarcane",                         hi: "गन्ना" },
+  "द्राक्षे":                        { en: "Grapes",                            hi: "अंगूर" },
+  "डाळिंब":                          { en: "Pomegranate",                       hi: "अनार" },
+  // Status
+  "प्रलंबित":                        { en: "Pending",                           hi: "लंबित" },
+  "मंजूर":                           { en: "Approved",                          hi: "स्वीकृत" },
+  "नामंजूर":                         { en: "Rejected",                          hi: "अस्वीकृत" },
+  // Directions
+  "उत्तर":                           { en: "North",                             hi: "उत्तर" },
+  "दक्षिण":                          { en: "South",                             hi: "दक्षिण" },
+  "पूर्व":                           { en: "East",                              hi: "पूर्व" },
+  "पश्चिम":                          { en: "West",                              hi: "पश्चिम" },
+};
+
+const _SORTED_TERMS = Object.keys(TERM_MAP).sort((a, b) => b.length - a.length);
+
 function translateValue(value: string, lang: LangCode): string {
-  if (lang === "en" || !value) return value;
-  const d = ["०","१","२","३","४","५","६","७","८","९"];
-  return value.replace(/[0-9]/g, (ch) => d[parseInt(ch)]);
+  if (!value) return value;
+  const trimmed = value.trim();
+
+  // 1. Exact-match lookup (whole value is a known term)
+  if (TERM_MAP[trimmed]) {
+    const entry = TERM_MAP[trimmed];
+    const translated = lang === "en" ? entry.en : lang === "hi" ? entry.hi : trimmed;
+    return value.replace(trimmed, translated);
+  }
+
+  let result = value;
+
+  // 2. Arabic → Devanagari digits for mr / hi
+  if (lang !== "en") {
+    const d = ["०","१","२","३","४","५","६","७","८","९"];
+    result = result.replace(/[0-9]/g, (ch) => d[parseInt(ch)]);
+  }
+
+  // 3. Phrase-level replacement for hi / en (mr keeps original Marathi)
+  if (lang !== "mr") {
+    for (const term of _SORTED_TERMS) {
+      if (result.includes(term)) {
+        const entry = TERM_MAP[term];
+        const rep = lang === "en" ? entry.en : entry.hi;
+        result = result.split(term).join(rep);
+      }
+    }
+  }
+
+  return result;
 }
 
-/** Apply digit-localisation to HTML string (only inside text nodes, not attributes). */
+/** Apply digit-localisation AND phrase translation to HTML text nodes (not attributes). */
 function localizeHtml(html: string, lang: LangCode): string {
-  if (lang === "en" || !html) return html;
+  if (!html) return html;
+  const doDigits = lang !== "en";
+  const doTerms = lang !== "mr";
+  if (!doDigits && !doTerms) return html;
+
   const d = ["०","१","२","३","४","५","६","७","८","९"];
-  return html.replace(/>([^<]+)</g, (_m, text: string) =>
-    ">" + text.replace(/[0-9]/g, (ch) => d[parseInt(ch)]) + "<",
-  );
+
+  return html.replace(/>([^<]*)</g, (_m, text: string) => {
+    let t = text;
+    if (doDigits) t = t.replace(/[0-9]/g, (ch) => d[parseInt(ch)]);
+    if (doTerms) {
+      for (const term of _SORTED_TERMS) {
+        if (t.includes(term)) {
+          const entry = TERM_MAP[term];
+          const rep = lang === "en" ? entry.en : entry.hi;
+          t = t.split(term).join(rep);
+        }
+      }
+    }
+    return ">" + t + "<";
+  });
 }
 
 function tProfileField(fieldKey: string, lang: LangCode): string {
@@ -867,7 +978,7 @@ function FieldsTable({
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{ui("otherText", lang)}</p>
           {textBlocks.map((t, i) => (
             <div key={i} className="border-l-4 border-l-blue-400 bg-card border border-border rounded-md px-4 py-3 text-sm whitespace-pre-wrap break-words text-foreground">
-              {t}
+              {translateValue(t, lang)}
             </div>
           ))}
         </div>
