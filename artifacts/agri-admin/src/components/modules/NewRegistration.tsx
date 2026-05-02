@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Upload, CheckCircle2, XCircle, Loader2, FileText,
   User, Landmark, FileStack, Sprout,
@@ -1135,6 +1135,76 @@ function FarmerProfileCard({
     ? `data:${docStates["aadhar"].aadharPhoto.mimeType};base64,${docStates["aadhar"].aadharPhoto.base64}`
     : null;
 
+  // ── Form 8A editable table ──────────────────────────────────────────────
+  const form8aRawTable0 = docStates["form8a"]?.rawTables?.[0] ?? null;
+
+  const [editRows, setEditRows] = useState<string[][]>(
+    () => form8aRawTable0?.rows ?? []
+  );
+
+  // Re-initialise whenever a new Form 8A extraction completes
+  useEffect(() => {
+    setEditRows(docStates["form8a"]?.rawTables?.[0]?.rows ?? []);
+  }, [docStates["form8a"]?.status]);
+
+  const numCols = useMemo(() => {
+    if (!form8aRawTable0) return 0;
+    return Math.max(
+      form8aRawTable0.headers.length,
+      ...form8aRawTable0.rows.map(r => r.length),
+      0,
+    );
+  }, [form8aRawTable0]);
+
+  // Map column index → profile field key (anchored from the right)
+  const colToProfile = useMemo((): Record<number, keyof FarmerProfile> => {
+    if (numCols === 0) return {};
+    return {
+      [numCols - 1]: "grandTotal",
+      [numCols - 2]: "totalGpCess",
+      [numCols - 3]: "totalZpCess",
+      [numCols - 4]: "totalDamageInherited",
+      [numCols - 5]: "totalAssessment",
+      [numCols - 6]: "land",
+    };
+  }, [numCols]);
+
+  const profileToCol = useMemo((): Partial<Record<keyof FarmerProfile, number>> => {
+    const m: Partial<Record<keyof FarmerProfile, number>> = {};
+    Object.entries(colToProfile).forEach(([c, k]) => { m[k] = Number(c); });
+    return m;
+  }, [colToProfile]);
+
+  // Sync: profile field input → table cell (two-way)
+  const { land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal } = profile;
+  useEffect(() => {
+    if (editRows.length === 0 || numCols === 0) return;
+    setEditRows(prev => {
+      let changed = false;
+      const next = prev.map(row => {
+        const nr = [...row];
+        (Object.entries(profileToCol) as [keyof FarmerProfile, number][]).forEach(([key, col]) => {
+          if (col >= 0 && col < nr.length && nr[col] !== "" && nr[col] !== undefined) {
+            const val = profile[key] ?? "";
+            if (nr[col] !== val) { nr[col] = val; changed = true; }
+          }
+        });
+        return nr;
+      });
+      return changed ? next : prev;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [land, totalAssessment, totalDamageInherited, totalZpCess, totalGpCess, totalRecovery, grandTotal]);
+
+  // Handle table cell edit → update local rows + sync to profile field
+  const handleCellChange = useCallback((rowIdx: number, colIdx: number, val: string) => {
+    setEditRows(prev =>
+      prev.map((r, ri) => ri === rowIdx ? r.map((c, ci) => ci === colIdx ? val : c) : r)
+    );
+    const profileKey = colToProfile[colIdx];
+    if (profileKey) onChange(profileKey, val);
+  }, [colToProfile, onChange]);
+
   return (
     <div className="rounded-xl border-2 border-primary/30 bg-card shadow-md overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 bg-primary/5 border-b border-primary/20">
@@ -1214,23 +1284,56 @@ function FarmerProfileCard({
                     </div>
                   ))}
 
-                  {/* Holdings raw tables — rendered exactly like the extraction page */}
-                  {form8aRawTables.length > 0 && (
+                  {/* Holdings editable table */}
+                  {form8aRawTables.length > 0 && editRows.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Holdings (धारण जमिनींची नोंदवही)
                       </p>
-                      {form8aRawTables.map((tbl, idx) => (
-                        <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
-                            Table {idx + 1}
-                          </p>
-                          <div
-                            className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground"
-                            dangerouslySetInnerHTML={{ __html: cleanDocHtml(tbl.html) }}
-                          />
+                      <div className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
+                          Table 1 <span className="normal-case font-normal text-muted-foreground ml-1">— click any cell to edit</span>
+                        </p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse border border-border text-xs">
+                            {form8aRawTable0 && form8aRawTable0.headers.length > 0 && (
+                              <thead>
+                                <tr className="bg-muted/40">
+                                  {Array.from({ length: numCols }).map((_, hi) => (
+                                    <th key={hi} className="border border-border px-2 py-2 text-left font-semibold align-top whitespace-pre-wrap text-muted-foreground">
+                                      {form8aRawTable0.headers[hi] ?? ""}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                            )}
+                            <tbody>
+                              {editRows.map((row, ri) => (
+                                <tr key={ri} className={ri % 2 === 0 ? "bg-background" : "bg-muted/20"}>
+                                  {Array.from({ length: numCols }).map((_, ci) => {
+                                    const isMapped = colToProfile[ci] !== undefined;
+                                    return (
+                                      <td key={ci} className={`border border-border p-0 align-top ${isMapped ? "bg-teal-50/40" : ""}`}>
+                                        <input
+                                          type="text"
+                                          value={row[ci] ?? ""}
+                                          onChange={(e) => handleCellChange(ri, ci, e.target.value)}
+                                          className={`w-full px-2 py-1.5 bg-transparent text-xs focus:outline-none focus:bg-primary/5 min-w-[56px] ${isMapped ? "font-medium" : ""}`}
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                      ))}
+                        {numCols > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            Highlighted cells sync with the Totals fields above.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
