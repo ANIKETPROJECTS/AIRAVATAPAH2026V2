@@ -1741,6 +1741,7 @@ const PROFILE_SECTIONS: {
           { key: "totalDamageInherited", label: "Total Damage on Inherited Land", placeholder: "दुमाला जमिनीवरील नुकसान", span: true },
           { key: "totalZpCess", label: "Total ZP Local Cess", placeholder: "Zilla Parishad cess total", span: true },
           { key: "totalGpCess", label: "Total GP Local Cess", placeholder: "Gram Panchayat cess total", span: true },
+          { key: "totalRecovery", label: "Total Recovery Amount", placeholder: "एकूण वसुली रक्कम", span: true },
           { key: "grandTotal", label: "Grand Total", placeholder: "Final grand total" },
         ],
       },
