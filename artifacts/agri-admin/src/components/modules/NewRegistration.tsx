@@ -1181,70 +1181,85 @@ function FarmerProfileCard({
                   {isExtracted ? `${sectionFilled} / ${allFields.length} filled` : "Upload document to extract"}
                 </span>
               </div>
-              <div className="space-y-5">
-                {section.subsections.map((sub) => (
-                  <div key={sub.label}>
-                    <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2 ${section.subHeaderColor}`}>
-                      {sub.label}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {sub.fields.map(({ key, label, placeholder, span }) => (
-                        <div key={key} className={span ? "sm:col-span-2" : ""}>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
-                          <input
-                            type="text"
-                            value={profile[key as keyof FarmerProfile]}
-                            onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
-                            placeholder={placeholder}
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Holdings Table — rendered only for form8a when raw tables are available */}
-                {section.id === "form8a" && form8aRawTables.length > 0 && (
-                  <div>
-                    <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2 ${section.subHeaderColor}`}>
-                      Holdings (धारण जमिनींची नोंदवही)
-                    </p>
-                    <div className="overflow-x-auto rounded-lg border border-teal-200">
-                      {form8aRawTables.map((table, ti) => (
-                        <table key={ti} className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-teal-50">
-                              {table.headers.map((h, hi) => (
-                                <th
-                                  key={hi}
-                                  className="px-3 py-2 text-left font-semibold text-teal-700 border-b border-teal-200 whitespace-nowrap"
-                                >
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
+              {section.id === "form8a" ? (
+                /* Form 8A: extraction-style row layout with editable inputs */
+                <div className="space-y-5">
+                  {section.subsections.map((sub) => (
+                    <div key={sub.label}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                        {sub.label}
+                      </p>
+                      <div className="rounded-md border border-border overflow-hidden">
+                        <table className="w-full text-sm">
                           <tbody>
-                            {table.rows.map((row, ri) => (
-                              <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-teal-50/30"}>
-                                {row.map((cell, ci) => (
-                                  <td
-                                    key={ci}
-                                    className="px-3 py-2 text-foreground border-b border-teal-100 align-top"
-                                  >
-                                    {cell}
-                                  </td>
-                                ))}
+                            {sub.fields.map(({ key, label, placeholder }) => (
+                              <tr key={key} className="border-b border-border last:border-0">
+                                <td className="px-4 py-2.5 text-muted-foreground font-medium w-2/5 align-middle whitespace-nowrap">
+                                  {label}
+                                </td>
+                                <td className="px-3 py-1.5 align-middle">
+                                  <input
+                                    type="text"
+                                    value={profile[key as keyof FarmerProfile]}
+                                    onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
+                                    placeholder={placeholder}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                                  />
+                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Holdings raw tables — rendered exactly like the extraction page */}
+                  {form8aRawTables.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Holdings (धारण जमिनींची नोंदवही)
+                      </p>
+                      {form8aRawTables.map((tbl, idx) => (
+                        <div key={tbl.blockId ?? idx} className="border-l-4 border-l-orange-400 bg-card border border-border rounded-md p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 mb-3">
+                            Table {idx + 1}
+                          </p>
+                          <div
+                            className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground"
+                            dangerouslySetInnerHTML={{ __html: cleanDocHtml(tbl.html) }}
+                          />
+                        </div>
                       ))}
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                /* All other sections: standard grid input layout */
+                <div className="space-y-5">
+                  {section.subsections.map((sub) => (
+                    <div key={sub.label}>
+                      <p className={`text-[10px] font-semibold tracking-widest uppercase mb-2 ${section.subHeaderColor}`}>
+                        {sub.label}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {sub.fields.map(({ key, label, placeholder, span }) => (
+                          <div key={key} className={span ? "sm:col-span-2" : ""}>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+                            <input
+                              type="text"
+                              value={profile[key as keyof FarmerProfile]}
+                              onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
+                              placeholder={placeholder}
+                              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
