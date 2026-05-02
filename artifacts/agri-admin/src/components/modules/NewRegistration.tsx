@@ -1565,6 +1565,27 @@ function AiSummaryPanel({
   );
 }
 
+function fieldKeyToLabel(key: string): string {
+  const overrides: Record<string, string> = {
+    name: "Full Name", bankHolderName: "Account Holder Name", aadhaar: "Aadhaar No.",
+    bankAccount: "Account No.", ifsc: "IFSC Code", village: "Village",
+    district: "District", taluka: "Taluka", khateNumber: "Khate No.",
+    surveyNumber: "Survey No.", mobile: "Mobile No.",
+  };
+  return overrides[key] ?? key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+}
+
+function jumpToProfileField(key: string) {
+  const el = document.getElementById(`profile-field-${key}`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.focus({ preventScroll: true });
+  el.style.outline = "2px solid #f59e0b";
+  el.style.outlineOffset = "3px";
+  el.style.transition = "outline 0.3s ease";
+  setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 1800);
+}
+
 function IssueGroup({
   icon, label, labelClass, issues, accentClass, badgeClass, onResolve,
 }: {
@@ -1599,8 +1620,22 @@ function IssueGroup({
               {issue.details.map((d, j) => (
                 <div key={j} className="flex items-center gap-1 bg-white/80 border border-white rounded px-2 py-0.5 text-[10px]">
                   <span className="font-semibold text-muted-foreground">{d.doc}:</span>
-                  <span className="font-mono text-foreground">{d.value}</span>
+                  <span className="font-mono text-foreground break-all">{d.value}</span>
                 </div>
+              ))}
+            </div>
+          )}
+          {issue.fieldKeys.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {issue.fieldKeys.map(fk => (
+                <button
+                  key={fk}
+                  onClick={() => jumpToProfileField(fk)}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 bg-blue-50/60 hover:bg-blue-50 rounded px-2 py-0.5 transition-colors"
+                >
+                  <ArrowRight className="h-2.5 w-2.5 flex-shrink-0" />
+                  {fieldKeyToLabel(fk)}
+                </button>
               ))}
             </div>
           )}
@@ -2290,6 +2325,7 @@ export function FarmerProfileCard({
                                 </td>
                                 <td className="px-3 py-1.5 align-middle">
                                   <input
+                                    id={`profile-field-${key}`}
                                     type="text"
                                     value={profile[key as keyof FarmerProfile]}
                                     onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
@@ -2451,6 +2487,7 @@ export function FarmerProfileCard({
                               {isHighlighted && <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />}
                             </label>
                             <input
+                              id={`profile-field-${key}`}
                               type="text"
                               value={profile[key as keyof FarmerProfile]}
                               onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
