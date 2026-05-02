@@ -22,17 +22,36 @@ export interface DocRecord {
   status: "uploaded" | "failed" | "none";
 }
 
+export interface SavedDocState {
+  filename: string;
+  sections: Array<{
+    title: string;
+    fields: Array<{ key: string; label: string; value: string }>;
+    tables: Array<{
+      key: string;
+      label: string;
+      columns: Array<{ key: string; label: string }>;
+      rows: Array<{ values: Record<string, string> }>;
+    }>;
+  }>;
+  rawTables: Array<{ blockId?: string; headers: string[]; rows: string[][]; html: string }>;
+  textBlocks: string[];
+  aadharPhoto?: { base64: string; mimeType: string } | null;
+}
+
 export interface FarmerRecord {
   farmerId: string;
   name: string;
   village: string;
   district: string;
+  taluka?: string;
   land: number;
   crop: string;
   aadhaar: string;
+  khateNumber?: string;
   surveyNumber: string;
   bankAccount: string;
-  status: "Active" | "Inactive" | "Pending";
+  status: "Active" | "Inactive" | "Pending" | "Verified" | "Cancelled";
   source: "ocr" | "manual" | "seed";
   addedAt: string;
   fatherName?: string;
@@ -55,6 +74,8 @@ export interface FarmerRecord {
   npciStatus?: string;
   docs?: DocRecord[];
   aiRiskScore?: number;
+  extractionData?: Record<string, SavedDocState>;
+  farmerProfile?: Record<string, string>;
 }
 
 const API = "/api";

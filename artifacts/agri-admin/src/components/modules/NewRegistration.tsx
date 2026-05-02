@@ -10,7 +10,7 @@ import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
-type LangCode = "mr" | "hi" | "en";
+export type LangCode = "mr" | "hi" | "en";
 
 type LangMap = { mr: string; hi: string; en: string };
 
@@ -435,7 +435,7 @@ function tProfileField(fieldKey: string, lang: LangCode): string {
   return PROFILE_FIELD_LABEL_MAP[fieldKey]?.[lang] ?? fieldKey;
 }
 
-type DocTypeId = "form7" | "form12" | "form8a" | "aadhar" | "bank_passbook";
+export type DocTypeId = "form7" | "form12" | "form8a" | "aadhar" | "bank_passbook";
 type ExtractionStatus = "idle" | "uploading" | "processing" | "complete" | "error";
 type WorkflowStep = "upload" | "review";
 
@@ -466,7 +466,7 @@ const DOC_CARD_DESCS: Record<string, LangMap> = {
   "bank_passbook": { mr: "बँक खाते पासबुक पहिले पान",                  hi: "बैंक खाता पासबुक का पहला पृष्ठ",                en: "Bank account passbook front page" },
 };
 
-const DOC_CARD_SHORT: Record<string, LangMap> = {
+export const DOC_CARD_SHORT: Record<string, LangMap> = {
   "form7":         { mr: "फॉर्म ७",  hi: "फॉर्म ७",  en: "Form 7" },
   "form12":        { mr: "फॉर्म १२", hi: "फॉर्म १२", en: "Form 12" },
   "form8a":        { mr: "फॉर्म ८A", hi: "फॉर्म ८A", en: "Form 8A" },
@@ -474,7 +474,7 @@ const DOC_CARD_SHORT: Record<string, LangMap> = {
   "bank_passbook": { mr: "पासबुक",   hi: "पासबुक",    en: "Passbook" },
 };
 
-const DOC_CARDS: DocCard[] = [
+export const DOC_CARDS: DocCard[] = [
   {
     id: "form7",
     label: "Form 7 (Ownership Register)",
@@ -540,20 +540,20 @@ interface TableData {
   rows: { values: Record<string, string> }[];
 }
 
-interface RawTable {
+export interface RawTable {
   blockId?: string;
   headers: string[];
   rows: string[][];
   html: string;
 }
 
-interface SectionData {
+export interface SectionData {
   title: string;
   fields: FieldRow[];
   tables: TableData[];
 }
 
-interface ExtractionState {
+export interface ExtractionState {
   status: ExtractionStatus;
   filename: string;
   requestId: string | null;
@@ -565,7 +565,7 @@ interface ExtractionState {
   error: string | null;
 }
 
-const DEFAULT_STATE: ExtractionState = {
+export const DEFAULT_STATE: ExtractionState = {
   status: "idle",
   filename: "",
   requestId: null,
@@ -640,7 +640,7 @@ export interface FarmerProfile {
   email: string;
 }
 
-const EMPTY_PROFILE: FarmerProfile = {
+export const EMPTY_PROFILE: FarmerProfile = {
   name: "", aadhaar: "", vid: "", dob: "", gender: "", fathersName: "",
   mobile: "", address: "", pincode: "", state: "", issueDate: "", enrolmentNumber: "",
   village: "", district: "", taluka: "", surveyNumber: "", puId: "",
@@ -722,7 +722,7 @@ function fieldMatch(field: FieldRow, keywords: string[]): boolean {
   return keywords.some((kw) => h.includes(kw));
 }
 
-function extractProfileFromStates(
+export function extractProfileFromStates(
   allStates: Record<DocTypeId, ExtractionState>,
 ): Partial<FarmerProfile> {
   const out: Partial<FarmerProfile> = {};
@@ -1022,7 +1022,7 @@ function EditableSpannedTable({
   );
 }
 
-function FieldsTable({
+export function FieldsTable({
   sections,
   rawTables = [],
   textBlocks = [],
@@ -1808,7 +1808,7 @@ function EditableHtmlTable({
   );
 }
 
-function FarmerProfileCard({
+export function FarmerProfileCard({
   docStates,
   profile,
   onChange,
@@ -2219,17 +2219,34 @@ export default function NewRegistration() {
   };
 
   const handleApprove = () => {
+    const extractionData: Record<string, { filename: string; sections: SectionData[]; rawTables: RawTable[]; textBlocks: string[]; aadharPhoto: { base64: string; mimeType: string } | null }> = {};
+    for (const card of DOC_CARDS) {
+      const s = docStates[card.id];
+      if (s.status === "complete") {
+        extractionData[card.id] = {
+          filename: s.filename,
+          sections: s.sections,
+          rawTables: s.rawTables,
+          textBlocks: s.textBlocks,
+          aadharPhoto: s.aadharPhoto,
+        };
+      }
+    }
     apiCreateFarmer({
       name: profile.name || "Unknown Farmer",
       village: profile.village || profile.taluka || "—",
+      taluka: profile.taluka || "—",
       district: profile.district || "—",
       land: parseFloat(profile.land) || 0,
       crop: profile.crop || "—",
       aadhaar: profile.aadhaar || "—",
+      khateNumber: profile.khateNumber || "—",
       surveyNumber: profile.surveyNumber || "—",
       bankAccount: profile.bankAccount || "—",
-      status: "Active",
+      status: "Pending",
       source: "ocr",
+      extractionData,
+      farmerProfile: profile as unknown as Record<string, string>,
     }).then(() => {
       notifyFarmerChange();
     }).catch(() => {});

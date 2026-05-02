@@ -1,14 +1,16 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2 } from "lucide-react";
-import { apiFetchFarmers, apiDeleteFarmer, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
+import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2, Eye, XCircle, CheckCircle2 } from "lucide-react";
+import { apiFetchFarmers, apiDeleteFarmer, apiUpdateFarmer, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
 import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
 import FarmerDetailModal from "@/components/modules/FarmerDetailModal";
+import FarmerReviewModal from "@/components/modules/FarmerReviewModal";
 
 function StatusBadge({ status }: { status: string }) {
-  const cls = status === "Active" ? "bg-success/10 text-success" :
-    status === "Inactive" ? "bg-muted text-muted-foreground" :
-    "bg-warning/20 text-warning";
-  return <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${cls}`}>{status}</span>;
+  if (status === "Verified") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-100 text-emerald-700">Verified</span>;
+  if (status === "Cancelled") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-red-100 text-red-700">Cancelled</span>;
+  if (status === "Pending") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">Pending</span>;
+  if (status === "Active") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-success/10 text-success">Active</span>;
+  return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">{status}</span>;
 }
 
 export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: string) => void }) {
@@ -17,13 +19,15 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [distFilter, setDistFilter] = useState("");
-  const [cropFilter, setCropFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [viewFarmer, setViewFarmer] = useState<FarmerRecord | null>(null);
+  const [reviewFarmer, setReviewFarmer] = useState<FarmerRecord | null>(null);
   const [toast, setToast] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [quickAction, setQuickAction] = useState<string | null>(null);
 
   const loadFarmers = useCallback(async () => {
     try {
@@ -37,9 +41,7 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
     }
   }, []);
 
-  useEffect(() => {
-    loadFarmers();
-  }, [loadFarmers]);
+  useEffect(() => { loadFarmers(); }, [loadFarmers]);
 
   useEffect(() => {
     const handler = () => loadFarmers();
@@ -48,22 +50,20 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
   }, [loadFarmers]);
 
   const districts = useMemo(() => [...new Set(farmers.map(f => f.district))].sort(), [farmers]);
-  const crops = useMemo(() => [...new Set(farmers.map(f => f.crop))].sort(), [farmers]);
 
   const filtered = useMemo(() => {
     return farmers.filter(f => {
       const s = search.toLowerCase();
       const matchSearch = !s || f.name.toLowerCase().includes(s) || f.farmerId.toLowerCase().includes(s) || f.aadhaar.includes(s);
       const matchDist = !distFilter || f.district === distFilter;
-      const matchCrop = !cropFilter || f.crop === cropFilter;
-      return matchSearch && matchDist && matchCrop;
+      const matchStatus = !statusFilter || f.status === statusFilter;
+      return matchSearch && matchDist && matchStatus;
     });
-  }, [search, distFilter, cropFilter, farmers]);
+  }, [search, distFilter, statusFilter, farmers]);
 
   const totalPages = Math.ceil(filtered.length / 10);
   const pageData = filtered.slice(page * 10, (page + 1) * 10);
-
-  const newlyAdded = farmers.filter(f => f.source === "ocr" || f.source === "manual").length;
+  const pendingCount = farmers.filter(f => f.status === "Pending").length;
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -97,7 +97,30 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
 
   const handleFarmerUpdated = (updated: FarmerRecord) => {
     setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
-    setViewFarmer(updated);
+    setViewFarmer(null);
+    showToast(`Farmer ${updated.status === "Verified" ? "verified ✓" : updated.status === "Cancelled" ? "rejected" : "updated"}`);
+  };
+
+  const handleReviewUpdated = (updated: FarmerRecord) => {
+    setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
+    setReviewFarmer(null);
+    showToast(updated.status === "Verified" ? "Farmer verification approved ✓" : "Farmer registration cancelled");
+  };
+
+  const handleQuickReject = async (farmerId: string) => {
+    if (quickAction === farmerId) {
+      setQuickAction(null);
+      try {
+        const updated = await apiUpdateFarmer(farmerId, { status: "Cancelled" });
+        setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
+        showToast("Farmer rejected");
+      } catch {
+        showToast("Action failed — please try again");
+      }
+    } else {
+      setQuickAction(farmerId);
+      setTimeout(() => setQuickAction(prev => prev === farmerId ? null : prev), 3000);
+    }
   };
 
   const handleRegistrationSuccess = (msg: string) => {
@@ -113,10 +136,10 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
         </div>
       )}
 
-      {newlyAdded > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
-          <Sparkles className="h-4 w-4 flex-shrink-0" />
-          <span><strong>{newlyAdded}</strong> new farmer{newlyAdded > 1 ? "s" : ""} recently added and saved to the database.</span>
+      {pendingCount > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-yellow-600" />
+          <span><strong>{pendingCount}</strong> farmer{pendingCount > 1 ? "s" : ""} pending review and verification.</span>
         </div>
       )}
 
@@ -132,10 +155,14 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
           <option value="">All Districts</option>
           {districts.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={cropFilter} onChange={e => { setCropFilter(e.target.value); setPage(0); }}
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
           className="text-sm bg-card border border-border rounded-lg px-3 py-2">
-          <option value="">All Crops</option>
-          {crops.map(c => <option key={c} value={c}>{c}</option>)}
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Verified">Verified</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
         </select>
         <button onClick={() => onNavigate ? onNavigate("newregistration") : setShowAdd(true)} className="flex items-center gap-1.5 text-sm px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">
           <Plus className="h-4 w-4" /> Add Farmer
@@ -174,7 +201,7 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
                   <th className="px-4 py-3 font-medium">Village</th>
                   <th className="px-4 py-3 font-medium">District</th>
                   <th className="px-4 py-3 font-medium">Land (ac)</th>
-                  <th className="px-4 py-3 font-medium">Crop</th>
+                  <th className="px-4 py-3 font-medium">Khate No.</th>
                   <th className="px-4 py-3 font-medium">Aadhaar</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
@@ -184,7 +211,11 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
                 {pageData.map(f => (
                   <tr
                     key={f.farmerId}
-                    className={`border-t border-border/50 hover:bg-muted/30 transition-colors ${f.source === "ocr" ? "bg-emerald-50/40" : f.source === "manual" ? "bg-blue-50/30" : ""}`}
+                    className={`border-t border-border/50 hover:bg-muted/30 transition-colors ${
+                      f.status === "Pending" ? "bg-yellow-50/40" :
+                      f.source === "ocr" ? "bg-emerald-50/40" :
+                      f.source === "manual" ? "bg-blue-50/30" : ""
+                    }`}
                   >
                     <td className="px-4 py-2.5 font-mono text-xs">
                       <span className="flex items-center gap-1">
@@ -205,23 +236,76 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
                     <td className="px-4 py-2.5">{f.village}</td>
                     <td className="px-4 py-2.5">{f.district}</td>
                     <td className="px-4 py-2.5">{f.land}</td>
-                    <td className="px-4 py-2.5">{f.crop}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{f.khateNumber && f.khateNumber !== "—" ? f.khateNumber : <span className="text-muted-foreground/50">—</span>}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{f.aadhaar}</td>
                     <td className="px-4 py-2.5"><StatusBadge status={f.status} /></td>
                     <td className="px-4 py-2.5">
-                      <div className="flex gap-1 items-center">
-                        <button
-                          onClick={() => setViewFarmer(f)}
-                          className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-80"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => setViewFarmer(f)}
-                          className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80"
-                        >
-                          Edit
-                        </button>
+                      <div className="flex gap-1 items-center flex-wrap">
+                        {/* Pending farmers: Review + Reject */}
+                        {f.status === "Pending" && (
+                          <>
+                            <button
+                              onClick={() => setReviewFarmer(f)}
+                              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-85 font-medium transition-opacity"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Review
+                            </button>
+                            <button
+                              onClick={() => handleQuickReject(f.farmerId)}
+                              className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors ${
+                                quickAction === f.farmerId
+                                  ? "bg-destructive text-destructive-foreground animate-pulse"
+                                  : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                              }`}
+                            >
+                              <XCircle className="h-3 w-3" />
+                              {quickAction === f.farmerId ? "Confirm?" : "Reject"}
+                            </button>
+                          </>
+                        )}
+
+                        {/* Verified farmers: View (read-only) */}
+                        {f.status === "Verified" && (
+                          <button
+                            onClick={() => setReviewFarmer(f)}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-medium transition-colors"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            View
+                          </button>
+                        )}
+
+                        {/* Cancelled farmers: View */}
+                        {f.status === "Cancelled" && (
+                          <button
+                            onClick={() => setReviewFarmer(f)}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 font-medium transition-colors"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </button>
+                        )}
+
+                        {/* Active/Inactive (seed data): View + Edit */}
+                        {(f.status === "Active" || f.status === "Inactive") && (
+                          <>
+                            <button
+                              onClick={() => setViewFarmer(f)}
+                              className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-80"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => setViewFarmer(f)}
+                              className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80"
+                            >
+                              Edit
+                            </button>
+                          </>
+                        )}
+
+                        {/* Delete for all */}
                         <button
                           onClick={() => handleRowDelete(f.farmerId)}
                           disabled={deleting === f.farmerId}
@@ -266,12 +350,25 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
         </div>
       )}
 
+      {/* Full review modal for OCR/Pending/Verified/Cancelled farmers */}
+      {reviewFarmer && (
+        <FarmerReviewModal
+          farmer={reviewFarmer}
+          onClose={() => setReviewFarmer(null)}
+          onUpdated={handleReviewUpdated}
+        />
+      )}
+
+      {/* Legacy detail modal for Active/Inactive seed farmers */}
       {viewFarmer && (
         <FarmerDetailModal
           farmer={viewFarmer}
           onClose={() => setViewFarmer(null)}
           onDeleted={handleFarmerDeleted}
-          onUpdated={handleFarmerUpdated}
+          onUpdated={(updated) => {
+            setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
+            setViewFarmer(updated);
+          }}
         />
       )}
 
