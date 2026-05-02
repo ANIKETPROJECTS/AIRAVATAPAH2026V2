@@ -805,7 +805,7 @@ function extractProfileFromStates(
   pick(["last_mutation_number"], "lastMutationNumber", ["form7"]);
   pick(["last_mutation_date"], "lastMutationDate", ["form7"]);
   pick(["pending_mutation"], "pendingMutation", ["form7"]);
-  pick(["previous_mutation_numbers", "previous mutations"], "previousMutationNumbers", ["form7"]);
+  pick(["old_mutation_numbers", "previous mutation"], "previousMutationNumbers", ["form7"]);
   pick(["year"], "form8aYear", ["form8a"]);
   pick(["report_date"], "form8aReportDate", ["form8a"]);
   pick(["account_type", "khata type", "account type"], "khateAccountType", ["form8a"]);
