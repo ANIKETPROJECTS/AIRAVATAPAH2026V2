@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, Upload, Check, AlertCircle, Eye, Trash2, ArrowLeft } from "lucide-react";
 import { farmers } from "@/data/dummyData";
+import { addApprovedFarmer, nextFarmerId } from "@/data/farmerStore";
 
 const districtsByState: Record<string, string[]> = {
   Maharashtra: ["Nagpur", "Pune", "Amravati", "Nashik", "Latur", "Wardha"],
@@ -62,6 +63,7 @@ export default function FarmerRegistrationForm({ onClose, onSuccess }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [submitStep, setSubmitStep] = useState(-1);
   const [showResult, setShowResult] = useState(false);
+  const [generatedFarmerId, setGeneratedFarmerId] = useState("");
 
   // Step 1 fields — pre-filled with dummy data
   const [fullName, setFullName] = useState("Suresh Balaji Patil");
@@ -231,11 +233,71 @@ export default function FarmerRegistrationForm({ onClose, onSuccess }: Props) {
   };
 
   const handleSubmit = () => {
+    const farmerId = nextFarmerId();
+    setGeneratedFarmerId(farmerId);
     setSubmitting(true);
     setSubmitStep(0);
     setTimeout(() => setSubmitStep(1), 1500);
     setTimeout(() => setSubmitStep(2), 3000);
-    setTimeout(() => { setSubmitting(false); setShowResult(true); }, 4500);
+    setTimeout(() => {
+      addApprovedFarmer({
+        id: farmerId,
+        name: fullName,
+        village: landParcels[0]?.village || "",
+        district: landParcels[0]?.district || "",
+        land: parseFloat(landParcels[0]?.totalArea) || 0,
+        crop: landParcels[0]?.primaryCrop || "",
+        aadhaar,
+        surveyNumber: landParcels[0]?.surveyNo || "",
+        bankAccount: accountNo ? `****${accountNo.slice(-4)}` : "",
+        status: "Active",
+        source: "manual",
+        addedAt: new Date().toISOString(),
+        fatherName,
+        dob,
+        gender,
+        category,
+        religion,
+        mobile,
+        altMobile,
+        email,
+        diffAbled,
+        disabilityType,
+        landParcels: landParcels.map(lp => ({
+          state: lp.state,
+          district: lp.district,
+          taluka: lp.taluka,
+          village: lp.village,
+          surveyNo: lp.surveyNo,
+          totalArea: lp.totalArea,
+          areaUnit: lp.areaUnit,
+          irrigatedArea: lp.irrigatedArea,
+          ownershipType: lp.ownershipType,
+          soilType: lp.soilType,
+          irrigationSources: lp.irrigationSources,
+          primaryCrop: lp.primaryCrop,
+          secondaryCrop: lp.secondaryCrop,
+          farmingType: lp.farmingType,
+        })),
+        bankName,
+        branchName,
+        ifsc,
+        accountNo,
+        accountType,
+        aadhaarLinked,
+        npciStatus,
+        docs: [
+          ...docs,
+          ...(["SC", "ST", "OBC"].includes(category) ? [casteCertDoc] : []),
+          ...(diffAbled ? [disabilityCertDoc] : []),
+          ...(landParcels.some(lp => lp.ownershipType === "Leased") ? [tenancyDoc] : []),
+          ...(otherDoc.fileName ? [otherDoc] : []),
+        ].filter(d => d.status === "uploaded"),
+        aiRiskScore: 18,
+      });
+      setSubmitting(false);
+      setShowResult(true);
+    }, 4500);
   };
 
   const validateIfsc = (val: string) => {
@@ -279,7 +341,7 @@ export default function FarmerRegistrationForm({ onClose, onSuccess }: Props) {
                 <div className="text-xs text-success font-medium">Low Risk</div>
               </div>
             </div>
-            <div className="text-sm font-mono text-secondary font-medium">Farmer ID Assigned: F-{1291}</div>
+            <div className="text-sm font-mono text-secondary font-medium">Farmer ID Assigned: {generatedFarmerId}</div>
           </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="flex-1 text-sm px-4 py-2.5 rounded-lg bg-muted hover:bg-muted/80">Close</button>

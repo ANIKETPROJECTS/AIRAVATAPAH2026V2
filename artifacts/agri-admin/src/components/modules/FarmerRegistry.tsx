@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Upload, Download, X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { farmers } from "@/data/dummyData";
 import { getApprovedFarmers, subscribeToFarmers, FarmerRecord } from "@/data/farmerStore";
 import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
+import FarmerDetailModal from "@/components/modules/FarmerDetailModal";
 
-type AnyFarmer = {
+export type AnyFarmer = {
   id: string;
   name: string;
   village: string;
@@ -14,9 +15,32 @@ type AnyFarmer = {
   aadhaar: string;
   status: string;
   source?: string;
+  fatherName?: string;
+  dob?: string;
+  gender?: string;
+  category?: string;
+  religion?: string;
+  mobile?: string;
+  altMobile?: string;
+  email?: string;
+  diffAbled?: boolean;
+  disabilityType?: string;
+  surveyNumber?: string;
+  bankAccount?: string;
+  landParcels?: FarmerRecord["landParcels"];
+  bankName?: string;
+  branchName?: string;
+  ifsc?: string;
+  accountNo?: string;
+  accountType?: string;
+  aadhaarLinked?: string;
+  npciStatus?: string;
+  docs?: FarmerRecord["docs"];
+  aiRiskScore?: number;
 };
 
 function toAnyFarmer(f: typeof farmers[0] | FarmerRecord): AnyFarmer {
+  const r = f as FarmerRecord;
   return {
     id: f.id,
     name: f.name,
@@ -26,7 +50,29 @@ function toAnyFarmer(f: typeof farmers[0] | FarmerRecord): AnyFarmer {
     crop: f.crop,
     aadhaar: f.aadhaar,
     status: f.status,
-    source: (f as FarmerRecord).source,
+    source: r.source,
+    fatherName: r.fatherName,
+    dob: r.dob,
+    gender: r.gender,
+    category: r.category,
+    religion: r.religion,
+    mobile: r.mobile,
+    altMobile: r.altMobile,
+    email: r.email,
+    diffAbled: r.diffAbled,
+    disabilityType: r.disabilityType,
+    surveyNumber: r.surveyNumber,
+    bankAccount: r.bankAccount,
+    landParcels: r.landParcels,
+    bankName: r.bankName,
+    branchName: r.branchName,
+    ifsc: r.ifsc,
+    accountNo: r.accountNo,
+    accountType: r.accountType,
+    aadhaarLinked: r.aadhaarLinked,
+    npciStatus: r.npciStatus,
+    docs: r.docs,
+    aiRiskScore: r.aiRiskScore,
   };
 }
 
@@ -137,7 +183,7 @@ export default function FarmerRegistry() {
               {pageData.map(f => (
                 <tr
                   key={f.id}
-                  className={`border-t border-border/50 table-row-alt hover:bg-muted/30 transition-colors ${f.source === "ocr" ? "bg-emerald-50/40" : ""}`}
+                  className={`border-t border-border/50 table-row-alt hover:bg-muted/30 transition-colors ${f.source === "ocr" ? "bg-emerald-50/40" : f.source === "manual" ? "bg-blue-50/30" : ""}`}
                 >
                   <td className="px-4 py-2.5 font-mono text-xs">
                     <span className="flex items-center gap-1">
@@ -145,6 +191,11 @@ export default function FarmerRegistry() {
                       {f.source === "ocr" && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
                           <Sparkles className="h-2.5 w-2.5" />OCR
+                        </span>
+                      )}
+                      {f.source === "manual" && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                          Manual
                         </span>
                       )}
                     </span>
@@ -158,8 +209,18 @@ export default function FarmerRegistry() {
                   <td className="px-4 py-2.5"><StatusBadge status={f.status} /></td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1">
-                      <button onClick={() => setViewFarmer(f)} className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-80">View</button>
-                      <button className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80">Edit</button>
+                      <button
+                        onClick={() => setViewFarmer(f)}
+                        className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-80"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => setViewFarmer(f)}
+                        className="text-xs px-2 py-1 rounded bg-muted text-foreground hover:bg-muted/80"
+                      >
+                        Edit
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -177,79 +238,10 @@ export default function FarmerRegistry() {
       </div>
 
       {viewFarmer && (
-        <div className="fixed inset-0 bg-foreground/30 z-50 flex items-center justify-center p-4" onClick={() => setViewFarmer(null)}>
-          <div className="bg-card border border-border rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 animate-fade-in" style={{ opacity: 0 }} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-heading text-xl">{viewFarmer.name}</h2>
-                  {viewFarmer.source === "ocr" && (
-                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-                      <Sparkles className="h-3 w-3" />OCR Registered
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">{viewFarmer.id} · {viewFarmer.village}, {viewFarmer.district}</p>
-              </div>
-              <button onClick={() => setViewFarmer(null)}><X className="h-5 w-5" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Land Holdings</div>
-                <div className="font-semibold">{viewFarmer.land} acres</div>
-              </div>
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Primary Crop</div>
-                <div className="font-semibold">{viewFarmer.crop}</div>
-              </div>
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Aadhaar</div>
-                <div className="font-semibold font-mono">{viewFarmer.aadhaar}</div>
-              </div>
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Status</div>
-                <StatusBadge status={viewFarmer.status} />
-              </div>
-            </div>
-            {!viewFarmer.source && (
-              <>
-                <div className="mb-4">
-                  <h4 className="font-heading text-sm mb-2">Scheme Enrollments</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-success/10 text-success">PM-KISAN ✅</span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-success/10 text-success">PMFBY ✅</span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-warning/20 text-warning">KCC ⏳</span>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <h4 className="font-heading text-sm mb-2">AI Risk Score</h4>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-16 h-16">
-                      <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="14" fill="none" stroke="hsl(140 20% 90%)" strokeWidth="3" />
-                        <circle cx="18" cy="18" r="14" fill="none" stroke="hsl(142 60% 40%)" strokeWidth="3" strokeDasharray="88" strokeDashoffset={88 - 88 * 0.32} strokeLinecap="round" />
-                      </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">32</span>
-                    </div>
-                    <span className="text-sm text-success font-medium">Low Risk</span>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <h4 className="font-heading text-sm mb-2">Documents</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["Aadhaar Card", "Land Record", "Bank Passbook", "Photo ID"].map(d => (
-                      <div key={d} className="flex items-center gap-2 bg-muted/30 rounded-lg p-2.5 text-sm">
-                        <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center text-xs">📄</div>
-                        <span>{d}</span>
-                        <button className="ml-auto text-xs text-secondary hover:underline">View</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <FarmerDetailModal
+          farmer={viewFarmer}
+          onClose={() => setViewFarmer(null)}
+        />
       )}
 
       {showAdd && (
