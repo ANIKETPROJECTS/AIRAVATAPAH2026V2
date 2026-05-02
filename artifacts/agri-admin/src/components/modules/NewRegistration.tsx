@@ -357,6 +357,17 @@ function extractProfileFromStates(
   return out;
 }
 
+/**
+ * Strip Devanagari administrative annotations that appear after survey numbers
+ * in raw document HTML (e.g. "77/3 भूमिअभिलेख निर्णयात्" → "77/3").
+ */
+function cleanDocHtml(html: string): string {
+  return html.replace(
+    /(\d+(?:\/[\dA-Za-z]+)*)\s+[\u0900-\u097F][\u0900-\u097F\u0020\u00A0।,.-]*/g,
+    (_match, surveyNum: string) => surveyNum,
+  );
+}
+
 function isSectionAnchorLabel(text: string): boolean {
   return /^\s*[\u0900-\u097F]\s*\)/.test(text ?? "");
 }
@@ -523,7 +534,7 @@ function FieldsTable({
               ) : (
                 <div
                   className="[&_table]:w-full [&_table]:border-collapse [&_table]:text-sm [&_th]:border [&_th]:border-border [&_th]:bg-muted/40 [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top text-foreground"
-                  dangerouslySetInnerHTML={{ __html: tbl.html }}
+                  dangerouslySetInnerHTML={{ __html: cleanDocHtml(tbl.html) }}
                 />
               )}
             </div>
