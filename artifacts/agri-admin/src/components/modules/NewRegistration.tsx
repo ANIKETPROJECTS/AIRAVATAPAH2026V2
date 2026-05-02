@@ -1309,11 +1309,13 @@ function DocUploadCard({
 // ─── AI Summary analysis ──────────────────────────────────────────────────────
 
 interface SummaryIssue {
+  id: string;
   type: "conflict" | "missing" | "format";
   severity: "high" | "medium" | "low";
   title: string;
   description: string;
   details: { doc: string; value: string }[];
+  fieldKeys: (keyof FarmerProfile)[];
 }
 
 function getFieldVal(state: ExtractionState, keywords: string[]): string | null {
@@ -1337,116 +1339,114 @@ export function analyzeDocuments(docStates: Record<string, ExtractionState>): Su
   const issues: SummaryIssue[] = [];
 
   const checkConflict = (
+    id: string,
     label: string,
     entries: { doc: string; value: string | null }[],
     severity: "high" | "medium",
+    fieldKeys: (keyof FarmerProfile)[],
   ) => {
     const present = entries.filter(e => e.value !== null) as { doc: string; value: string }[];
     if (present.length < 2) return;
     const normed = present.map(e => normForCompare(e.value));
     if (!normed.every(n => n === normed[0])) {
       issues.push({
+        id,
         type: "conflict",
         severity,
         title: `"${label}" mismatch across documents`,
         description: `The ${label} field has different values in the uploaded documents. Verify which is correct before submitting.`,
         details: present,
+        fieldKeys,
       });
     }
   };
 
   const g = (docId: string, kws: string[]) => getFieldVal(docStates[docId], kws);
 
-  // Cross-doc name conflicts
-  checkConflict("Farmer Name", [
+  checkConflict("conflict-farmer-name", "Farmer Name", [
     { doc: "Aadhaar", value: g("aadhar", ["full_name", "name"]) },
     { doc: "Bank Passbook", value: g("bank_passbook", ["account_holder_name"]) },
     { doc: "Form 7", value: g("form7", ["owner_names", "owner_name"]) },
     { doc: "Form 8A", value: g("form8a", ["khatedar_name"]) },
-  ], "high");
+  ], "high", ["name", "bankHolderName"]);
 
-  // Cross-doc location conflicts
-  checkConflict("Village", [
+  checkConflict("conflict-village", "Village", [
     { doc: "Form 7", value: g("form7", ["village"]) },
     { doc: "Form 8A", value: g("form8a", ["village"]) },
     { doc: "Form 12", value: g("form12", ["village"]) },
-  ], "medium");
+  ], "medium", ["village"]);
 
-  checkConflict("District", [
+  checkConflict("conflict-district", "District", [
     { doc: "Form 7", value: g("form7", ["district"]) },
     { doc: "Form 8A", value: g("form8a", ["district"]) },
     { doc: "Form 12", value: g("form12", ["district"]) },
-  ], "medium");
+  ], "medium", ["district"]);
 
-  checkConflict("Taluka", [
+  checkConflict("conflict-taluka", "Taluka", [
     { doc: "Form 7", value: g("form7", ["taluka"]) },
     { doc: "Form 8A", value: g("form8a", ["taluka"]) },
     { doc: "Form 12", value: g("form12", ["taluka"]) },
-  ], "medium");
+  ], "medium", ["taluka"]);
 
-  // Khate number conflicts
-  checkConflict("Khate / Account Number", [
+  checkConflict("conflict-khate-number", "Khate / Account Number", [
     { doc: "Form 7", value: g("form7", ["khate_number", "account_number"]) },
     { doc: "Form 8A", value: g("form8a", ["khate_number", "account_number"]) },
-  ], "high");
+  ], "high", ["khateNumber"]);
 
-  // Survey number conflicts
-  checkConflict("Survey Number", [
+  checkConflict("conflict-survey-number", "Survey Number", [
     { doc: "Form 7", value: g("form7", ["survey_number"]) },
     { doc: "Form 12", value: g("form12", ["survey_number"]) },
-  ], "medium");
+  ], "medium", ["surveyNumber"]);
 
-  // ── Missing critical fields ──────────────────────────────────────────────
   const aadharDone = docStates["aadhar"]?.status === "complete";
   const passbookDone = docStates["bank_passbook"]?.status === "complete";
   const form7Done = docStates["form7"]?.status === "complete";
 
   if (aadharDone) {
     if (!g("aadhar", ["full_name", "name"])) {
-      issues.push({ type: "missing", severity: "high",
+      issues.push({ id: "missing-farmer-name", type: "missing", severity: "high",
         title: "Farmer name not found in Aadhaar",
         description: "Full name could not be read from the Aadhaar card. Manual entry required.",
-        details: [{ doc: "Aadhaar", value: "(empty)" }] });
+        details: [{ doc: "Aadhaar", value: "(empty)" }], fieldKeys: ["name"] });
     }
     if (!g("aadhar", ["aadhaar_number", "aadhaar", "uid"])) {
-      issues.push({ type: "missing", severity: "high",
+      issues.push({ id: "missing-aadhaar", type: "missing", severity: "high",
         title: "Aadhaar UID number not extracted",
         description: "The 12-digit Aadhaar number is mandatory for identity verification.",
-        details: [{ doc: "Aadhaar", value: "(empty)" }] });
+        details: [{ doc: "Aadhaar", value: "(empty)" }], fieldKeys: ["aadhaar"] });
     }
   }
 
   if (passbookDone) {
     if (!g("bank_passbook", ["account_number"])) {
-      issues.push({ type: "missing", severity: "high",
+      issues.push({ id: "missing-bank-account", type: "missing", severity: "high",
         title: "Bank account number not found",
         description: "Account number is required for subsidy and DBT disbursement.",
-        details: [{ doc: "Bank Passbook", value: "(empty)" }] });
+        details: [{ doc: "Bank Passbook", value: "(empty)" }], fieldKeys: ["bankAccount"] });
     }
     if (!g("bank_passbook", ["ifsc_code", "ifsc"])) {
-      issues.push({ type: "missing", severity: "medium",
+      issues.push({ id: "missing-ifsc", type: "missing", severity: "medium",
         title: "IFSC code not found in passbook",
         description: "IFSC is required for all direct bank transfers.",
-        details: [{ doc: "Bank Passbook", value: "(empty)" }] });
+        details: [{ doc: "Bank Passbook", value: "(empty)" }], fieldKeys: ["ifsc"] });
     }
   }
 
   if (form7Done && !g("form7", ["survey_number"])) {
-    issues.push({ type: "missing", severity: "medium",
+    issues.push({ id: "missing-survey-number", type: "missing", severity: "medium",
       title: "Survey number missing from Form 7",
       description: "The land survey number is needed for plot identification.",
-      details: [{ doc: "Form 7", value: "(empty)" }] });
+      details: [{ doc: "Form 7", value: "(empty)" }], fieldKeys: ["surveyNumber"] });
   }
 
-  // ── Format / value checks ────────────────────────────────────────────────
   const aadhaarNum = g("aadhar", ["aadhaar_number", "aadhaar", "uid"]);
   if (aadhaarNum) {
     const digits = aadhaarNum.replace(/\D/g, "");
     if (digits.length !== 12) {
-      issues.push({ type: "format", severity: "high",
+      issues.push({ id: "format-aadhaar-length", type: "format", severity: "high",
         title: "Aadhaar number does not have 12 digits",
         description: `Expected 12 digits but found ${digits.length}. The extracted value may be truncated or contain OCR errors.`,
-        details: [{ doc: "Aadhaar", value: aadhaarNum }] });
+        details: [{ doc: "Aadhaar", value: aadhaarNum }], fieldKeys: ["aadhaar"] });
     }
   }
 
@@ -1454,10 +1454,10 @@ export function analyzeDocuments(docStates: Record<string, ExtractionState>): Su
   if (ifsc) {
     const clean = ifsc.trim().toUpperCase().replace(/\s/g, "");
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(clean)) {
-      issues.push({ type: "format", severity: "medium",
+      issues.push({ id: "format-ifsc", type: "format", severity: "medium",
         title: "IFSC code format looks incorrect",
         description: `Standard IFSC is 11 chars — 4 letters, 0, then 6 alphanumerics (e.g. SBIN0001234). Found: "${ifsc}"`,
-        details: [{ doc: "Bank Passbook", value: ifsc }] });
+        details: [{ doc: "Bank Passbook", value: ifsc }], fieldKeys: ["ifsc"] });
     }
   }
 
@@ -1465,10 +1465,10 @@ export function analyzeDocuments(docStates: Record<string, ExtractionState>): Su
   if (mobile) {
     const digits = mobile.replace(/\D/g, "");
     if (digits.length !== 10) {
-      issues.push({ type: "format", severity: "low",
+      issues.push({ id: "format-mobile", type: "format", severity: "low",
         title: "Mobile number is not 10 digits",
         description: `Indian mobile numbers must be 10 digits. Found ${digits.length} digit(s): "${mobile}"`,
-        details: [{ doc: "Aadhaar", value: mobile }] });
+        details: [{ doc: "Aadhaar", value: mobile }], fieldKeys: ["mobile"] });
     }
   }
 
@@ -1476,106 +1476,89 @@ export function analyzeDocuments(docStates: Record<string, ExtractionState>): Su
   if (farmerName) {
     const alphOnly = farmerName.replace(/[\u0900-\u097F\s]/g, "").replace(/[a-zA-Z\s.]/g, "");
     if (farmerName.replace(/\s/g, "").length < 3) {
-      issues.push({ type: "format", severity: "medium",
+      issues.push({ id: "format-name-short", type: "format", severity: "medium",
         title: "Farmer name appears too short",
         description: `The extracted name "${farmerName}" is unusually short — may be an OCR error.`,
-        details: [{ doc: "Aadhaar / Passbook", value: farmerName }] });
+        details: [{ doc: "Aadhaar / Passbook", value: farmerName }], fieldKeys: ["name", "bankHolderName"] });
     } else if (alphOnly.length > 0 && /\d{3,}/.test(farmerName)) {
-      issues.push({ type: "format", severity: "medium",
+      issues.push({ id: "format-name-chars", type: "format", severity: "medium",
         title: "Farmer name contains unexpected characters",
         description: `The name "${farmerName}" contains digits or special characters which is unusual.`,
-        details: [{ doc: "Aadhaar / Passbook", value: farmerName }] });
+        details: [{ doc: "Aadhaar / Passbook", value: farmerName }], fieldKeys: ["name", "bankHolderName"] });
     }
   }
 
   return issues;
 }
 
-// ─── AI Summary Panel ─────────────────────────────────────────────────────────
+// ─── AI Summary Side Panel ────────────────────────────────────────────────────
 
-function AiSummaryPanel({ docStates }: { docStates: Record<string, ExtractionState> }) {
-  const issues = useMemo(() => analyzeDocuments(docStates), [docStates]);
+function AiSummaryPanel({
+  docStates,
+  resolvedIds = new Set(),
+  onResolve = () => {},
+}: {
+  docStates: Record<string, ExtractionState>;
+  resolvedIds?: Set<string>;
+  onResolve?: (id: string) => void;
+}) {
+  const allIssues = useMemo(() => analyzeDocuments(docStates), [docStates]);
+  const issues = allIssues.filter(i => !resolvedIds.has(i.id));
+  const resolvedCount = allIssues.length - issues.length;
+
   const conflicts = issues.filter(i => i.type === "conflict");
   const missing = issues.filter(i => i.type === "missing");
   const format = issues.filter(i => i.type === "format");
   const highCount = issues.filter(i => i.severity === "high").length;
 
-  const completedCount = Object.values(docStates).filter(s => s.status === "complete").length;
-
   return (
-    <div className="space-y-5 pb-8">
-      {/* Header card */}
-      <div className={`rounded-xl border p-5 flex items-start gap-4 ${
-        issues.length === 0
-          ? "bg-emerald-50 border-emerald-200"
-          : highCount > 0
-          ? "bg-red-50 border-red-200"
-          : "bg-amber-50 border-amber-200"
+    <div className="space-y-3">
+      {/* Header */}
+      <div className={`rounded-lg border px-3 py-2.5 flex items-center gap-2.5 ${
+        issues.length === 0 ? "bg-emerald-50 border-emerald-200" :
+        highCount > 0 ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"
       }`}>
-        <div className={`mt-0.5 flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+        <div className={`flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center ${
           issues.length === 0 ? "bg-emerald-100" : highCount > 0 ? "bg-red-100" : "bg-amber-100"
         }`}>
           {issues.length === 0
-            ? <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            : highCount > 0
-            ? <CircleAlert className="h-5 w-5 text-red-600" />
-            : <AlertTriangle className="h-5 w-5 text-amber-600" />
-          }
+            ? <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+            : highCount > 0 ? <CircleAlert className="h-3.5 w-3.5 text-red-600" />
+            : <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-base">
-            {issues.length === 0
-              ? "All documents look consistent"
-              : `${issues.length} issue${issues.length > 1 ? "s" : ""} found across ${completedCount} document${completedCount > 1 ? "s" : ""}`
-            }
+          <div className="font-semibold text-xs">
+            {issues.length === 0 ? "All clear" : `${issues.length} issue${issues.length !== 1 ? "s" : ""} to review`}
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {issues.length === 0
-              ? `${completedCount} document${completedCount > 1 ? "s" : ""} analysed — no conflicts, missing fields, or format errors detected.`
-              : `${conflicts.length} conflict${conflicts.length !== 1 ? "s" : ""} · ${missing.length} missing field${missing.length !== 1 ? "s" : ""} · ${format.length} format issue${format.length !== 1 ? "s" : ""}. Review before registering the farmer.`
-            }
-          </p>
+          {resolvedCount > 0 && (
+            <p className="text-[10px] text-emerald-600 font-medium">{resolvedCount} resolved</p>
+          )}
         </div>
       </div>
 
-      {/* Issue groups */}
       {conflicts.length > 0 && (
-        <IssueGroup
-          icon={<CircleAlert className="h-4 w-4 text-red-500" />}
-          label="Cross-document Conflicts"
-          labelClass="text-red-700"
-          issues={conflicts}
-          accentClass="border-red-200 bg-red-50/60"
-          badgeClass="bg-red-100 text-red-700"
-        />
+        <IssueGroup icon={<CircleAlert className="h-3.5 w-3.5 text-red-500" />}
+          label="Conflicts" labelClass="text-red-700"
+          issues={conflicts} accentClass="border-red-200 bg-red-50/50"
+          badgeClass="bg-red-100 text-red-700" onResolve={onResolve} />
       )}
-
       {missing.length > 0 && (
-        <IssueGroup
-          icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
-          label="Missing Critical Fields"
-          labelClass="text-amber-700"
-          issues={missing}
-          accentClass="border-amber-200 bg-amber-50/60"
-          badgeClass="bg-amber-100 text-amber-700"
-        />
+        <IssueGroup icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          label="Missing Fields" labelClass="text-amber-700"
+          issues={missing} accentClass="border-amber-200 bg-amber-50/50"
+          badgeClass="bg-amber-100 text-amber-700" onResolve={onResolve} />
       )}
-
       {format.length > 0 && (
-        <IssueGroup
-          icon={<Info className="h-4 w-4 text-orange-500" />}
-          label="Format / Value Irregularities"
-          labelClass="text-orange-700"
-          issues={format}
-          accentClass="border-orange-200 bg-orange-50/60"
-          badgeClass="bg-orange-100 text-orange-700"
-        />
+        <IssueGroup icon={<Info className="h-3.5 w-3.5 text-orange-500" />}
+          label="Format Issues" labelClass="text-orange-700"
+          issues={format} accentClass="border-orange-200 bg-orange-50/50"
+          badgeClass="bg-orange-100 text-orange-700" onResolve={onResolve} />
       )}
 
       {issues.length === 0 && (
-        <div className="text-center text-sm text-muted-foreground py-6">
-          <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto mb-2" />
-          You can proceed to the Farmer Profile tab to finalise and register.
+        <div className="text-center text-xs text-muted-foreground py-4">
+          <CheckCircle2 className="h-6 w-6 text-emerald-400 mx-auto mb-1.5" />
+          {allIssues.length === 0 ? "No issues detected." : "All issues resolved."}
         </div>
       )}
     </div>
@@ -1583,7 +1566,7 @@ function AiSummaryPanel({ docStates }: { docStates: Record<string, ExtractionSta
 }
 
 function IssueGroup({
-  icon, label, labelClass, issues, accentClass, badgeClass,
+  icon, label, labelClass, issues, accentClass, badgeClass, onResolve,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -1591,39 +1574,43 @@ function IssueGroup({
   issues: SummaryIssue[];
   accentClass: string;
   badgeClass: string;
+  onResolve: (id: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <div className={`flex items-center gap-2 font-semibold text-sm ${labelClass}`}>
+    <div className="space-y-1.5">
+      <div className={`flex items-center gap-1.5 font-semibold text-xs ${labelClass}`}>
         {icon}
         {label}
-        <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${badgeClass}`}>{issues.length}</span>
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}`}>{issues.length}</span>
       </div>
-      {issues.map((issue, i) => (
-        <div key={i} className={`rounded-lg border p-4 ${accentClass}`}>
-          <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm text-foreground">{issue.title}</div>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{issue.description}</p>
-              {issue.details.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {issue.details.map((d, j) => (
-                    <div key={j} className="flex items-center gap-1.5 bg-white/70 border border-white/80 rounded px-2.5 py-1 text-xs shadow-sm">
-                      <span className="font-semibold text-muted-foreground shrink-0">{d.doc}:</span>
-                      <span className="font-mono text-foreground break-all">{d.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <span className={`flex-shrink-0 text-[10px] uppercase font-bold tracking-wide px-2 py-0.5 rounded ${
+      {issues.map((issue) => (
+        <div key={issue.id} className={`rounded-md border p-3 ${accentClass}`}>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="font-medium text-xs text-foreground leading-snug flex-1">{issue.title}</div>
+            <span className={`flex-shrink-0 text-[9px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded ${
               issue.severity === "high" ? "bg-red-100 text-red-600"
               : issue.severity === "medium" ? "bg-amber-100 text-amber-600"
               : "bg-slate-100 text-slate-500"
-            }`}>
-              {issue.severity}
-            </span>
+            }`}>{issue.severity}</span>
           </div>
+          <p className="text-[10px] text-muted-foreground leading-relaxed mb-2">{issue.description}</p>
+          {issue.details.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {issue.details.map((d, j) => (
+                <div key={j} className="flex items-center gap-1 bg-white/80 border border-white rounded px-2 py-0.5 text-[10px]">
+                  <span className="font-semibold text-muted-foreground">{d.doc}:</span>
+                  <span className="font-mono text-foreground">{d.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => onResolve(issue.id)}
+            className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            Mark as resolved
+          </button>
         </div>
       ))}
     </div>
@@ -1636,22 +1623,18 @@ function ReviewTabBar({
   completedCards,
   activeIndex,
   showProfile,
-  showSummary,
   issueCount,
   onJump,
   onJumpToProfile,
-  onJumpToSummary,
   onBack,
   lang,
 }: {
   completedCards: DocCard[];
   activeIndex: number;
   showProfile: boolean;
-  showSummary: boolean;
   issueCount: number;
   onJump: (i: number) => void;
   onJumpToProfile: () => void;
-  onJumpToSummary: () => void;
   onBack: () => void;
   lang: LangCode;
 }) {
@@ -1669,7 +1652,7 @@ function ReviewTabBar({
 
         {completedCards.map((card, i) => {
           const Icon = card.icon;
-          const isActive = !showProfile && !showSummary && activeIndex === i;
+          const isActive = !showProfile && activeIndex === i;
           return (
             <button
               key={card.id}
@@ -1682,7 +1665,7 @@ function ReviewTabBar({
             >
               <Icon className={`h-3.5 w-3.5 ${isActive ? card.color : ""}`} />
               {DOC_CARD_SHORT[card.id]?.[lang] ?? card.shortLabel}
-              {(i < activeIndex || showProfile || showSummary) ? (
+              {(i < activeIndex || showProfile) ? (
                 <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-0.5" />
               ) : null}
             </button>
@@ -1699,27 +1682,12 @@ function ReviewTabBar({
         >
           <UserCheck className="h-3.5 w-3.5" />
           {ui("farmerProfileTab", lang)}
-        </button>
-
-        <button
-          onClick={onJumpToSummary}
-          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all rounded-t-sm whitespace-nowrap ${
-            showSummary
-              ? "border-b-2 border-b-purple-500 text-purple-600 bg-purple-50/50"
-              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20"
-          }`}
-        >
-          <Sparkles className={`h-3.5 w-3.5 ${showSummary ? "text-purple-500" : ""}`} />
-          AI Summary
           {issueCount > 0 && (
             <span className={`ml-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-              showSummary ? "bg-purple-100 text-purple-700" : "bg-red-100 text-red-600"
+              showProfile ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600"
             }`}>
               {issueCount}
             </span>
-          )}
-          {issueCount === 0 && (
-            <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-0.5" />
           )}
         </button>
       </div>
@@ -2172,6 +2140,7 @@ export function FarmerProfileCard({
   customPhoto,
   onCustomPhotoChange,
   hideFooter = false,
+  highlightedFields,
 }: {
   docStates: Record<DocTypeId, ExtractionState>;
   profile: FarmerProfile;
@@ -2184,6 +2153,7 @@ export function FarmerProfileCard({
   customPhoto: string | null;
   onCustomPhotoChange: (v: string | null) => void;
   hideFooter?: boolean;
+  highlightedFields?: Set<keyof FarmerProfile>;
 }) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [form12EditedCells, setForm12EditedCells] = useState<Record<string, string>>({});
@@ -2310,10 +2280,13 @@ export function FarmerProfileCard({
                       <div className="rounded-md border border-border overflow-hidden">
                         <table className="w-full text-sm">
                           <tbody>
-                            {sub.fields.map(({ key, placeholder }) => (
-                              <tr key={key} className="border-b border-border last:border-0">
+                            {sub.fields.map(({ key, placeholder }) => {
+                              const isHighlighted = highlightedFields?.has(key as keyof FarmerProfile);
+                              return (
+                              <tr key={key} className={`border-b border-border last:border-0 ${isHighlighted ? "bg-amber-50/60" : ""}`}>
                                 <td className="px-4 py-2.5 text-muted-foreground font-medium w-2/5 align-middle whitespace-nowrap">
                                   {tProfileField(key, lang)}
+                                  {isHighlighted && <span className="ml-1.5 inline-flex items-center"><AlertTriangle className="h-3 w-3 text-amber-500" /></span>}
                                 </td>
                                 <td className="px-3 py-1.5 align-middle">
                                   <input
@@ -2321,11 +2294,12 @@ export function FarmerProfileCard({
                                     value={profile[key as keyof FarmerProfile]}
                                     onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
                                     placeholder={placeholder}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                                    className={`w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 transition ${isHighlighted ? "border-amber-400 ring-amber-400/30 bg-amber-50/40 focus:ring-amber-400/40" : "border-input bg-background focus:ring-primary/40"}`}
                                   />
                                 </td>
                               </tr>
-                            ))}
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -2468,18 +2442,24 @@ export function FarmerProfileCard({
                         {tSec(sub.key, lang)}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {sub.fields.map(({ key, placeholder, span }) => (
+                        {sub.fields.map(({ key, placeholder, span }) => {
+                          const isHighlighted = highlightedFields?.has(key as keyof FarmerProfile);
+                          return (
                           <div key={key} className={span ? "sm:col-span-2" : ""}>
-                            <label className="block text-xs font-medium text-muted-foreground mb-1">{tProfileField(key, lang)}</label>
+                            <label className={`flex items-center gap-1.5 text-xs font-medium mb-1 ${isHighlighted ? "text-amber-600" : "text-muted-foreground"}`}>
+                              {tProfileField(key, lang)}
+                              {isHighlighted && <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />}
+                            </label>
                             <input
                               type="text"
                               value={profile[key as keyof FarmerProfile]}
                               onChange={(e) => onChange(key as keyof FarmerProfile, e.target.value)}
                               placeholder={placeholder}
-                              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition ${isHighlighted ? "border-amber-400 ring-amber-400/30 bg-amber-50/40 focus:ring-amber-400/40" : "border-input bg-background focus:ring-primary/40"}`}
                             />
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -2632,12 +2612,24 @@ export default function NewRegistration() {
     }
   };
 
+  const [resolvedIssueIds, setResolvedIssueIds] = useState<Set<string>>(new Set());
+
   const showProfileCard = step === "review" && reviewIndex === completedCards.length;
-  const showSummary = step === "review" && reviewIndex === completedCards.length + 1;
-  const issueCount = useMemo(
-    () => (step === "review" ? analyzeDocuments(docStates).length : 0),
+
+  const allIssues = useMemo(
+    () => (step === "review" ? analyzeDocuments(docStates) : []),
     [docStates, step],
   );
+  const activeIssues = allIssues.filter(i => !resolvedIssueIds.has(i.id));
+  const issueCount = activeIssues.length;
+  const highlightedFields = useMemo(
+    () => new Set(activeIssues.flatMap(i => i.fieldKeys)) as Set<keyof FarmerProfile>,
+    [activeIssues],
+  );
+
+  const handleResolveIssue = (id: string) => {
+    setResolvedIssueIds(prev => new Set([...prev, id]));
+  };
 
   if (step === "upload") {
     return (
@@ -2702,16 +2694,14 @@ export default function NewRegistration() {
         completedCards={completedCards}
         activeIndex={reviewIndex}
         showProfile={showProfileCard}
-        showSummary={showSummary}
         issueCount={issueCount}
         onJump={jumpTo}
         onJumpToProfile={() => jumpTo(completedCards.length)}
-        onJumpToSummary={() => jumpTo(completedCards.length + 1)}
         onBack={handleBackToUpload}
         lang={form8aLang}
       />
 
-      {!showProfileCard && !showSummary && completedCards[reviewIndex] && (
+      {!showProfileCard && completedCards[reviewIndex] && (
         <DocReviewPanel
           card={completedCards[reviewIndex]}
           state={docStates[completedCards[reviewIndex].id]}
@@ -2728,22 +2718,39 @@ export default function NewRegistration() {
       )}
 
       {showProfileCard && (
-        <FarmerProfileCard
-          docStates={docStates}
-          profile={profile}
-          onChange={handleProfileChange}
-          onApprove={handleApprove}
-          approved={approved}
-          onBack={() => jumpTo(completedCards.length - 1)}
-          lang={form8aLang}
-          onLangChange={setForm8aLang}
-          customPhoto={customPhoto}
-          onCustomPhotoChange={setCustomPhoto}
-        />
-      )}
-
-      {showSummary && (
-        <AiSummaryPanel docStates={docStates} />
+        <div className="flex gap-5 items-start">
+          <div className="flex-1 min-w-0">
+            <FarmerProfileCard
+              docStates={docStates}
+              profile={profile}
+              onChange={handleProfileChange}
+              onApprove={handleApprove}
+              approved={approved}
+              onBack={() => jumpTo(completedCards.length - 1)}
+              lang={form8aLang}
+              onLangChange={setForm8aLang}
+              customPhoto={customPhoto}
+              onCustomPhotoChange={setCustomPhoto}
+              highlightedFields={highlightedFields}
+            />
+          </div>
+          <div className="w-72 flex-shrink-0 sticky top-20 max-h-[calc(100vh-100px)] overflow-y-auto pb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+              <span className="font-semibold text-sm text-foreground">AI Summary</span>
+              {issueCount > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 bg-red-100 text-red-600">
+                  {issueCount}
+                </span>
+              )}
+            </div>
+            <AiSummaryPanel
+              docStates={docStates}
+              resolvedIds={resolvedIssueIds}
+              onResolve={handleResolveIssue}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
