@@ -6,8 +6,7 @@ import {
   ArrowRight, ArrowLeft, ChevronRight,
 } from "lucide-react";
 import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
-import { TransliteratedText } from "@/components/TransliteratedText";
-import { transliterateText, hasLatinText } from "@/lib/transliterate";
+
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -914,7 +913,7 @@ function SpannedTable({ headers, rows, lang = "mr" }: { headers: string[]; rows:
                           if (value === null) return [<div key={`${lIdx}-full`} className="col-span-2 whitespace-pre-wrap">{label.length > 0 ? translateValue(label, lang) : "\u00A0"}</div>];
                           return [
                             <div key={`${lIdx}-label`} className="whitespace-pre-wrap">{translateValue(label, lang)}</div>,
-                            <div key={`${lIdx}-value`} className="whitespace-pre-wrap text-right tabular-nums">{translateValue(value, lang)}</div>,
+                            <div key={`${lIdx}-value`} className="whitespace-pre-wrap text-right tabular-nums">{value}</div>,
                           ];
                         })}
                       </div>
@@ -960,7 +959,7 @@ function FieldsTable({
                         {tField(f.key, lang, f.label)}
                       </td>
                       <td className="px-4 py-2.5 text-foreground break-words">
-                        <TransliteratedText value={translateValue(f.value, lang)} lang={lang} />
+                        {f.value}
                       </td>
                     </tr>
                   ))}
@@ -981,7 +980,7 @@ function FieldsTable({
                   <tbody>
                     {tbl.rows.map((row, i) => (
                       <tr key={i} className="border-t border-border">
-                        {tbl.columns.map(c => <td key={c.key} className="px-4 py-2 text-foreground">{translateValue(row.values[c.key] ?? "—", lang)}</td>)}
+                        {tbl.columns.map(c => <td key={c.key} className="px-4 py-2 text-foreground">{row.values[c.key] ?? "—"}</td>)}
                       </tr>
                     ))}
                   </tbody>
@@ -1026,7 +1025,7 @@ function FieldsTable({
             <div className="mt-2 space-y-2">
               {textBlocks.map((t, i) => (
                 <div key={i} className="border-l-4 border-l-border bg-card border border-border rounded-md px-4 py-3 text-sm whitespace-pre-wrap break-words text-foreground">
-                  {translateValue(t, lang)}
+                  {t}
                 </div>
               ))}
             </div>
@@ -1792,41 +1791,6 @@ function FarmerProfileCard({
     };
   }, [numCols]);
 
-  const prevLang = useRef<LangCode>("en");
-  useEffect(() => {
-    if (lang === prevLang.current) return;
-    prevLang.current = lang;
-    if (lang === "en") return;
-
-    // Step 1: Synchronously apply dict lookups (MALE→पुरुष, Maharashtra→महाराष्ट्र)
-    // and Devanagari digit conversion to ALL profile fields
-    (Object.keys(profile) as (keyof FarmerProfile)[]).forEach((field) => {
-      const val = profile[field];
-      if (!val) return;
-      const translated = translateValue(val, lang);
-      if (translated !== val) onChange(field, translated);
-    });
-
-    // Step 2: Async API transliteration for Latin-script name/address/text fields
-    const TEXT_FIELDS: (keyof FarmerProfile)[] = [
-      "name", "fathersName", "address", "village", "district", "taluka",
-      "ownerNames", "khatedarNames", "khatedarAddress",
-      "bankName", "branchName", "branchAddress", "bankHolderName", "bankCustomerAddress",
-      "nomineeRelationship", "accountType", "occupantClass", "modeOfAcquisition",
-      "otherRights", "encumbrances", "boundaryMarks", "pendingMutation",
-      "tenantName", "crop",
-    ];
-
-    TEXT_FIELDS.forEach((field) => {
-      const val = profile[field];
-      if (val && hasLatinText(val)) {
-        transliterateText(val, lang as "mr" | "hi").then((translated) => {
-          if (translated !== val) onChange(field, translated);
-        });
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
 
   return (
     <div className="rounded-xl border-2 border-primary/30 bg-card shadow-md overflow-hidden">
