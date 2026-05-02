@@ -2608,7 +2608,7 @@ export default function NewRegistration() {
       village: profile.village || profile.taluka || "—",
       taluka: profile.taluka || "—",
       district: profile.district || "—",
-      land: parseFloat(profile.land) || 0,
+      land: profile.land || "0",
       crop: profile.crop || "—",
       aadhaar: profile.aadhaar || "—",
       khateNumber: profile.khateNumber || "—",

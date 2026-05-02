@@ -45,7 +45,7 @@ export interface FarmerRecord {
   village: string;
   district: string;
   taluka?: string;
-  land: number;
+  land: number | string;
   crop: string;
   aadhaar: string;
   khateNumber?: string;

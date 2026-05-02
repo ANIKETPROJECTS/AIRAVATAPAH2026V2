@@ -9,6 +9,22 @@ interface Props {
   onUpdated: (updated: FarmerRecord) => void;
 }
 
+function formatLandHAR(val: number | string | undefined): string {
+  if (val === undefined || val === null || val === "" || val === "0" || val === 0) return "—";
+  const s = String(val).trim();
+  const parts = s.split(".");
+  if (parts.length === 3) {
+    const [h, a, sm] = parts;
+    return `${h} हे. ${a} आर. ${sm} चौ.मी.`;
+  }
+  if (parts.length === 2) {
+    const [h, a] = parts;
+    if (a === "0" || a === "00") return `${h} हे.`;
+    return `${h} हे. ${a} आर.`;
+  }
+  return `${s} हे.`;
+}
+
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -200,8 +216,8 @@ export default function FarmerDetailModal({ farmer, onClose, onDeleted, onUpdate
           {/* Quick stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-muted/30 rounded-lg p-3 text-center">
-              <div className="text-xs text-muted-foreground mb-0.5">Land</div>
-              <div className="font-semibold text-sm">{farmer.land} ac</div>
+              <div className="text-xs text-muted-foreground mb-0.5">क्षेत्रफळ</div>
+              <div className="font-semibold text-sm font-mono">{formatLandHAR(farmer.land)}</div>
             </div>
             <div className="bg-muted/30 rounded-lg p-3 text-center">
               <div className="text-xs text-muted-foreground mb-0.5">Crop</div>
@@ -311,8 +327,8 @@ export default function FarmerDetailModal({ farmer, onClose, onDeleted, onUpdate
                 <InfoRow label="Village" value={farmer.village} />
                 <InfoRow label="Survey Number" value={farmer.surveyNumber} />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground">Land Holdings</span>
-                  <span className="text-sm font-medium">{farmer.land} Acres</span>
+                  <span className="text-xs text-muted-foreground">क्षेत्रफळ (हे.आर.चौ.मी.)</span>
+                  <span className="text-sm font-medium font-mono">{formatLandHAR(farmer.land)}</span>
                 </div>
                 <InfoRow label="Primary Crop" value={farmer.crop} />
               </div>

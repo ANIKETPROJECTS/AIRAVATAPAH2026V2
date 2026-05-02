@@ -5,6 +5,22 @@ import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
 import FarmerDetailModal from "@/components/modules/FarmerDetailModal";
 import FarmerReviewModal from "@/components/modules/FarmerReviewModal";
 
+function formatLandHAR(val: number | string | undefined): string {
+  if (val === undefined || val === null || val === "" || val === "0" || val === 0) return "—";
+  const s = String(val).trim();
+  const parts = s.split(".");
+  if (parts.length === 3) {
+    const [h, a, sm] = parts;
+    return `${h} हे. ${a} आर. ${sm} चौ.मी.`;
+  }
+  if (parts.length === 2) {
+    const [h, a] = parts;
+    if (a === "0" || a === "00") return `${h} हे.`;
+    return `${h} हे. ${a} आर.`;
+  }
+  return `${s} हे.`;
+}
+
 function StatusBadge({ status }: { status: string }) {
   if (status === "Verified") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-100 text-emerald-700">Verified</span>;
   if (status === "Cancelled") return <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-red-100 text-red-700">Cancelled</span>;
@@ -200,7 +216,7 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Village</th>
                   <th className="px-4 py-3 font-medium">District</th>
-                  <th className="px-4 py-3 font-medium">Land (ac)</th>
+                  <th className="px-4 py-3 font-medium">क्षेत्रफळ <span className="text-muted-foreground font-normal">(हे.आर.चौ.मी.)</span></th>
                   <th className="px-4 py-3 font-medium">Khate No.</th>
                   <th className="px-4 py-3 font-medium">Aadhaar</th>
                   <th className="px-4 py-3 font-medium">Status</th>
@@ -235,7 +251,7 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
                     <td className="px-4 py-2.5 font-medium">{f.name}</td>
                     <td className="px-4 py-2.5">{f.village}</td>
                     <td className="px-4 py-2.5">{f.district}</td>
-                    <td className="px-4 py-2.5">{f.land}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{formatLandHAR(f.land)}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{f.khateNumber && f.khateNumber !== "—" ? f.khateNumber : <span className="text-muted-foreground/50">—</span>}</td>
                     <td className="px-4 py-2.5 font-mono text-xs">{f.aadhaar}</td>
                     <td className="px-4 py-2.5"><StatusBadge status={f.status} /></td>
