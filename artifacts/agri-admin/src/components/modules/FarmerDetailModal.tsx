@@ -1,44 +1,12 @@
 import { useState } from "react";
-import { X, Sparkles, FileText, User, MapPin, Landmark, Shield, ChevronDown, ChevronUp, Edit2, Save, XCircle } from "lucide-react";
-import { FarmerRecord, updateApprovedFarmer, DocRecord } from "@/data/farmerStore";
-
-type AnyFarmerFull = {
-  id: string;
-  name: string;
-  village: string;
-  district: string;
-  land: number;
-  crop: string;
-  aadhaar: string;
-  status: string;
-  source?: string;
-  fatherName?: string;
-  dob?: string;
-  gender?: string;
-  category?: string;
-  religion?: string;
-  mobile?: string;
-  altMobile?: string;
-  email?: string;
-  diffAbled?: boolean;
-  disabilityType?: string;
-  surveyNumber?: string;
-  bankAccount?: string;
-  landParcels?: FarmerRecord["landParcels"];
-  bankName?: string;
-  branchName?: string;
-  ifsc?: string;
-  accountNo?: string;
-  accountType?: string;
-  aadhaarLinked?: string;
-  npciStatus?: string;
-  docs?: DocRecord[];
-  aiRiskScore?: number;
-};
+import { X, Sparkles, FileText, User, MapPin, Landmark, Shield, ChevronDown, ChevronUp, Edit2, Save, XCircle, Trash2, Loader2 } from "lucide-react";
+import { apiUpdateFarmer, apiDeleteFarmer, type FarmerRecord, type DocRecord } from "@/data/farmerApi";
 
 interface Props {
-  farmer: AnyFarmerFull;
+  farmer: FarmerRecord;
   onClose: () => void;
+  onDeleted: (id: string) => void;
+  onUpdated: (updated: FarmerRecord) => void;
 }
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -64,8 +32,7 @@ function Section({ title, icon, children, defaultOpen = true }: {
         className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2 text-sm font-heading font-semibold">
-          {icon}
-          {title}
+          {icon}{title}
         </div>
         {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
@@ -81,27 +48,44 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${cls}`}>{status}</span>;
 }
 
-export default function FarmerDetailModal({ farmer, onClose }: Props) {
+export default function FarmerDetailModal({ farmer, onClose, onDeleted, onUpdated }: Props) {
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const [editName, setEditName] = useState(farmer.name);
   const [editMobile, setEditMobile] = useState(farmer.mobile || "");
   const [editEmail, setEditEmail] = useState(farmer.email || "");
   const [editStatus, setEditStatus] = useState(farmer.status);
   const [editCrop, setEditCrop] = useState(farmer.crop);
 
-  const isStoreFarmer = farmer.source === "ocr" || farmer.source === "manual";
-
-  const handleSave = () => {
-    if (isStoreFarmer) {
-      updateApprovedFarmer(farmer.id, {
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const updated = await apiUpdateFarmer(farmer.farmerId, {
         name: editName,
         mobile: editMobile,
         email: editEmail,
         status: editStatus as "Active" | "Inactive" | "Pending",
         crop: editCrop,
       });
+      onUpdated(updated);
+      setIsEditing(false);
+    } finally {
+      setSaving(false);
     }
-    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await apiDeleteFarmer(farmer.farmerId);
+      onDeleted(farmer.farmerId);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -151,21 +135,34 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{farmer.id} · {farmer.village}, {farmer.district}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{farmer.farmerId} · {farmer.village}, {farmer.district}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-            {isStoreFarmer && !isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-              >
-                <Edit2 className="h-3.5 w-3.5" /> Edit
-              </button>
+            {!isEditing && (
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <Edit2 className="h-3.5 w-3.5" /> Edit
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
+              </>
             )}
             {isEditing && (
               <>
-                <button onClick={handleSave} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:opacity-90">
-                  <Save className="h-3.5 w-3.5" /> Save
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Save
                 </button>
                 <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80">
                   <XCircle className="h-3.5 w-3.5" /> Cancel
@@ -177,6 +174,25 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
             </button>
           </div>
         </div>
+
+        {/* Delete confirmation */}
+        {confirmDelete && (
+          <div className="px-6 py-3 bg-destructive/10 border-b border-destructive/20 flex items-center gap-3 flex-shrink-0">
+            <Trash2 className="h-4 w-4 text-destructive flex-shrink-0" />
+            <span className="text-sm text-destructive flex-1">Permanently delete <strong>{farmer.name}</strong>? This cannot be undone.</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-destructive text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              Confirm Delete
+            </button>
+            <button onClick={() => setConfirmDelete(false)} className="text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80">
+              Cancel
+            </button>
+          </div>
+        )}
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
@@ -198,7 +214,7 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
             <div className="bg-muted/30 rounded-lg p-3 text-center">
               <div className="text-xs text-muted-foreground mb-0.5">Status</div>
               {isEditing ? (
-                <select value={editStatus} onChange={e => setEditStatus(e.target.value)} className="w-full text-xs px-1 py-0.5 border border-border rounded">
+                <select value={editStatus} onChange={e => setEditStatus(e.target.value as "Active" | "Inactive" | "Pending")} className="w-full text-xs px-1 py-0.5 border border-border rounded">
                   {["Active", "Inactive", "Pending"].map(s => <option key={s}>{s}</option>)}
                 </select>
               ) : (
@@ -247,10 +263,7 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
               </div>
               {farmer.altMobile && <InfoRow label="Alternate Mobile" value={farmer.altMobile} />}
               {farmer.diffAbled && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground">Differently Abled</span>
-                  <span className="text-sm font-medium">Yes {farmer.disabilityType ? `(${farmer.disabilityType})` : ""}</span>
-                </div>
+                <InfoRow label="Differently Abled" value={`Yes${farmer.disabilityType ? ` (${farmer.disabilityType})` : ""}`} />
               )}
             </div>
           </Section>
@@ -261,9 +274,7 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
               <div className="space-y-4">
                 {farmer.landParcels.map((lp, i) => (
                   <div key={i} className={`${farmer.landParcels!.length > 1 ? "border border-border rounded-lg p-3" : ""}`}>
-                    {farmer.landParcels!.length > 1 && (
-                      <div className="text-xs font-semibold text-muted-foreground mb-3">Parcel {i + 1}</div>
-                    )}
+                    {farmer.landParcels!.length > 1 && <div className="text-xs font-semibold text-muted-foreground mb-3">Parcel {i + 1}</div>}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <InfoRow label="State" value={lp.state} />
                       <InfoRow label="District" value={lp.district} />
@@ -274,9 +285,7 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
                         <span className="text-xs text-muted-foreground">Total Area</span>
                         <span className="text-sm font-medium">{lp.totalArea} {lp.areaUnit || "Acres"}</span>
                       </div>
-                      {lp.irrigatedArea && (
-                        <InfoRow label="Irrigated Area" value={`${lp.irrigatedArea} ${lp.areaUnit || "Acres"}`} />
-                      )}
+                      {lp.irrigatedArea && <InfoRow label="Irrigated Area" value={`${lp.irrigatedArea} ${lp.areaUnit || "Acres"}`} />}
                       <InfoRow label="Ownership" value={lp.ownershipType} />
                       <InfoRow label="Soil Type" value={lp.soilType} />
                       <InfoRow label="Primary Crop" value={lp.primaryCrop} />
@@ -332,7 +341,7 @@ export default function FarmerDetailModal({ farmer, onClose }: Props) {
           <Section title="Documents" icon={<FileText className="h-4 w-4 text-secondary" />}>
             {farmer.docs && farmer.docs.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {farmer.docs.filter(d => d.status === "uploaded").map((doc, i) => (
+                {(farmer.docs as DocRecord[]).filter(d => d.status === "uploaded").map((doc, i) => (
                   <div key={i} className="flex items-center gap-2 bg-muted/30 rounded-lg p-2.5">
                     <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center text-sm flex-shrink-0">📄</div>
                     <div className="flex-1 min-w-0">

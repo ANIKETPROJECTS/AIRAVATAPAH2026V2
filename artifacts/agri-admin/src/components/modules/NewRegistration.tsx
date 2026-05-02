@@ -5,7 +5,7 @@ import {
   ClipboardCheck, UserCheck, Pencil, ThumbsUp, Camera,
   ArrowRight, ArrowLeft, ChevronRight,
 } from "lucide-react";
-import { addApprovedFarmer, nextFarmerId } from "@/data/farmerStore";
+import { apiCreateFarmer, notifyFarmerChange } from "@/data/farmerApi";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -1282,8 +1282,7 @@ export default function NewRegistration() {
   };
 
   const handleApprove = () => {
-    addApprovedFarmer({
-      id: nextFarmerId(),
+    apiCreateFarmer({
       name: profile.name || "Unknown Farmer",
       village: profile.village || profile.taluka || "—",
       district: profile.district || "—",
@@ -1294,8 +1293,9 @@ export default function NewRegistration() {
       bankAccount: profile.bankAccount || "—",
       status: "Active",
       source: "ocr",
-      addedAt: new Date().toISOString(),
-    });
+    }).then(() => {
+      notifyFarmerChange();
+    }).catch(() => {});
     setApproved(true);
   };
 
