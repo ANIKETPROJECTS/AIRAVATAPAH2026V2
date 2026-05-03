@@ -399,18 +399,18 @@ function SchemeDetailPage({ scheme, onBack, onStatusChange }: {
 
       {/* Hero header */}
       <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm mb-5">
-        <div className="px-6 py-5" style={{ background: "linear-gradient(135deg, #0D2B1E 0%, #1a4a30 60%, #0f3d25 100%)" }}>
+        <div className="px-6 py-5" style={{ background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%)" }}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <TypeBadge type={scheme.type}/>
-                <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border border-white/20 ${scheme.status === "Active" ? "text-emerald-300" : "text-white/40"}`}>
+                <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border ${scheme.status === "Active" ? "border-emerald-400 text-emerald-800 bg-emerald-100/60" : "border-slate-300 text-slate-500 bg-white/50"}`}>
                   {scheme.status === "Active" ? "● Active" : "● Closed"}
                 </span>
-                <span className="text-[11px] px-2.5 py-1 rounded-full border border-white/20 text-white/60">{scheme.category}</span>
+                <span className="text-[11px] px-2.5 py-1 rounded-full border border-emerald-300 text-emerald-800 bg-white/50">{scheme.category}</span>
               </div>
-              <h2 className="font-bold text-xl text-white leading-snug mb-2">{scheme.name}</h2>
-              <p className="text-sm text-white/60 leading-relaxed max-w-2xl">{scheme.description}</p>
+              <h2 className="font-bold text-xl text-emerald-950 leading-snug mb-2">{scheme.name}</h2>
+              <p className="text-sm text-emerald-800/70 leading-relaxed max-w-2xl">{scheme.description}</p>
             </div>
             <div className="flex-shrink-0 flex flex-col items-end gap-3">
               <StatusToggle schemeId={scheme.id} status={scheme.status} onToggle={onStatusChange}/>
@@ -420,24 +420,24 @@ function SchemeDetailPage({ scheme, onBack, onStatusChange }: {
           {/* Key stats */}
           <div className="grid grid-cols-4 gap-3 mt-5">
             {[
-              { label: "Registered Farmers", val: farmers.length, icon: Users },
-              { label: "Applied / Enrolled", val: appliedFarmers.length, icon: BadgeCheck },
-              { label: "Can Apply", val: eligibleFarmers.length, icon: TrendingUp },
-              { label: "Not Eligible", val: ineligibleFarmers.length, icon: XCircle },
+              { label: "Registered Farmers", val: farmers.length, icon: Users, color: "bg-white/70 text-emerald-900" },
+              { label: "Applied / Enrolled", val: appliedFarmers.length, icon: BadgeCheck, color: "bg-emerald-600/20 text-emerald-900" },
+              { label: "Can Apply", val: eligibleFarmers.length, icon: TrendingUp, color: "bg-teal-600/20 text-teal-900" },
+              { label: "Not Eligible", val: ineligibleFarmers.length, icon: XCircle, color: "bg-white/40 text-slate-700" },
             ].map(stat => (
-              <div key={stat.label} className="bg-white/10 backdrop-blur rounded-xl px-3 py-2.5">
+              <div key={stat.label} className={`${stat.color} backdrop-blur rounded-xl px-3 py-2.5 border border-white/60`}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <stat.icon className="h-3.5 w-3.5 text-white/50"/>
-                  <span className="text-[10px] text-white/50 font-semibold uppercase tracking-wide">{stat.label}</span>
+                  <stat.icon className="h-3.5 w-3.5 opacity-60"/>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide opacity-70">{stat.label}</span>
                 </div>
-                <div className="text-2xl font-bold text-white">{loadingFarmers ? "—" : stat.val}</div>
+                <div className="text-2xl font-bold">{loadingFarmers ? "—" : stat.val}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Benefits strip */}
-        <div className="bg-emerald-50 border-t border-emerald-100 px-6 py-3 flex items-start gap-2">
+        <div className="bg-white border-t border-emerald-100 px-6 py-3 flex items-start gap-2">
           <TrendingUp className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"/>
           <div>
             <span className="text-xs font-bold text-emerald-800 mr-2">Benefits:</span>
