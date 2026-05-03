@@ -12,37 +12,43 @@ import ReportsAnalytics from "@/components/modules/ReportsAnalytics";
 import SettingsWorkflow from "@/components/modules/SettingsWorkflow";
 import FarmerAppPreview from "@/components/modules/FarmerAppPreview";
 import NewRegistration from "@/components/modules/NewRegistration";
+import UserManagement from "@/components/modules/UserManagement";
 import AIAssistant from "@/components/AIAssistant";
 import { useLang } from "@/contexts/LanguageContext";
+import { useAuth, type SectionKey } from "@/contexts/AuthContext";
 import { t } from "@/i18n/translations";
+import { Lock } from "lucide-react";
 
 const pageTitleKeys: Record<string, string> = {
-  dashboard:          "page_dashboard",
-  newregistration:    "page_newregistration",
-  farmers:            "page_farmers",
-  verifiedfarmers:    "page_verifiedfarmers",
-  applications:       "page_applications",
-  subsidies:          "page_subsidies",
-  insurance:          "page_insurance",
-  grievances:         "page_grievances",
-  reports:            "page_reports",
-  settings:           "page_settings",
-  farmerapp:          "page_farmerapp",
+  dashboard:        "page_dashboard",
+  newregistration:  "page_newregistration",
+  farmers:          "page_farmers",
+  verifiedfarmers:  "page_verifiedfarmers",
+  applications:     "page_applications",
+  subsidies:        "page_subsidies",
+  insurance:        "page_insurance",
+  grievances:       "page_grievances",
+  reports:          "page_reports",
+  settings:         "page_settings",
+  farmerapp:        "page_farmerapp",
+  usermanagement:   "User Management",
 };
 
-const modules: Record<string, React.FC> = {
-  dashboard:          Dashboard,
-  newregistration:    NewRegistration,
-  farmers:            FarmerRegistry,
-  verifiedfarmers:    VerifiedFarmers,
-  applications:       SchemeApplications,
-  subsidies:          SubsidyManagement,
-  insurance:          InsuranceClaims,
-  grievances:         GrievanceManagement,
-  reports:            ReportsAnalytics,
-  settings:           SettingsWorkflow,
-  farmerapp:          FarmerAppPreview,
-};
+function AccessDenied({ section }: { section: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+        <Lock className="h-8 w-8 text-slate-400"/>
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-slate-700 mb-1">Access Restricted</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          You don't have permission to access <strong>{section}</strong>. Contact your administrator to request access.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function Index() {
   const [active, setActive] = useState("dashboard");
@@ -50,6 +56,7 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const { lang } = useLang();
+  const { can } = useAuth();
 
   useEffect(() => {
     const check = () => setCollapsed(window.innerWidth < 1280);
@@ -61,39 +68,54 @@ export default function Index() {
   const navigate = (key: string) => {
     if (key === active) return;
     setLoading(true);
-    setTimeout(() => {
-      setActive(key);
-      setLoading(false);
-    }, 200);
+    setTimeout(() => { setActive(key); setLoading(false); }, 200);
   };
 
-  const ActiveModule = modules[active];
+  const pageTitle = pageTitleKeys[active]
+    ? (active === "usermanagement" ? "User Management" : t(pageTitleKeys[active], lang))
+    : active;
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse"/>)}
+        </div>
+      );
+    }
+
+    const section = active as SectionKey;
+    if (!can(section)) return <AccessDenied section={pageTitleKeys[active] || active}/>;
+
+    if (active === "farmers")         return <FarmerRegistry onNavigate={navigate}/>;
+    if (active === "dashboard")       return <Dashboard/>;
+    if (active === "newregistration") return <NewRegistration/>;
+    if (active === "verifiedfarmers") return <VerifiedFarmers/>;
+    if (active === "applications")    return <SchemeApplications/>;
+    if (active === "subsidies")       return <SubsidyManagement/>;
+    if (active === "insurance")       return <InsuranceClaims/>;
+    if (active === "grievances")      return <GrievanceManagement/>;
+    if (active === "reports")         return <ReportsAnalytics/>;
+    if (active === "settings")        return <SettingsWorkflow/>;
+    if (active === "farmerapp")       return <FarmerAppPreview/>;
+    if (active === "usermanagement")  return <UserManagement/>;
+    return <Dashboard/>;
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar active={active} onNavigate={navigate} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+      <Sidebar active={active} onNavigate={navigate} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)}/>
 
       <div className={`transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
-        <Header onAIOpen={() => setAiOpen(true)} />
+        <Header onAIOpen={() => setAiOpen(true)} onNavigate={navigate}/>
 
         <main className="p-6">
-          <h1 className="font-heading text-2xl mb-6">{t(pageTitleKeys[active], lang)}</h1>
-
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : active === "farmers" ? (
-            <FarmerRegistry onNavigate={navigate} />
-          ) : (
-            <ActiveModule />
-          )}
+          <h1 className="font-heading text-2xl mb-6">{pageTitle}</h1>
+          {renderContent()}
         </main>
       </div>
 
-      <AIAssistant open={aiOpen} onClose={() => setAiOpen(false)} />
+      <AIAssistant open={aiOpen} onClose={() => setAiOpen(false)}/>
     </div>
   );
 }

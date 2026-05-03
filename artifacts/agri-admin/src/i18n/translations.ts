@@ -12,6 +12,7 @@ export const T: Record<string, Record<LangCode, string>> = {
   nav_settings:         { en: "Settings & Workflow",        hi: "सेटिंग्स और वर्कफ्लो",  mr: "सेटिंग्स आणि कार्यप्रवाह" },
   nav_farmerapp:        { en: "Farmer App Preview",         hi: "किसान ऐप पूर्वावलोकन", mr: "शेतकरी ॲप पूर्वावलोकन" },
   nav_verifiedfarmers:  { en: "Farmers",                   hi: "किसान",                  mr: "शेतकरी" },
+  nav_usermanagement:   { en: "User Management",            hi: "उपयोगकर्ता प्रबंधन",     mr: "वापरकर्ता व्यवस्थापन" },
 
   page_dashboard:       { en: "Dashboard Overview",        hi: "डैशबोर्ड अवलोकन",       mr: "डॅशबोर्ड विहंगावलोकन" },
   page_newregistration: { en: "New Registration",          hi: "नई पंजीकरण",             mr: "नवीन नोंदणी" },
