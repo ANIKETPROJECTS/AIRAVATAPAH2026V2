@@ -5,7 +5,7 @@ export type UserRole = "admin" | "district_officer" | "taluka_officer" | "viewer
 
 export const SECTIONS = [
   "dashboard", "newregistration", "farmers", "verifiedfarmers",
-  "applications", "subsidies", "insurance", "grievances",
+  "applications", "allschemes", "subsidies", "insurance", "grievances",
   "reports", "settings", "farmerapp", "usermanagement",
 ] as const;
 export type SectionKey = typeof SECTIONS[number];
@@ -16,6 +16,7 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   farmers:          "Farmer Registry",
   verifiedfarmers:  "Verified Farmers",
   applications:     "Scheme Applications",
+  allschemes:       "All Schemes",
   subsidies:        "Subsidy Management",
   insurance:        "Insurance Claims",
   grievances:       "Grievance Management",
@@ -36,12 +37,12 @@ export const ROLE_PRESETS: Record<UserRole, Partial<Record<SectionKey, boolean>>
   admin: Object.fromEntries(SECTIONS.map(s => [s, true])) as Record<SectionKey, boolean>,
   district_officer: {
     dashboard: true, newregistration: true, farmers: true, verifiedfarmers: true,
-    applications: true, subsidies: true, insurance: true, grievances: true, reports: true,
+    applications: true, allschemes: true, subsidies: true, insurance: true, grievances: true, reports: true,
   },
   taluka_officer: {
     dashboard: true, newregistration: true, farmers: true, verifiedfarmers: true, grievances: true,
   },
-  viewer: { dashboard: true, reports: true },
+  viewer: { dashboard: true, reports: true, allschemes: true },
 };
 
 export const AVATAR_COLORS = [
@@ -173,13 +174,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<AppUser[]>(loadUsers);
   const [sessionId, setSessionId] = useState<string | null>(loadSession);
 
-  /* Ensure seed users exist */
+  /* Ensure seed users exist and all users have permissions for every section */
   useEffect(() => {
     setUsers(prev => {
+      let changed = false;
       const emails = new Set(prev.map(u => u.email));
       const missing = SEED_USERS.filter(s => !emails.has(s.email));
-      if (missing.length === 0) return prev;
-      const merged = [...prev, ...missing];
+      let merged = missing.length > 0 ? [...prev, ...missing] : prev;
+      if (missing.length > 0) changed = true;
+
+      merged = merged.map(u => {
+        const missingPerms = SECTIONS.filter(s => !(s in u.permissions));
+        if (missingPerms.length === 0) return u;
+        changed = true;
+        const rolePreset = ROLE_PRESETS[u.role] ?? {};
+        const patch = Object.fromEntries(missingPerms.map(s => [s, rolePreset[s] ?? false]));
+        return { ...u, permissions: { ...u.permissions, ...patch } };
+      });
+
+      if (!changed) return prev;
       saveUsers(merged);
       return merged;
     });

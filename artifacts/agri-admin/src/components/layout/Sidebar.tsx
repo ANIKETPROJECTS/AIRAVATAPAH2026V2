@@ -1,7 +1,7 @@
 import {
   BarChart3, Users, ClipboardList, IndianRupee, Shield, Megaphone,
   TrendingUp, Settings, ChevronLeft, ChevronRight, Smartphone,
-  UserPlus, UserCheck, UsersRound,
+  UserPlus, UserCheck, UsersRound, BookOpen,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { useAuth, type SectionKey } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ const NAV_ITEMS: { key: SectionKey; labelKey: string; icon: React.ElementType }[
   { key: "farmers",         labelKey: "nav_farmers",         icon: Users },
   { key: "verifiedfarmers", labelKey: "nav_verifiedfarmers", icon: UserCheck },
   { key: "applications",    labelKey: "nav_applications",    icon: ClipboardList },
+  { key: "allschemes",      labelKey: "nav_allschemes",      icon: BookOpen },
   { key: "subsidies",       labelKey: "nav_subsidies",       icon: IndianRupee },
   { key: "insurance",       labelKey: "nav_insurance",       icon: Shield },
   { key: "grievances",      labelKey: "nav_grievances",      icon: Megaphone },

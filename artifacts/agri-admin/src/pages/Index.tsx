@@ -13,6 +13,7 @@ import SettingsWorkflow from "@/components/modules/SettingsWorkflow";
 import FarmerAppPreview from "@/components/modules/FarmerAppPreview";
 import NewRegistration from "@/components/modules/NewRegistration";
 import UserManagement from "@/components/modules/UserManagement";
+import AllSchemes from "@/components/modules/AllSchemes";
 import AIAssistant from "@/components/AIAssistant";
 import { useLang } from "@/contexts/LanguageContext";
 import { useAuth, type SectionKey } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ const pageTitleKeys: Record<string, string> = {
   farmers:          "page_farmers",
   verifiedfarmers:  "page_verifiedfarmers",
   applications:     "page_applications",
+  allschemes:       "All Schemes",
   subsidies:        "page_subsidies",
   insurance:        "page_insurance",
   grievances:       "page_grievances",
@@ -72,7 +74,7 @@ export default function Index() {
   };
 
   const pageTitle = pageTitleKeys[active]
-    ? (active === "usermanagement" ? "User Management" : t(pageTitleKeys[active], lang))
+    ? (["usermanagement", "allschemes"].includes(active) ? pageTitleKeys[active] : t(pageTitleKeys[active], lang))
     : active;
 
   const renderContent = () => {
@@ -92,6 +94,7 @@ export default function Index() {
     if (active === "newregistration") return <NewRegistration/>;
     if (active === "verifiedfarmers") return <VerifiedFarmers/>;
     if (active === "applications")    return <SchemeApplications/>;
+    if (active === "allschemes")      return <AllSchemes/>;
     if (active === "subsidies")       return <SubsidyManagement/>;
     if (active === "insurance")       return <InsuranceClaims/>;
     if (active === "grievances")      return <GrievanceManagement/>;

@@ -13,6 +13,7 @@ export const T: Record<string, Record<LangCode, string>> = {
   nav_farmerapp:        { en: "Farmer App Preview",         hi: "किसान ऐप पूर्वावलोकन", mr: "शेतकरी ॲप पूर्वावलोकन" },
   nav_verifiedfarmers:  { en: "Farmers",                   hi: "किसान",                  mr: "शेतकरी" },
   nav_usermanagement:   { en: "User Management",            hi: "उपयोगकर्ता प्रबंधन",     mr: "वापरकर्ता व्यवस्थापन" },
+  nav_allschemes:       { en: "All Schemes",                hi: "सभी योजनाएं",             mr: "सर्व योजना" },
 
   page_dashboard:       { en: "Dashboard Overview",        hi: "डैशबोर्ड अवलोकन",       mr: "डॅशबोर्ड विहंगावलोकन" },
   page_newregistration: { en: "New Registration",          hi: "नई पंजीकरण",             mr: "नवीन नोंदणी" },
