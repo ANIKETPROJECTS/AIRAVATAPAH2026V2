@@ -1,5 +1,4 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { getDb } from "../lib/mongo";
 import { logger } from "../lib/logger";
@@ -7,8 +6,26 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 const JWT_SECRET = process.env["JWT_SECRET"] ?? "krushi-suvidha-secret-2026";
-const JWT_EXPIRES_IN = "7d";
+const JWT_EXPIRES_DAYS = 7;
 const OTP_TTL_MS = 5 * 60 * 1000;
+
+function b64url(input: string | Buffer): string {
+  const buf = typeof input === "string" ? Buffer.from(input) : input;
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function signJwt(payload: Record<string, unknown>): string {
+  const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = b64url(JSON.stringify({
+    ...payload,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + JWT_EXPIRES_DAYS * 24 * 60 * 60,
+  }));
+  const sig = b64url(
+    crypto.createHmac("sha256", JWT_SECRET).update(`${header}.${body}`).digest()
+  );
+  return `${header}.${body}.${sig}`;
+}
 
 function generateOtp(): string {
   return String(crypto.randomInt(100000, 999999));
@@ -78,7 +95,7 @@ router.post("/auth/verify-otp", async (req, res): Promise<void> => {
     );
 
     const payload = { mobile, farmerId: farmer?.["farmerId"] ?? null, role: "farmer" };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const token = signJwt(payload);
 
     res.json({
       success: true,
