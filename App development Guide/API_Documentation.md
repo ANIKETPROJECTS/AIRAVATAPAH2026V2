@@ -123,17 +123,16 @@ module.exports = {
 git clone <your-repo> /var/www/krushi-suvidha
 cd /var/www/krushi-suvidha
 
-# 2. Install dependencies
-npm install -g pnpm pm2
-pnpm install
+# 2. Install Node.js (v20+) and PM2 globally
+npm install -g pm2
 
-# 3. Build frontend (React/Vite)
-pnpm --filter @workspace/agri-admin run build
-# Output: artifacts/agri-admin/dist/
+# 3. Install all dependencies (single command)
+npm install
 
-# 4. Build API server (TypeScript → ESM)
-pnpm --filter @workspace/api-server run build
-# Output: artifacts/api-server/dist/
+# 4. Build everything — frontend + API server (single command)
+npm run build
+# Builds: artifacts/agri-admin/dist/  (React frontend)
+#         artifacts/api-server/dist/   (Express API server)
 
 # 5. Start with PM2
 pm2 start ecosystem.config.cjs
@@ -148,6 +147,9 @@ sudo nginx -t && sudo systemctl reload nginx
 
 # 8. SSL certificate (Let's Encrypt)
 sudo certbot --nginx -d krushisuvidhaai.airavatatechnologies.com
+
+# To redeploy after code changes:
+# git pull && npm install && npm run build && pm2 restart krushi-suvidha
 ```
 
 ---
