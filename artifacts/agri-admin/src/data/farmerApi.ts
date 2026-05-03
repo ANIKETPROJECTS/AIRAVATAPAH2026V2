@@ -39,6 +39,10 @@ export interface SavedDocState {
   aadharPhoto?: { base64: string; mimeType: string } | null;
 }
 
+export interface OcrDocSection {
+  [field: string]: unknown;
+}
+
 export interface FarmerRecord {
   farmerId: string;
   name: string;
@@ -52,7 +56,7 @@ export interface FarmerRecord {
   surveyNumber: string;
   bankAccount: string;
   status: "Active" | "Inactive" | "Pending" | "Verified" | "Cancelled";
-  source: "ocr" | "manual" | "seed";
+  source: "ocr" | "manual" | "seed" | "mobile_ocr";
   addedAt: string;
   fatherName?: string;
   dob?: string;
@@ -76,6 +80,16 @@ export interface FarmerRecord {
   aiRiskScore?: number;
   extractionData?: Record<string, SavedDocState>;
   farmerProfile?: Record<string, string>;
+  address?: string;
+  state?: string;
+  farmerNames?: string[];
+  ocr?: {
+    aadhar?: OcrDocSection;
+    passbook?: OcrDocSection;
+    form7?: OcrDocSection;
+    form12?: OcrDocSection;
+    form8a?: OcrDocSection;
+  };
 }
 
 const API = "/api";

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { X, Sparkles, FileText, User, MapPin, Landmark, Shield, ChevronDown, ChevronUp, Edit2, Save, XCircle, Trash2, Loader2 } from "lucide-react";
-import { apiUpdateFarmer, apiDeleteFarmer, type FarmerRecord, type DocRecord } from "@/data/farmerApi";
+import { X, Sparkles, FileText, User, MapPin, Landmark, Shield, ChevronDown, ChevronUp, Edit2, Save, XCircle, Trash2, Loader2, Smartphone } from "lucide-react";
+import { apiUpdateFarmer, apiDeleteFarmer, type FarmerRecord, type DocRecord, type OcrDocSection } from "@/data/farmerApi";
 
 interface Props {
   farmer: FarmerRecord;
@@ -143,6 +143,11 @@ export default function FarmerDetailModal({ farmer, onClose, onDeleted, onUpdate
               {farmer.source === "ocr" && (
                 <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium flex-shrink-0">
                   <Sparkles className="h-3 w-3" />OCR
+                </span>
+              )}
+              {farmer.source === "mobile_ocr" && (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium flex-shrink-0">
+                  <Smartphone className="h-3 w-3" />Mobile OCR
                 </span>
               )}
               {farmer.source === "manual" && (
@@ -383,6 +388,64 @@ export default function FarmerDetailModal({ farmer, onClose, onDeleted, onUpdate
               </div>
             )}
           </Section>
+
+          {/* OCR Extracted Document Data */}
+          {farmer.ocr && Object.keys(farmer.ocr).length > 0 && (
+            <Section title="Extracted Document Data" icon={<Smartphone className="h-4 w-4 text-secondary" />} defaultOpen={false}>
+              <div className="space-y-4">
+                {(["aadhar", "passbook", "form7", "form12", "form8a"] as const).map(sec => {
+                  const data = farmer.ocr?.[sec];
+                  if (!data) return null;
+                  const labels: Record<string, string> = {
+                    aadhar: "Aadhaar Card",
+                    passbook: "Bank Passbook",
+                    form7: "7/12 Satbara (Form 7)",
+                    form12: "Form 12 — Crop Register",
+                    form8a: "Form 8A",
+                  };
+                  const skip = new Set(["rawText", "html", "photoBase64", "photoMimeType", "images", "transactions", "tables", "textBlocks", "cropEntries", "ownershipEntries", "holdings"]);
+                  const fields = Object.entries(data as OcrDocSection).filter(([k, v]) =>
+                    !skip.has(k) && v !== null && v !== undefined && v !== "" && !Array.isArray(v) && typeof v !== "object"
+                  );
+                  const arrayFields = Object.entries(data as OcrDocSection).filter(([k, v]) =>
+                    !skip.has(k) && Array.isArray(v) && (v as unknown[]).length > 0
+                  );
+                  return (
+                    <div key={sec} className="border border-border/60 rounded-lg overflow-hidden">
+                      <div className="px-3 py-2 bg-emerald-50 text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5" />{labels[sec]}
+                      </div>
+                      <div className="p-3">
+                        {fields.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                            {fields.map(([k, v]) => (
+                              <div key={k} className="flex flex-col gap-0.5">
+                                <span className="text-[10px] text-muted-foreground capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                <span className="text-xs font-medium">{String(v)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {arrayFields.map(([k, v]) => (
+                          <div key={k} className="mt-2">
+                            <div className="text-[10px] text-muted-foreground capitalize mb-1">{k.replace(/([A-Z])/g, ' $1').trim()}</div>
+                            <div className="flex flex-wrap gap-1">
+                              {(v as string[]).map((item, i) => (
+                                <span key={i} className="text-xs px-2 py-0.5 bg-muted/40 rounded">{String(item)}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        {fields.length === 0 && arrayFields.length === 0 && (
+                          <span className="text-xs text-muted-foreground">No text fields extracted</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
 
           {/* Schemes & AI Risk */}
           <Section title="Schemes & AI Assessment" icon={<Shield className="h-4 w-4 text-secondary" />}>

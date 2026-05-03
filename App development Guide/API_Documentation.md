@@ -1,16 +1,18 @@
-# Krushi Suvidha AI — Mobile App API Documentation
+# Krushi Suvidha AI — API Documentation
+## AgriAdmin Backend — Complete Endpoint Reference
 
-**Base URL (Production):** `https://krushisuvidhaai.airavatatechnologies.com/api`  
-**Server:** VPS running Node.js (Express) via PM2, reverse-proxied through Nginx on **port 3014**  
-**Protocol:** HTTPS only in production  
-**Content-Type:** `application/json` unless uploading files (then `multipart/form-data`)  
-**CORS:** Enabled for all origins on the API server
+---
+
+## Base URL
+
+**Production:** `https://krushisuvidhaai.airavatatechnologies.com/api`
+**Development:** `http://localhost:8000/api`
 
 ---
 
 ## Environment Credentials
 
-> These values are already configured in `ecosystem.config.cjs` and must be present on the VPS.
+> These values are configured in `ecosystem.config.cjs` and must be present on the VPS.
 
 | Variable | Value |
 |----------|-------|
@@ -22,155 +24,66 @@
 
 ---
 
-## Table of Contents
-
-1. [Server & Infrastructure Setup](#1-server--infrastructure-setup)
-2. [Authentication APIs](#2-authentication-apis) *(new — to be added)*
-3. [Document Upload & OCR Extraction APIs](#3-document-upload--ocr-extraction-apis) *(existing)*
-4. [Farmer Registration & Profile APIs](#4-farmer-registration--profile-apis) *(existing + extensions)*
-5. [Scheme APIs](#5-scheme-apis) *(existing)*
-6. [Grievance APIs](#6-grievance-apis) *(new — to be added)*
-7. [Notification APIs](#7-notification-apis) *(new — to be added)*
-8. [Error Handling](#8-error-handling)
-9. [Data Models Reference](#9-data-models-reference)
-10. [New Endpoints Summary](#10-new-endpoints-summary)
-
----
-
-## 1. Server & Infrastructure Setup
-
-### Architecture — Single Port (3014)
-
-The Express API server runs on **port 3014** and handles everything:
-- `/api/*` → All API routes
-- `/*` → Serves the built React admin dashboard (static files)
-
-This means only **one process, one port** — no separate frontend server needed.
-
-```
-Internet → Nginx (80/443) → localhost:3014 (Express — API + Static Frontend)
-```
-
----
-
-### Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name krushisuvidhaai.airavatatechnologies.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name krushisuvidhaai.airavatatechnologies.com;
-
-    ssl_certificate /etc/letsencrypt/live/krushisuvidhaai.airavatatechnologies.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/krushisuvidhaai.airavatatechnologies.com/privkey.pem;
-
-    # Everything goes to the single Express server on port 3014
-    location / {
-        proxy_pass http://localhost:3014;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 120s;
-        client_max_body_size 55M;
-    }
-}
-```
-
----
-
-### PM2 Ecosystem Config (`ecosystem.config.cjs`)
-
-> This file is already created at the root of the project. Just run the commands below on your VPS.
-
-```js
-module.exports = {
-  apps: [
-    {
-      name: "krushi-suvidha",
-      cwd: "./artifacts/api-server",
-      script: "node",
-      args: "--enable-source-maps ./dist/index.mjs",
-      instances: 1,
-      exec_mode: "fork",
-      autorestart: true,
-      watch: false,
-      max_memory_restart: "512M",
-      env: {
-        PORT: 3014,
-        NODE_ENV: "production",
-        MONGODB_URI: "mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0",
-        DATALAB_API_KEY: "Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI",
-      },
-    },
-  ],
-};
-```
-
----
-
-### VPS Deployment Steps
+## VPS Deploy Commands
 
 ```bash
-# 1. Clone/upload project to VPS
-git clone <your-repo> /var/www/krushi-suvidha
-cd /var/www/krushi-suvidha
+# After pulling latest code:
+npm run build && pm2 restart krushi-suvidha
 
-# 2. Install Node.js (v20+) and PM2 globally
-npm install -g pm2
-
-# 3. Install all dependencies (single command)
-npm install
-
-# 4. Build everything — frontend + API server (single command)
-npm run build
-# Builds: artifacts/agri-admin/dist/  (React frontend)
-#         artifacts/api-server/dist/   (Express API server)
-
-# 5. Start with PM2
-pm2 start ecosystem.config.cjs
-
-# 6. Save PM2 process list (auto-restart on reboot)
-pm2 save
-pm2 startup
-
-# 7. Set up Nginx (copy config above to /etc/nginx/sites-available/krushi-suvidha)
-sudo ln -s /etc/nginx/sites-available/krushi-suvidha /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-
-# 8. SSL certificate (Let's Encrypt)
-sudo certbot --nginx -d krushisuvidhaai.airavatatechnologies.com
-
-# To redeploy after code changes:
-# git pull && npm install && npm run build && pm2 restart krushi-suvidha
+# First-time setup only:
+npm install && npm run build && pm2 start ecosystem.config.cjs
 ```
 
 ---
 
-## 2. Authentication APIs
+## MongoDB Collections
 
-> ✅ **Implemented and live** on the API server.
+| Collection | Purpose |
+|------------|---------|
+| `farmers` | All farmer registrations (manual + mobile OCR) |
+| `schemes` | Government schemes (seeded) |
+| `otp_sessions` | OTP store (auto-deleted on verify) |
+| `push_tokens` | Expo push tokens per mobile |
+| `grievances` | Farmer grievances |
+| `notifications` | Push + in-app notifications |
 
-### 2.1 Request OTP
+---
 
+## Authentication
+
+All protected endpoints require:
 ```
-POST /api/auth/send-otp
-Content-Type: application/json
+Authorization: Bearer <jwt_token>
 ```
+
+JWT payload: `{ mobile, farmerId, role: "farmer", iat, exp }`
+Expiry: **7 days**
+Algorithm: **HS256** (Node.js built-in crypto — no external dependencies)
+
+---
+
+## Complete Endpoint Reference
+
+### Health
+
+#### `GET /api/health`
+Returns server status.
+
+**Response:**
+```json
+{ "status": "ok", "timestamp": "2026-05-03T..." }
+```
+
+---
+
+### Authentication
+
+#### `POST /api/auth/send-otp`
+Generate and store a 6-digit OTP for a mobile number.
 
 **Body:**
 ```json
-{
-  "mobile": "9876543210"
-}
+{ "mobile": "9876543210" }
 ```
 
 **Response 200:**
@@ -182,53 +95,31 @@ Content-Type: application/json
   "expiresIn": 300
 }
 ```
+> `otp` is returned directly during development. Integrate MSG91/Fast2SMS in production and remove from response.
 
-> **Note:** The `otp` field is returned directly for development. In production, integrate an SMS gateway (MSG91 / Fast2SMS) and remove it from the response.
-
-**Response 400:**
-```json
-{ "error": "Valid 10-digit mobile number required" }
-```
-
-**Notes:**
-- OTP is 6 digits, valid for 5 minutes
-- Stored in MongoDB `otp_sessions` collection
-- A new OTP request overwrites the previous one for the same mobile
+**Response 400:** `{ "error": "Valid 10-digit mobile number required" }`
 
 ---
 
-### 2.2 Verify OTP & Get JWT Token
-
-```
-POST /api/auth/verify-otp
-Content-Type: application/json
-```
+#### `POST /api/auth/verify-otp`
+Verify OTP. Returns JWT + farmer record if registered.
 
 **Body:**
 ```json
-{
-  "mobile": "9876543210",
-  "otp": "482910"
-}
+{ "mobile": "9876543210", "otp": "482910" }
 ```
 
-**Response 200 — Farmer exists:**
+**Response 200 — returning farmer:**
 ```json
 {
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "farmer": {
-    "farmerId": "F-042",
-    "name": "Ramesh Patel",
-    "mobile": "9876543210",
-    "status": "Verified",
-    "district": "Nashik"
-  },
+  "farmer": { "farmerId": "F-042", "name": "Ramesh Patel", "status": "Pending", ... },
   "isRegistered": true
 }
 ```
 
-**Response 200 — Mobile not yet registered:**
+**Response 200 — new farmer (no registration yet):**
 ```json
 {
   "success": true,
@@ -238,140 +129,99 @@ Content-Type: application/json
 }
 ```
 
-**Response 400:**
-```json
-{ "error": "OTP expired. Please request a new one." }
-```
-
-**Notes:**
-- JWT payload: `{ mobile, farmerId, role: "farmer", iat, exp }`
-- Token expires in **7 days**
-- Include in all subsequent requests: `Authorization: Bearer <token>`
-- OTP session is deleted after successful verification
+**Response 400:** `{ "error": "OTP expired. Please request a new one." }` or `{ "error": "Invalid OTP" }`
 
 ---
 
-### 2.3 Register Expo Push Token
-
-```
-POST /api/auth/register-push-token
-Content-Type: application/json
-```
+#### `POST /api/auth/register-push-token`
+Store Expo push token for a mobile number.
 
 **Body:**
 ```json
-{
-  "mobile": "9876543210",
-  "pushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
-}
+{ "mobile": "9876543210", "pushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" }
 ```
 
-**Response 200:**
-```json
-{ "success": true }
-```
+**Response 200:** `{ "success": true }`
 
-> Call this on every app launch after login to keep the token current.
+> Call this on every app launch after login to keep the push token current.
 
 ---
 
-## 3. Document Upload & OCR Extraction APIs
+### Document OCR
 
-> These endpoints **already exist** in the current API server. The mobile app uses them exactly as described below.
-
-### 3.1 Get Supported Document Types
-
-```
-GET /api/document-types
-```
+#### `GET /api/document-types`
+Returns the list of supported document types for upload.
 
 **Response 200:**
 ```json
 {
   "types": [
-    { "id": "form7",        "label": "Form 7 (Ownership Register)",        "description": "Maharashtra 7/12 — Rights Register" },
-    { "id": "form12",       "label": "Form 12 (Crop Inspection Register)",  "description": "Maharashtra 7/12 — Crop Inspection Register" },
-    { "id": "form8a",       "label": "Form 8A (Holding Register)",          "description": "Maharashtra — Holding Register" },
-    { "id": "aadhar",       "label": "Aadhaar Card",                        "description": "UIDAI Aadhaar identity card" },
-    { "id": "bank_passbook","label": "Bank Passbook",                       "description": "Bank account passbook front page" }
+    { "id": "aadhar",       "label": "Aadhaar Card",             "description": "..." },
+    { "id": "bank_passbook","label": "Bank Passbook",            "description": "..." },
+    { "id": "form7",        "label": "7/12 Satbara",             "description": "..." },
+    { "id": "form12",       "label": "Form 12 — Crop Register",  "description": "..." },
+    { "id": "form8a",       "label": "Form 8A",                  "description": "..." }
   ]
 }
 ```
 
 ---
 
-### 3.2 Upload Document for OCR Extraction
+#### `POST /api/extract`
+Upload a document for OCR extraction. Fans out to two Datalab pipelines simultaneously.
 
-```
-POST /api/extract
-Content-Type: multipart/form-data
-Authorization: Bearer <token>
-```
+**Content-Type:** `multipart/form-data`
 
-**Form Fields:**
+**Fields:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file` | File | Yes | PDF or image (JPG/PNG/WEBP), max 50 MB |
-| `document_type` | string | Yes | One of: `form7`, `form12`, `form8a`, `aadhar`, `bank_passbook` |
-| `mode` | string | No | `fast`, `balanced`, or `accurate` (default: `accurate`) |
-| `profile_phone` | string | No | Farmer's mobile number — auto-saves extracted data to their profile |
+| `file` | File | ✅ | PDF or image (max 50 MB) |
+| `document_type` | string | ✅ | One of: `aadhar`, `bank_passbook`, `form7`, `form12`, `form8a` |
+| `profile_phone` | string | ✅ for mobile app | Farmer's mobile number. When set, the extraction result is automatically saved into the farmer's record in the `farmers` collection, making it visible in the admin dashboard. |
+| `mode` | string | ❌ | `fast` / `balanced` / `accurate` (default: `accurate`) |
 
 **Response 200:**
 ```json
 {
   "request_id": "a1b2c3d4e5f6...",
-  "document_type": "form7",
-  "document_label": "Form 7 (Ownership Register)",
+  "document_type": "aadhar",
+  "document_label": "Aadhaar Card",
   "mode": "accurate",
   "profile_phone": "9876543210",
   "pipelines": {
     "extract": { "status": "submitted" },
-    "marker": { "status": "submitted" }
+    "marker":  { "status": "submitted" }
   }
 }
 ```
-
-> Save the `request_id`. Poll the next endpoint every 4 seconds until `status` is `"complete"` or `"error"`.
 
 ---
 
-### 3.3 Poll Extraction Result
+#### `GET /api/extract/:requestId`
+Poll for extraction result. Call every 4 seconds until `status` is not `"processing"`.
 
-```
-GET /api/extract/:request_id
-Authorization: Bearer <token>
-```
-
-**Response — Still Processing:**
+**Response — still processing:**
 ```json
-{
-  "status": "processing",
-  "document_type": "form7",
-  "pipelines": {
-    "extract": { "status": "processing" },
-    "marker": { "status": "complete" }
-  }
-}
+{ "status": "processing", "document_type": "aadhar", ... }
 ```
 
-**Response — Complete:**
+**Response — complete:**
 ```json
 {
   "status": "complete",
-  "document_type": "form7",
-  "document_label": "Form 7 (Ownership Register)",
+  "document_type": "aadhar",
+  "document_label": "Aadhaar Card",
   "page_count": 1,
-  "runtime": 12.4,
   "structured": {
     "sections": [
       {
-        "title": "Header Details",
+        "title": "Identity",
         "fields": [
-          { "key": "village",       "label": "Village (गाव)",     "value": "Ozhar" },
-          { "key": "taluka",        "label": "Taluka (तालुका)",   "value": "Niphad" },
-          { "key": "district",      "label": "District (जिल्हा)", "value": "Nashik" },
-          { "key": "survey_number", "label": "Survey Number",     "value": "142/A" }
+          { "key": "name",          "label": "Full Name",      "value": "Ramesh Patel" },
+          { "key": "aadhaarNumber", "label": "Aadhaar Number", "value": "XXXX XXXX 1234" },
+          { "key": "dateOfBirth",   "label": "Date of Birth",  "value": "15-06-1985" },
+          { "key": "gender",        "label": "Gender",         "value": "Male" }
         ],
         "tables": []
       }
@@ -380,299 +230,178 @@ Authorization: Bearer <token>
   },
   "profile": {
     "phone": "9876543210",
-    "section": "land",
+    "section": "aadhar",
     "saved": true,
     "error": null
   }
 }
 ```
 
-**Aadhaar response also includes:**
-```json
-{
-  "aadhar_photo": {
-    "base64": "/9j/4AAQSkZJRgAB...",
-    "mimeType": "image/jpeg"
-  }
-}
-```
-
-**Polling Strategy:**
-```
-Upload → save request_id → poll every 4 seconds → stop at "complete" or "error" → timeout after 3 minutes
-```
+> When `profile.saved === true`, the farmer record in MongoDB has been created/updated and is immediately visible in the admin dashboard.
 
 ---
 
-## 4. Farmer Registration & Profile APIs
+### Farmers
 
-### 4.1 Submit New Farmer Registration
+#### `GET /api/farmers`
+List all farmers.
 
-```
-POST /api/farmers
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+**Response 200:** Array of farmer objects
 
-**Request Body:**
+---
+
+#### `GET /api/farmers/:id`
+Get a single farmer by `farmerId`.
+
+**Response 200:** Farmer object
+**Response 404:** `{ "error": "Farmer not found" }`
+
+**Farmer object shape:**
 ```json
 {
+  "farmerId": "F-042",
   "name": "Ramesh Patel",
   "mobile": "9876543210",
+  "status": "Pending",
+  "source": "mobile_ocr",
   "aadhaar": "XXXX-XXXX-1234",
-  "dob": "1985-06-15",
+  "fatherName": "Shyam Patel",
+  "dob": "15-06-1985",
   "gender": "Male",
-  "fatherName": "Suresh Patel",
-  "category": "OBC",
   "village": "Ozhar",
+  "district": "Nashik",
   "taluka": "Niphad",
-  "district": "Nashik",
-  "surveyNumber": "142/A",
-  "land": "2.20",
-  "crop": "Grapes",
-  "bankAccount": "SBI-XXXXXXXXXXXX",
-  "bankName": "State Bank of India",
-  "branchName": "Niphad Branch",
-  "ifsc": "SBIN0012345",
-  "accountNo": "XXXXXXXXXXXX",
-  "accountType": "Savings",
-  "status": "Pending",
-  "source": "mobile",
+  "surveyNumber": "42/3",
+  "land": "2.00",
+  "crop": "Cotton",
+  "bankName": "Bank of Maharashtra",
+  "branchName": "Ozhar Branch",
+  "ifsc": "MAHB0001234",
+  "accountNo": "60123456789",
+  "bankAccount": "60123456789",
+  "addedAt": "2026-05-03T...",
   "docs": [
-    { "name": "Form 7",       "fileName": "form7.pdf",    "size": "1.2 MB", "status": "uploaded" },
-    { "name": "Form 12",      "fileName": "form12.pdf",   "size": "0.9 MB", "status": "uploaded" },
-    { "name": "Form 8A",      "fileName": "form8a.pdf",   "size": "1.1 MB", "status": "uploaded" },
-    { "name": "Aadhaar Card", "fileName": "aadhar.jpg",   "size": "0.5 MB", "status": "uploaded" },
-    { "name": "Bank Passbook","fileName": "passbook.jpg", "size": "0.6 MB", "status": "uploaded" }
-  ]
-}
-```
-
-**Response 201:**
-```json
-{
-  "farmerId": "F-043",
-  "name": "Ramesh Patel",
-  "status": "Pending",
-  "mobile": "9876543210",
-  "addedAt": "2026-05-03T07:30:00.000Z",
-  "source": "mobile"
-}
-```
-
----
-
-### 4.2 Get Farmer Profile by ID
-
-```
-GET /api/farmers/:farmerId
-Authorization: Bearer <token>
-```
-
-> **Note:** A dedicated single-farmer endpoint needs to be added to the API server. Until then, use `GET /api/farmers` and filter client-side by `farmerId`.
-
-**Response 200:** Full `FarmerRecord` object (see Data Models section).
-
-**Response 404:**
-```json
-{ "error": "Farmer not found" }
-```
-
----
-
-### 4.3 Poll Farmer Status (lightweight)
-
-```
-GET /api/farmers/:farmerId/status
-Authorization: Bearer <token>
-```
-
-**Response 200:**
-```json
-{
-  "farmerId": "F-043",
-  "status": "Verified",
-  "statusUpdatedAt": "2026-05-04T09:15:00.000Z",
-  "message": "Your registration has been verified by the District Officer."
-}
-```
-
-**Status values:**
-
-| Status | Meaning for Farmer |
-|--------|--------------------|
-| `Pending` | Application received, under review |
-| `Verified` | Approved — full access unlocked |
-| `Active` | Active registered farmer |
-| `Cancelled` | Application rejected |
-| `Inactive` | Account disabled |
-
----
-
-### 4.4 Update Farmer Profile
-
-```
-PATCH /api/farmers/:farmerId
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Body (only fields to update):**
-```json
-{
-  "mobile": "9876543211",
-  "crop": "Wheat"
-}
-```
-
-**Response 200:** Returns the full updated farmer object.
-
----
-
-## 5. Scheme APIs
-
-> These endpoints **already exist**.
-
-### 5.1 Get All Active Schemes
-
-```
-GET /api/schemes
-GET /api/schemes?type=CENTRAL
-GET /api/schemes?type=STATE
-GET /api/schemes?search=PM-KISAN
-Authorization: Bearer <token>
-```
-
-**Response 200:** Array of Scheme objects (see Data Models).
-
----
-
-### 5.2 Get Single Scheme Details
-
-```
-GET /api/schemes/:schemeId
-Authorization: Bearer <token>
-```
-
-**Example:** `GET /api/schemes/pm-kisan`
-
-**Response 404:**
-```json
-{ "error": "Scheme not found" }
-```
-
----
-
-## 6. Grievance APIs
-
-> ✅ **Implemented and live** on the API server.
-
-### 6.1 Submit a Grievance
-
-```
-POST /api/grievances
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "farmerId": "F-043",
-  "farmerName": "Ramesh Patel",
-  "mobile": "9876543210",
-  "district": "Nashik",
-  "village": "Ozhar",
-  "category": "Scheme",
-  "subject": "PM-KISAN installment not received",
-  "description": "I have been verified since April 2026 but the first installment of PM-KISAN has not been credited to my account.",
-  "schemeId": "pm-kisan",
-  "schemeName": "PM-KISAN",
-  "attachmentUrl": null
-}
-```
-
-**Response 201:**
-```json
-{
-  "grievanceId": "GR-2026-0041",
-  "status": "Submitted",
-  "submittedAt": "2026-05-03T08:00:00.000Z",
-  "message": "Your grievance has been registered. Tracking ID: GR-2026-0041"
-}
-```
-
----
-
-### 6.2 Get Farmer's Grievances
-
-```
-GET /api/grievances?farmerId=F-043
-Authorization: Bearer <token>
-```
-
-**Response 200:**
-```json
-[
-  {
-    "grievanceId": "GR-2026-0041",
-    "category": "Scheme",
-    "subject": "PM-KISAN installment not received",
-    "status": "Under Review",
-    "submittedAt": "2026-05-03T08:00:00.000Z",
-    "resolvedAt": null,
-    "response": null
+    { "name": "Aadhaar Card", "fileName": "aadhar.pdf", "size": "—", "status": "uploaded", "section": "aadhar" },
+    { "name": "Bank Passbook", "fileName": "bank_passbook.pdf", "size": "—", "status": "uploaded", "section": "passbook" }
+  ],
+  "ocr": {
+    "aadhar": { "name": "Ramesh Patel", "aadhaarNumber": "XXXX XXXX 1234", ... },
+    "passbook": { "bankName": "Bank of Maharashtra", "ifsc": "MAHB0001234", ... },
+    "form7": { "village": "Ozhar", "surveyNumber": "42/3", "totalArea": "2.00", ... }
   }
-]
+}
 ```
 
-**Grievance Status Values:**
-
-| Status | Meaning |
-|--------|---------|
-| `Submitted` | Received by the system |
-| `Under Review` | Being reviewed by officer |
-| `Resolved` | Issue resolved |
-| `Closed` | Closed without action |
+> **`source: "mobile_ocr"`** — farmer created by mobile app OCR upload (vs `"manual"` for admin-created, `"seed"` for demo data)
 
 ---
 
-### 6.3 Get Single Grievance Detail
+#### `POST /api/farmers`
+Create farmer manually (admin dashboard — New Registration form).
 
-```
-GET /api/grievances/:grievanceId
-Authorization: Bearer <token>
-```
+**Body:** Farmer fields object (all top-level fields)
+**Response 201:** Created farmer object
 
-**Response 200:**
+---
+
+#### `PATCH /api/farmers/:id`
+Update a farmer's fields (admin only).
+
+**Body:** Partial farmer fields
+**Response 200:** Updated farmer object
+
+---
+
+#### `DELETE /api/farmers/:id`
+Delete a farmer.
+
+**Response 200:** `{ "success": true }`
+
+---
+
+### Schemes
+
+#### `GET /api/schemes`
+List all schemes with optional filters.
+
+**Query params:** `?type=Central`, `?search=kisan`
+
+**Response 200:** Array of scheme objects
+
+---
+
+#### `GET /api/schemes/:id`
+Get single scheme.
+
+---
+
+#### `PATCH /api/schemes/:id/status`
+Update scheme status (admin).
+
+**Body:** `{ "status": "Active" }` or `{ "status": "Closed" }`
+
+---
+
+### Grievances
+
+#### `GET /api/grievances`
+List grievances with filters.
+
+**Query params:** `?mobile=9876543210`, `?farmerId=F-042`, `?status=Open`
+
+**Response 200:** Array of grievance objects
+
+---
+
+#### `GET /api/grievances/:id`
+Get single grievance.
+
+---
+
+#### `POST /api/grievances`
+Submit a new grievance.
+
+**Body:**
 ```json
 {
-  "grievanceId": "GR-2026-0041",
-  "farmerId": "F-043",
-  "category": "Scheme",
+  "mobile": "9876543210",
+  "farmerId": "F-042",
   "subject": "PM-KISAN installment not received",
-  "description": "I have been verified...",
-  "status": "Resolved",
-  "submittedAt": "2026-05-03T08:00:00.000Z",
-  "resolvedAt": "2026-05-05T14:30:00.000Z",
-  "response": "Your payment has been initiated. Please allow 2–3 working days for credit.",
-  "resolvedBy": "District Officer — Nashik"
+  "description": "The 15th installment for Rabi 2025 has not been credited...",
+  "category": "Scheme"
+}
+```
+
+**Response 201:**
+```json
+{
+  "grievanceId": "GRV-A1B2C3D4",
+  "status": "Open",
+  "createdAt": "2026-05-03T..."
 }
 ```
 
 ---
 
-## 7. Notification APIs
+#### `PATCH /api/grievances/:id`
+Update grievance status / add officer reply (admin).
 
-> ✅ **Implemented and live** on the API server.
-
-### 7.1 Get Farmer Notifications
-
+**Body:**
+```json
+{
+  "status": "Resolved",
+  "officerReply": "Payment has been processed. Please check your bank account."
+}
 ```
-GET /api/notifications?farmerId=F-043
-GET /api/notifications?mobile=9876543210
-GET /api/notifications?farmerId=F-043&unreadOnly=true
-```
+
+---
+
+### Notifications
+
+#### `GET /api/notifications`
+Get notifications with filters.
+
+**Query params:** `?mobile=9876543210`, `?farmerId=F-042`, `?unreadOnly=true`
 
 **Response 200:**
 ```json
@@ -681,63 +410,46 @@ GET /api/notifications?farmerId=F-043&unreadOnly=true
     "notificationId": "NOTIF-1746252000000-x7k2z",
     "type": "status_change",
     "title": "Registration Verified!",
-    "body": "Congratulations! Your farmer registration has been verified.",
-    "farmerId": "F-042",
+    "body": "Your farmer registration has been verified by the District Officer.",
     "mobile": "9876543210",
+    "farmerId": "F-042",
     "read": false,
     "readAt": null,
     "data": { "newStatus": "Verified" },
-    "createdAt": "2026-05-04T09:15:00.000Z"
+    "createdAt": "2026-05-03T..."
   }
 ]
 ```
 
-**Notification Types:**
+**Notification types:**
 
-| Type | Trigger |
-|------|---------|
-| `status_change` | Officer changes farmer status (Verified / Cancelled) |
-| `scheme_eligible` | Sent on verification, listing eligible schemes |
+| Type | When sent |
+|------|-----------|
+| `status_change` | Officer changes farmer status |
+| `scheme_eligible` | On verification — lists eligible schemes |
 | `grievance_update` | Grievance status changes |
-| `general` | Admin broadcasts |
+| `general` | Admin broadcast |
 
 ---
 
-### 7.2 Mark Notification as Read
-
-```
-PATCH /api/notifications/:notificationId/read
-```
+#### `PATCH /api/notifications/:id/read`
+Mark single notification as read.
 
 **Response 200:** Updated notification object
 
 ---
 
-### 7.3 Mark All as Read
+#### `PATCH /api/notifications/read-all`
+Mark all notifications as read for a mobile number.
 
-```
-PATCH /api/notifications/read-all
-Content-Type: application/json
-```
+**Body:** `{ "mobile": "9876543210" }`
 
-**Body:**
-```json
-{ "mobile": "9876543210" }
-```
-
-**Response 200:**
-```json
-{ "success": true, "updated": 3 }
-```
+**Response 200:** `{ "success": true, "updated": 3 }`
 
 ---
 
-### 7.4 Send Notification (Admin / Server-side)
-
-```
-POST /api/notifications/send
-Content-Type: application/json
-```
+#### `POST /api/notifications/send`
+Send a notification (admin / server-side use). Also triggers Expo push delivery.
 
 **Body:**
 ```json
@@ -753,174 +465,55 @@ Content-Type: application/json
 
 **Response 201:** Created notification object
 
-> This endpoint also delivers an Expo push notification if the farmer has a registered push token (via `POST /api/auth/register-push-token`). Push delivery failures are non-fatal — the notification is always saved to MongoDB.
+> Push delivery is non-fatal — notification is always saved to MongoDB even if push delivery fails.
 
 ---
 
-## 8. Error Handling
+## Error Responses
 
-All errors follow this format:
+All errors follow this shape:
 ```json
 { "error": "Human-readable error message" }
 ```
 
-**HTTP Status Codes:**
-
-| Code | Meaning |
-|------|---------|
-| `200` | Success |
-| `201` | Created successfully |
-| `400` | Bad request (missing or invalid fields) |
-| `401` | Unauthorized (missing or invalid token) |
-| `403` | Forbidden (access denied) |
-| `404` | Resource not found |
-| `429` | Too many requests (rate limited) |
-| `500` | Internal server error |
-| `502` | Upstream OCR service error |
-
-**Mobile App Error Handling Strategy:**
-- `401` → Clear local token → Redirect to Login screen
-- `502` on OCR → Show retry button: "Processing service unavailable, please retry"
-- `429` on OTP → Show countdown timer
-- Network errors → Show offline banner with retry
+| Status | Meaning |
+|--------|---------|
+| 400 | Invalid input / validation failed |
+| 401 | Missing or invalid JWT token |
+| 404 | Resource not found |
+| 500 | Internal server error |
+| 502 | Upstream (Datalab) error |
 
 ---
 
-## 9. Data Models Reference
+## Mobile App OCR Registration Flow
 
-### FarmerRecord
+This is how a farmer's registration appears in the admin dashboard:
 
-```typescript
-interface FarmerRecord {
-  farmerId: string;          // "F-001" — auto-assigned
-  name: string;
-  mobile?: string;
-  aadhaar: string;           // masked: "XXXX-XXXX-1234"
-  dob?: string;              // ISO date: "1985-06-15"
-  gender?: string;           // "Male" | "Female" | "Other"
-  fatherName?: string;
-  category?: string;         // "SC" | "ST" | "OBC" | "NT" | "VJNT" | "General"
-  religion?: string;
-  diffAbled?: boolean;
-  disabilityType?: string;
-  village: string;
-  taluka?: string;
-  district: string;
-  land: number | string;     // hectares
-  surveyNumber: string;
-  khateNumber?: string;
-  crop: string;
-  bankAccount: string;
-  bankName?: string;
-  branchName?: string;
-  ifsc?: string;
-  accountNo?: string;
-  accountType?: string;
-  status: "Active" | "Inactive" | "Pending" | "Verified" | "Cancelled";
-  source: "ocr" | "manual" | "seed" | "mobile";
-  addedAt: string;           // ISO datetime
-  docs?: DocRecord[];
-  aiRiskScore?: number;
-}
-
-interface DocRecord {
-  name: string;              // "Form 7"
-  fileName: string;          // "form7.pdf"
-  size: string;              // "1.2 MB"
-  status: "uploaded" | "failed" | "none";
-}
 ```
+Mobile App                      API Server                    Admin Dashboard
+─────────────────────────────────────────────────────────────────────────────
+1. POST /auth/send-otp          → Generate OTP
+2. POST /auth/verify-otp        → Return JWT
+3. POST /auth/register-push-token
 
-### Document Type IDs
-
-| ID | Label | Required |
-|----|-------|---------|
-| `form7` | Form 7 — Ownership Register (7/12) | Yes |
-| `form12` | Form 12 — Crop Inspection Register | Yes |
-| `form8a` | Form 8A — Holding Register | Yes |
-| `aadhar` | Aadhaar Card | Yes |
-| `bank_passbook` | Bank Passbook | Yes |
-
-### Scheme Object
-
-```typescript
-interface Scheme {
-  id: string;
-  name: string;
-  type: "CENTRAL" | "STATE";
-  category: string;
-  description: string;
-  eligibility: {
-    summary: string;
-    parameters: { parameter: string; rule: string; validation: string }[];
-    familyCriteria: string[];
-    exclusions?: string[];
-  };
-  documents: string[];
-  validationRules: string[];
-  approvalRules: { approve: string[]; reject: string[] };
-  benefits: string;
-  status: "Active" | "Closed";
-}
-```
-
-### Grievance Object
-
-```typescript
-interface Grievance {
-  grievanceId: string;       // "GR-2026-0041"
-  farmerId: string;
-  farmerName: string;
-  mobile: string;
-  district: string;
-  village: string;
-  category: "Scheme" | "Land" | "Payment" | "Registration" | "Other";
-  subject: string;
-  description: string;
-  schemeId?: string;
-  schemeName?: string;
-  status: "Submitted" | "Under Review" | "Resolved" | "Closed";
-  submittedAt: string;
-  resolvedAt?: string;
-  response?: string;
-  resolvedBy?: string;
-}
+For each of 5 documents:
+4. POST /api/extract            → Submit to Datalab OCR
+   (with profile_phone)
+5. Poll GET /api/extract/:id    → When complete:
+                                  Auto-upsert into `farmers`
+                                  collection with:
+                                  - status: "Pending"
+                                  - source: "mobile_ocr"
+                                  - OCR fields mapped to
+                                    farmer top-level fields
+                                                              ← Farmer appears
+                                                                in Farmer Registry
+                                                                with all extracted
+                                                                document data
 ```
 
 ---
 
-## 10. Complete API Endpoints Reference
-
-### ✅ All Implemented
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/auth/send-otp` | Request OTP for mobile login |
-| `POST` | `/api/auth/verify-otp` | Verify OTP, get JWT token |
-| `POST` | `/api/auth/register-push-token` | Register Expo push token |
-| `GET` | `/api/document-types` | List supported OCR document types |
-| `POST` | `/api/extract` | Upload document for OCR extraction |
-| `GET` | `/api/extract/:requestId` | Poll OCR extraction result |
-| `GET` | `/api/farmers` | List all farmers |
-| `GET` | `/api/farmers/:id` | Get single farmer by farmerId |
-| `POST` | `/api/farmers` | Register new farmer |
-| `PATCH` | `/api/farmers/:id` | Update farmer profile |
-| `DELETE` | `/api/farmers/:id` | Delete farmer |
-| `GET` | `/api/schemes` | List schemes (filter by type/search) |
-| `GET` | `/api/schemes/:id` | Get single scheme |
-| `PATCH` | `/api/schemes/:id/status` | Update scheme status (Active/Closed) |
-| `GET` | `/api/grievances` | List grievances (filter by mobile/farmerId/status) |
-| `GET` | `/api/grievances/:id` | Get single grievance |
-| `POST` | `/api/grievances` | Submit new grievance |
-| `PATCH` | `/api/grievances/:id` | Update grievance status/reply (admin) |
-| `GET` | `/api/notifications` | Get notifications (filter by mobile/farmerId/unreadOnly) |
-| `PATCH` | `/api/notifications/:id/read` | Mark single notification as read |
-| `PATCH` | `/api/notifications/read-all` | Mark all notifications as read |
-| `POST` | `/api/notifications/send` | Send notification + Expo push |
-
----
-
-*Document Version: 1.1 — May 2026*  
-*Project: Krushi Suvidha AI — Airavata Technologies*  
-*Production: https://krushisuvidhaai.airavatatechnologies.com — Port 3014*
+*Document Version: 2.0 — May 2026*
+*Project: Krushi Suvidha AI | Airavata Technologies*

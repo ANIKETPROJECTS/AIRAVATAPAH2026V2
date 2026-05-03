@@ -43,6 +43,53 @@ interface JobMeta {
 
 const jobs = new Map<string, JobMeta>();
 
+async function getNextFarmerId(col: ReturnType<ReturnType<typeof getDb>["collection"]>): Promise<string> {
+  const farmers = await col.find({}, { projection: { farmerId: 1 } }).toArray();
+  let maxNum = 0;
+  for (const f of farmers) {
+    const m = String(f["farmerId"] ?? "").match(/F-(\d+)/);
+    if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+  }
+  return `F-${String(maxNum + 1).padStart(3, "0")}`;
+}
+
+function buildFarmerFieldsFromSection(section: string, data: Record<string, unknown>): Record<string, unknown> {
+  const u: Record<string, unknown> = {};
+  if (section === "aadhar") {
+    if (data["name"]) u["name"] = data["name"];
+    if (data["aadhaarNumber"]) u["aadhaar"] = data["aadhaarNumber"];
+    if (data["fathersOrHusbandsName"]) u["fatherName"] = data["fathersOrHusbandsName"];
+    if (data["dateOfBirth"]) u["dob"] = data["dateOfBirth"];
+    if (data["gender"]) u["gender"] = data["gender"];
+    if (data["address"]) u["address"] = data["address"];
+    if (data["state"]) u["state"] = data["state"];
+  } else if (section === "passbook") {
+    if (data["bankName"]) u["bankName"] = data["bankName"];
+    if (data["branchName"]) u["branchName"] = data["branchName"];
+    if (data["ifsc"]) u["ifsc"] = data["ifsc"];
+    if (data["accountNumber"]) {
+      u["accountNo"] = data["accountNumber"];
+      u["bankAccount"] = String(data["accountNumber"]);
+    }
+    if (data["accountType"]) u["accountType"] = data["accountType"];
+  } else if (section === "form7" || section === "form12" || section === "form8a") {
+    if (data["village"]) u["village"] = data["village"];
+    if (data["district"]) u["district"] = data["district"];
+    if (data["taluka"]) u["taluka"] = data["taluka"];
+    if (data["surveyNumber"]) u["surveyNumber"] = data["surveyNumber"];
+    if (data["totalArea"]) u["land"] = data["totalArea"];
+    if (section === "form12") {
+      const crops = data["cropEntries"] as Array<{ cropName?: string }> | undefined;
+      if (crops?.[0]?.["cropName"]) u["crop"] = crops[0]["cropName"];
+    }
+    if (section === "form7" || section === "form8a") {
+      const names = (data["ownerNames"] ?? data["khatedarNames"]) as string[] | undefined;
+      if (names && names.length > 0) u["farmerNames"] = names;
+    }
+  }
+  return u;
+}
+
 // 4 hour TTL — accurate mode can take several minutes; give plenty of headroom.
 const JOB_TTL_MS = 4 * 60 * 60 * 1000;
 function gcJobs() {
@@ -272,9 +319,10 @@ router.post(
 );
 
 /**
- * Persist a completed extraction into the user's profile (idempotent).
- * Returns a small marker so the GET /extract/:requestId response can tell the
- * frontend whether the data was saved and into which section.
+ * Persist a completed extraction into the farmers collection (idempotent).
+ * Keyed by the farmer's mobile number. Creates the farmer record on first
+ * upload, then merges subsequent document sections into the same record.
+ * The admin dashboard can see the farmer immediately in Pending status.
  */
 async function persistToProfile(
   meta: JobMeta,
@@ -297,39 +345,75 @@ async function persistToProfile(
 
   const mapped = mapExtractionToSection(docDef.id, presented, markdown, marker);
   if (!mapped) {
-    return {
-      saved: false,
-      section: null,
-      error: "Could not map extraction to a profile section.",
-    };
+    return { saved: false, section: null, error: "Could not map extraction to a profile section." };
   }
   if (Object.keys(mapped.data).length === 0) {
-    return {
-      saved: false,
-      section: mapped.section,
-      error: "Extraction returned no usable fields to save.",
-    };
+    return { saved: false, section: mapped.section, error: "Extraction returned no usable fields to save." };
   }
 
   try {
     const now = new Date().toISOString();
-    await getDb()
-      .collection("users")
-      .updateOne(
-        { phone: meta.profilePhone },
+    const mobile = meta.profilePhone;
+    const db = getDb();
+    const farmersCol = db.collection("farmers");
+
+    const topLevel = buildFarmerFieldsFromSection(mapped.section, mapped.data as Record<string, unknown>);
+    const docEntry = {
+      name: docDef.label,
+      fileName: `${docDef.id}.pdf`,
+      size: "—",
+      status: "uploaded",
+      section: mapped.section,
+      extractedAt: now,
+    };
+
+    const existing = await farmersCol.findOne({ mobile }, { projection: { _id: 0, farmerId: 1 } });
+
+    if (!existing) {
+      const farmerId = await getNextFarmerId(farmersCol);
+      await farmersCol.insertOne({
+        farmerId,
+        mobile,
+        status: "Pending",
+        source: "mobile_ocr",
+        name: "—",
+        aadhaar: "—",
+        village: "—",
+        district: "—",
+        surveyNumber: "—",
+        bankAccount: "—",
+        crop: "—",
+        land: "—",
+        addedAt: now,
+        updatedAt: now,
+        ocr: { [mapped.section]: mapped.data },
+        docs: [docEntry],
+        ...topLevel,
+      });
+    } else {
+      const updateDoc: Record<string, unknown> = {
+        [`ocr.${mapped.section}`]: mapped.data,
+        updatedAt: now,
+      };
+      for (const [k, v] of Object.entries(topLevel)) {
+        if (v !== undefined && v !== null && v !== "") updateDoc[k] = v;
+      }
+      await farmersCol.updateOne(
+        { mobile },
         {
-          $set: { [mapped.section]: mapped.data, updatedAt: now },
-          $setOnInsert: { phone: meta.profilePhone, createdAt: now },
+          $set: updateDoc,
+          $push: { docs: docEntry } as Record<string, unknown>,
         },
-        { upsert: true },
       );
+    }
+
     meta.saved = true;
     return { saved: true, section: mapped.section, error: null };
   } catch (err) {
     return {
       saved: false,
       section: mapped.section,
-      error: err instanceof Error ? err.message : "Failed to save profile.",
+      error: err instanceof Error ? err.message : "Failed to save to farmers.",
     };
   }
 }
