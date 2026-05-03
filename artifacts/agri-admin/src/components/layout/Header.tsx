@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import {
   Bell, MessageSquare, Shield, AlertTriangle, Ticket,
   CheckCircle2, Info, X, BellOff, CheckCheck,
-  LogOut, User, Settings, ChevronDown, Clock, Mail, Phone, MapPin,
+  LogOut, User, Settings, ChevronDown, Clock, Mail, Phone, MapPin, Edit2,
 } from "lucide-react";
 import { useNotifications, type AppNotification, type NotificationType } from "@/contexts/NotificationContext";
 import { useAuth, ROLE_LABELS, SECTION_LABELS, type SectionKey } from "@/contexts/AuthContext";
+import MyProfile from "@/components/modules/MyProfile";
 
 /* ── time-ago helper ── */
 function timeAgo(ts: number): string {
@@ -110,31 +111,38 @@ function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
 }
 
 /* ── Profile dropdown panel ── */
-function ProfilePanel({ onClose, onNavigateSettings }: { onClose: () => void; onNavigateSettings: () => void }) {
+function ProfilePanel({ onClose, onNavigateSettings, onEditProfile }: { onClose: () => void; onNavigateSettings: () => void; onEditProfile: () => void }) {
   const { currentUser, logout, can } = useAuth();
   if (!currentUser) return null;
 
   const enabledSections = (Object.keys(currentUser.permissions) as SectionKey[]).filter(k => currentUser.permissions[k]);
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-[300px] bg-white border border-border rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden">
+    <div className="absolute right-0 top-full mt-2 w-[320px] bg-white border border-border rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden">
       {/* User info */}
       <div className="p-5 border-b border-slate-100" style={{ background: "linear-gradient(135deg, #0D2B1E, #1a4a30)" }}>
-        <div className="flex items-center gap-3 mb-3">
-          {currentUser.avatarUrl ? (
-            <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-white/20 shadow"/>
-          ) : (
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${currentUser.avatarColor} flex items-center justify-center font-bold text-white text-lg shadow`}>
-              {currentUser.name.trim().split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
-            </div>
-          )}
-          <div className="min-w-0">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="relative flex-shrink-0">
+            {currentUser.avatarUrl ? (
+              <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-14 h-14 rounded-2xl object-cover border-2 border-white/20 shadow"/>
+            ) : (
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${currentUser.avatarColor} flex items-center justify-center font-bold text-white text-lg shadow`}>
+                {currentUser.name.trim().split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
             <div className="font-bold text-white text-sm truncate">{currentUser.name}</div>
             <div className="text-[11px] text-white/60 truncate">{currentUser.designation}</div>
             <span className="mt-1 inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "rgba(74,222,128,0.2)", color: "#4ade80" }}>
               {ROLE_LABELS[currentUser.role]}
             </span>
           </div>
+          <button onClick={() => { onEditProfile(); onClose(); }}
+            title="Edit profile"
+            className="flex-shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors mt-0.5">
+            <Edit2 className="h-3.5 w-3.5 text-white/60"/>
+          </button>
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[11px] text-white/50">
@@ -163,6 +171,10 @@ function ProfilePanel({ onClose, onNavigateSettings }: { onClose: () => void; on
 
       {/* Actions */}
       <div className="p-2">
+        <button onClick={() => { onEditProfile(); onClose(); }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 transition-colors">
+          <Edit2 className="h-4 w-4 text-emerald-500"/><span className="font-semibold">Edit My Profile</span>
+        </button>
         {can("settings") && (
           <button onClick={() => { onNavigateSettings(); onClose(); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
@@ -197,6 +209,7 @@ export default function Header({ onAIOpen, onNavigate }: { onAIOpen: () => void;
   const [time, setTime] = useState(new Date());
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { unreadCount } = useNotifications();
@@ -224,6 +237,7 @@ export default function Header({ onAIOpen, onNavigate }: { onAIOpen: () => void;
   }, [notifOpen, profileOpen]);
 
   return (
+    <>
     <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
       <div className="text-sm text-muted-foreground">
         {time.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
@@ -268,10 +282,14 @@ export default function Header({ onAIOpen, onNavigate }: { onAIOpen: () => void;
             <ProfilePanel
               onClose={() => setProfileOpen(false)}
               onNavigateSettings={() => onNavigate?.("settings")}
+              onEditProfile={() => setProfileEditOpen(true)}
             />
           )}
+        
         </div>
       </div>
     </header>
+    {profileEditOpen && <MyProfile onClose={() => setProfileEditOpen(false)}/>}
+  </>
   );
 }
