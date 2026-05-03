@@ -1,0 +1,117 @@
+import { Router } from "express";
+import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+import { getDb } from "../lib/mongo";
+import { logger } from "../lib/logger";
+
+const router = Router();
+
+const JWT_SECRET = process.env["JWT_SECRET"] ?? "krushi-suvidha-secret-2026";
+const JWT_EXPIRES_IN = "7d";
+const OTP_TTL_MS = 5 * 60 * 1000;
+
+function generateOtp(): string {
+  return String(crypto.randomInt(100000, 999999));
+}
+
+router.post("/auth/send-otp", async (req, res): Promise<void> => {
+  try {
+    const { mobile } = req.body as { mobile?: string };
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      res.status(400).json({ error: "Valid 10-digit mobile number required" });
+      return;
+    }
+
+    const db = getDb();
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
+
+    await db.collection("otp_sessions").updateOne(
+      { mobile },
+      { $set: { mobile, otp, expiresAt, verified: false, createdAt: new Date().toISOString() } },
+      { upsert: true }
+    );
+
+    logger.info({ mobile, otp }, "OTP generated");
+
+    res.json({
+      success: true,
+      message: "OTP sent successfully",
+      otp,
+      expiresIn: 300,
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to send OTP");
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+});
+
+router.post("/auth/verify-otp", async (req, res): Promise<void> => {
+  try {
+    const { mobile, otp } = req.body as { mobile?: string; otp?: string };
+    if (!mobile || !otp) {
+      res.status(400).json({ error: "mobile and otp are required" });
+      return;
+    }
+
+    const db = getDb();
+    const session = await db.collection("otp_sessions").findOne({ mobile });
+
+    if (!session) {
+      res.status(400).json({ error: "OTP not requested for this number" });
+      return;
+    }
+    if (new Date(session["expiresAt"] as string) < new Date()) {
+      res.status(400).json({ error: "OTP expired. Please request a new one." });
+      return;
+    }
+    if (session["otp"] !== otp) {
+      res.status(400).json({ error: "Invalid OTP" });
+      return;
+    }
+
+    await db.collection("otp_sessions").deleteOne({ mobile });
+
+    const farmer = await db.collection("farmers").findOne(
+      { mobile },
+      { projection: { _id: 0, farmerId: 1, name: 1, mobile: 1, status: 1, district: 1 } }
+    );
+
+    const payload = { mobile, farmerId: farmer?.["farmerId"] ?? null, role: "farmer" };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    res.json({
+      success: true,
+      token,
+      farmer: farmer ?? null,
+      isRegistered: !!farmer,
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to verify OTP");
+    res.status(500).json({ error: "Failed to verify OTP" });
+  }
+});
+
+router.post("/auth/register-push-token", async (req, res): Promise<void> => {
+  try {
+    const { mobile, pushToken } = req.body as { mobile?: string; pushToken?: string };
+    if (!mobile || !pushToken) {
+      res.status(400).json({ error: "mobile and pushToken are required" });
+      return;
+    }
+
+    const db = getDb();
+    await db.collection("push_tokens").updateOne(
+      { mobile },
+      { $set: { mobile, pushToken, updatedAt: new Date().toISOString() } },
+      { upsert: true }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, "Failed to register push token");
+    res.status(500).json({ error: "Failed to register push token" });
+  }
+});
+
+export default router;

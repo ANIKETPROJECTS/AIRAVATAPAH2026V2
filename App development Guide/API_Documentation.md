@@ -18,6 +18,7 @@
 | `NODE_ENV` | `production` |
 | `MONGODB_URI` | `mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0` |
 | `DATALAB_API_KEY` | `Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI` |
+| `JWT_SECRET` | `krushi-suvidha-prod-secret-2026-mh-agri` |
 
 ---
 
@@ -156,12 +157,13 @@ sudo certbot --nginx -d krushisuvidhaai.airavatatechnologies.com
 
 ## 2. Authentication APIs
 
-> These endpoints **need to be added** to the API server for mobile app authentication. Farmers authenticate using their mobile number + OTP. JWT tokens are used for session management.
+> ✅ **Implemented and live** on the API server.
 
 ### 2.1 Request OTP
 
 ```
-POST /api/auth/otp/request
+POST /api/auth/send-otp
+Content-Type: application/json
 ```
 
 **Body:**
@@ -175,27 +177,31 @@ POST /api/auth/otp/request
 ```json
 {
   "success": true,
-  "message": "OTP sent to 9876543210",
-  "expires_in": 300
+  "message": "OTP sent successfully",
+  "otp": "482910",
+  "expiresIn": 300
 }
 ```
 
+> **Note:** The `otp` field is returned directly for development. In production, integrate an SMS gateway (MSG91 / Fast2SMS) and remove it from the response.
+
 **Response 400:**
 ```json
-{ "error": "Invalid mobile number" }
+{ "error": "Valid 10-digit mobile number required" }
 ```
 
 **Notes:**
-- OTP is 6 digits, expires in 5 minutes
-- Use an SMS gateway (MSG91, Fast2SMS, or Twilio) on the server side
-- Rate limit: max 3 OTP requests per mobile per 10 minutes
+- OTP is 6 digits, valid for 5 minutes
+- Stored in MongoDB `otp_sessions` collection
+- A new OTP request overwrites the previous one for the same mobile
 
 ---
 
-### 2.2 Verify OTP & Login
+### 2.2 Verify OTP & Get JWT Token
 
 ```
-POST /api/auth/otp/verify
+POST /api/auth/verify-otp
+Content-Type: application/json
 ```
 
 **Body:**
@@ -206,68 +212,66 @@ POST /api/auth/otp/verify
 }
 ```
 
-**Response 200 — New Farmer (not yet registered):**
+**Response 200 — Farmer exists:**
 ```json
 {
   "success": true,
-  "isNewFarmer": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "farmer": null,
-  "message": "OTP verified. Please complete registration."
-}
-```
-
-**Response 200 — Existing Farmer:**
-```json
-{
-  "success": true,
-  "isNewFarmer": false,
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "farmer": {
     "farmerId": "F-042",
     "name": "Ramesh Patel",
     "mobile": "9876543210",
     "status": "Verified",
-    "district": "Nashik",
-    "village": "Ozhar"
-  }
+    "district": "Nashik"
+  },
+  "isRegistered": true
 }
 ```
 
-**Response 401:**
+**Response 200 — Mobile not yet registered:**
 ```json
-{ "error": "Invalid or expired OTP" }
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "farmer": null,
+  "isRegistered": false
+}
+```
+
+**Response 400:**
+```json
+{ "error": "OTP expired. Please request a new one." }
 ```
 
 **Notes:**
-- JWT payload: `{ farmerId, mobile, iat, exp }`
-- Token expires in 30 days
-- Include token in all subsequent requests: `Authorization: Bearer <token>`
+- JWT payload: `{ mobile, farmerId, role: "farmer", iat, exp }`
+- Token expires in **7 days**
+- Include in all subsequent requests: `Authorization: Bearer <token>`
+- OTP session is deleted after successful verification
 
 ---
 
-### 2.3 Verify Token (check login status)
+### 2.3 Register Expo Push Token
 
 ```
-GET /api/auth/me
-Authorization: Bearer <token>
+POST /api/auth/register-push-token
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "mobile": "9876543210",
+  "pushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+}
 ```
 
 **Response 200:**
 ```json
-{
-  "farmerId": "F-042",
-  "mobile": "9876543210",
-  "name": "Ramesh Patel",
-  "status": "Verified",
-  "district": "Nashik"
-}
+{ "success": true }
 ```
 
-**Response 401:**
-```json
-{ "error": "Token expired or invalid" }
-```
+> Call this on every app launch after login to keep the token current.
 
 ---
 
@@ -561,7 +565,7 @@ Authorization: Bearer <token>
 
 ## 6. Grievance APIs
 
-> These endpoints **need to be added** to the API server.
+> ✅ **Implemented and live** on the API server.
 
 ### 6.1 Submit a Grievance
 
@@ -660,44 +664,30 @@ Authorization: Bearer <token>
 
 ## 7. Notification APIs
 
-> These endpoints **need to be added** to the API server.
+> ✅ **Implemented and live** on the API server.
 
 ### 7.1 Get Farmer Notifications
 
 ```
 GET /api/notifications?farmerId=F-043
-Authorization: Bearer <token>
+GET /api/notifications?mobile=9876543210
+GET /api/notifications?farmerId=F-043&unreadOnly=true
 ```
 
 **Response 200:**
 ```json
 [
   {
-    "notificationId": "N-001",
+    "notificationId": "NOTIF-1746252000000-x7k2z",
     "type": "status_change",
     "title": "Registration Verified!",
-    "body": "Congratulations! Your farmer registration has been verified by the District Officer.",
-    "isRead": false,
-    "createdAt": "2026-05-04T09:15:00.000Z",
-    "data": { "newStatus": "Verified" }
-  },
-  {
-    "notificationId": "N-002",
-    "type": "scheme_eligible",
-    "title": "You are eligible for PM-KISAN",
-    "body": "Based on your profile, you qualify for ₹6,000/year income support.",
-    "isRead": false,
-    "createdAt": "2026-05-04T09:16:00.000Z",
-    "data": { "schemeId": "pm-kisan" }
-  },
-  {
-    "notificationId": "N-003",
-    "type": "grievance_update",
-    "title": "Grievance Update",
-    "body": "Your grievance GR-2026-0041 has been resolved.",
-    "isRead": false,
-    "createdAt": "2026-05-05T14:30:00.000Z",
-    "data": { "grievanceId": "GR-2026-0041" }
+    "body": "Congratulations! Your farmer registration has been verified.",
+    "farmerId": "F-042",
+    "mobile": "9876543210",
+    "read": false,
+    "readAt": null,
+    "data": { "newStatus": "Verified" },
+    "createdAt": "2026-05-04T09:15:00.000Z"
   }
 ]
 ```
@@ -717,37 +707,53 @@ Authorization: Bearer <token>
 
 ```
 PATCH /api/notifications/:notificationId/read
-Authorization: Bearer <token>
+```
+
+**Response 200:** Updated notification object
+
+---
+
+### 7.3 Mark All as Read
+
+```
+PATCH /api/notifications/read-all
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{ "mobile": "9876543210" }
 ```
 
 **Response 200:**
 ```json
-{ "success": true }
+{ "success": true, "updated": 3 }
 ```
 
 ---
 
-### 7.3 Register FCM / Expo Push Token
+### 7.4 Send Notification (Admin / Server-side)
 
 ```
-POST /api/notifications/register-token
-Authorization: Bearer <token>
+POST /api/notifications/send
 Content-Type: application/json
 ```
 
 **Body:**
 ```json
 {
-  "farmerId": "F-043",
-  "pushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-  "platform": "android"
+  "mobile": "9876543210",
+  "farmerId": "F-042",
+  "type": "status_change",
+  "title": "Registration Verified!",
+  "body": "Your farmer registration has been verified by the District Officer.",
+  "data": { "newStatus": "Verified" }
 }
 ```
 
-**Response 200:**
-```json
-{ "success": true }
-```
+**Response 201:** Created notification object
+
+> This endpoint also delivers an Expo push notification if the farmer has a registered push token (via `POST /api/auth/register-push-token`). Push delivery failures are non-fatal — the notification is always saved to MongoDB.
 
 ---
 
@@ -883,21 +889,35 @@ interface Grievance {
 
 ---
 
-## 10. New Endpoints Summary (to be added to API server)
+## 10. Complete API Endpoints Reference
+
+### ✅ All Implemented
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| `POST` | `/api/auth/otp/request` | Request OTP for login |
-| `POST` | `/api/auth/otp/verify` | Verify OTP, get JWT |
-| `GET` | `/api/auth/me` | Validate token, get farmer info |
-| `GET` | `/api/farmers/:id` | Get single farmer by ID |
-| `GET` | `/api/farmers/:id/status` | Lightweight status poll |
-| `POST` | `/api/grievances` | Submit grievance |
-| `GET` | `/api/grievances` | List farmer's grievances |
-| `GET` | `/api/grievances/:id` | Get grievance detail |
-| `GET` | `/api/notifications` | Get farmer notifications |
-| `PATCH` | `/api/notifications/:id/read` | Mark notification as read |
-| `POST` | `/api/notifications/register-token` | Register push token |
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/auth/send-otp` | Request OTP for mobile login |
+| `POST` | `/api/auth/verify-otp` | Verify OTP, get JWT token |
+| `POST` | `/api/auth/register-push-token` | Register Expo push token |
+| `GET` | `/api/document-types` | List supported OCR document types |
+| `POST` | `/api/extract` | Upload document for OCR extraction |
+| `GET` | `/api/extract/:requestId` | Poll OCR extraction result |
+| `GET` | `/api/farmers` | List all farmers |
+| `GET` | `/api/farmers/:id` | Get single farmer by farmerId |
+| `POST` | `/api/farmers` | Register new farmer |
+| `PATCH` | `/api/farmers/:id` | Update farmer profile |
+| `DELETE` | `/api/farmers/:id` | Delete farmer |
+| `GET` | `/api/schemes` | List schemes (filter by type/search) |
+| `GET` | `/api/schemes/:id` | Get single scheme |
+| `PATCH` | `/api/schemes/:id/status` | Update scheme status (Active/Closed) |
+| `GET` | `/api/grievances` | List grievances (filter by mobile/farmerId/status) |
+| `GET` | `/api/grievances/:id` | Get single grievance |
+| `POST` | `/api/grievances` | Submit new grievance |
+| `PATCH` | `/api/grievances/:id` | Update grievance status/reply (admin) |
+| `GET` | `/api/notifications` | Get notifications (filter by mobile/farmerId/unreadOnly) |
+| `PATCH` | `/api/notifications/:id/read` | Mark single notification as read |
+| `PATCH` | `/api/notifications/read-all` | Mark all notifications as read |
+| `POST` | `/api/notifications/send` | Send notification + Expo push |
 
 ---
 

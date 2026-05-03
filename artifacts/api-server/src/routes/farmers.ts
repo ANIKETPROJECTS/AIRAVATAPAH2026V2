@@ -33,6 +33,18 @@ async function getNextFarmerId(col: Collection): Promise<string> {
   return `F-${String(maxNum + 1).padStart(3, "0")}`;
 }
 
+router.get("/farmers/:id", async (req, res, next) => {
+  try {
+    const db = getDb();
+    const col = db.collection("farmers");
+    const farmer = await col.findOne({ farmerId: req.params["id"] }, { projection: { _id: 0 } });
+    if (!farmer) { res.status(404).json({ error: "Farmer not found" }); return; }
+    res.json(farmer);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/farmers", async (_req, res, next) => {
   try {
     const db = getDb();

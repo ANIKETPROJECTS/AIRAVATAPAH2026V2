@@ -4,13 +4,19 @@ import extractRouter from "./extract";
 import farmersRouter from "./farmers";
 import transliterateRouter from "./transliterate";
 import schemesRouter from "./schemes";
+import authRouter from "./auth";
+import grievancesRouter from "./grievances";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use(extractRouter);
 router.use(farmersRouter);
 router.use(transliterateRouter);
 router.use(schemesRouter);
+router.use(grievancesRouter);
+router.use(notificationsRouter);
 
 export default router;
