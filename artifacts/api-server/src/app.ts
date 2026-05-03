@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const staticDir = path.resolve(__dirname, "..", "..", "agri-admin", "dist");
   app.use(express.static(staticDir));
-  app.get("*", (_req: Request, res: Response) => {
+  app.get("*splat", (_req: Request, res: Response) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }
