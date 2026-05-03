@@ -36,7 +36,7 @@ app.use("/api", router);
 // In production: serve the built React frontend from the same port (single-port deployment)
 if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const staticDir = path.resolve(__dirname, "..", "..", "agri-admin", "dist");
+  const staticDir = path.resolve(__dirname, "..", "..", "agri-admin", "dist", "public");
   app.use(express.static(staticDir));
   app.get("*splat", (_req: Request, res: Response) => {
     res.sendFile(path.join(staticDir, "index.html"));
