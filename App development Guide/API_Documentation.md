@@ -1,10 +1,23 @@
 # Krushi Suvidha AI — Mobile App API Documentation
 
 **Base URL (Production):** `https://krushisuvidhaai.airavatatechnologies.com/api`  
-**Server:** VPS running Node.js (Express) via PM2, reverse-proxied through Nginx  
+**Server:** VPS running Node.js (Express) via PM2, reverse-proxied through Nginx on **port 3014**  
 **Protocol:** HTTPS only in production  
 **Content-Type:** `application/json` unless uploading files (then `multipart/form-data`)  
 **CORS:** Enabled for all origins on the API server
+
+---
+
+## Environment Credentials
+
+> These values are already configured in `ecosystem.config.cjs` and must be present on the VPS.
+
+| Variable | Value |
+|----------|-------|
+| `PORT` | `3014` |
+| `NODE_ENV` | `production` |
+| `MONGODB_URI` | `mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0` |
+| `DATALAB_API_KEY` | `Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI` |
 
 ---
 
@@ -19,12 +32,27 @@
 7. [Notification APIs](#7-notification-apis) *(new — to be added)*
 8. [Error Handling](#8-error-handling)
 9. [Data Models Reference](#9-data-models-reference)
+10. [New Endpoints Summary](#10-new-endpoints-summary)
 
 ---
 
 ## 1. Server & Infrastructure Setup
 
-### Nginx Configuration (reverse proxy)
+### Architecture — Single Port (3014)
+
+The Express API server runs on **port 3014** and handles everything:
+- `/api/*` → All API routes
+- `/*` → Serves the built React admin dashboard (static files)
+
+This means only **one process, one port** — no separate frontend server needed.
+
+```
+Internet → Nginx (80/443) → localhost:3014 (Express — API + Static Frontend)
+```
+
+---
+
+### Nginx Configuration
 
 ```nginx
 server {
@@ -40,62 +68,93 @@ server {
     ssl_certificate /etc/letsencrypt/live/krushisuvidhaai.airavatatechnologies.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/krushisuvidhaai.airavatatechnologies.com/privkey.pem;
 
-    # API — Node.js Express server on port 8000
-    location /api/ {
-        proxy_pass http://localhost:8000;
+    # Everything goes to the single Express server on port 3014
+    location / {
+        proxy_pass http://localhost:3014;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;        # OCR can take up to 2 min
-        client_max_body_size 55M;       # allow up to 55 MB uploads
-    }
-
-    # Admin Web Dashboard — React/Vite on port 5000
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
+        proxy_read_timeout 120s;
+        client_max_body_size 55M;
     }
 }
 ```
 
-### PM2 Ecosystem (pm2.config.js)
+---
+
+### PM2 Ecosystem Config (`ecosystem.config.cjs`)
+
+> This file is already created at the root of the project. Just run the commands below on your VPS.
 
 ```js
 module.exports = {
   apps: [
     {
-      name: "krushi-api",
+      name: "krushi-suvidha",
       cwd: "./artifacts/api-server",
       script: "node",
       args: "--enable-source-maps ./dist/index.mjs",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "512M",
       env: {
-        PORT: 8000,
+        PORT: 3014,
         NODE_ENV: "production",
-        MONGODB_URI: "mongodb://localhost:27017/krushi",
-        DATALAB_API_KEY: "<your_datalab_key>"
-      }
+        MONGODB_URI: "mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0",
+        DATALAB_API_KEY: "Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI",
+      },
     },
-    {
-      name: "krushi-admin",
-      cwd: "./artifacts/agri-admin",
-      script: "npx",
-      args: "serve -s dist -l 5000",
-      env: { NODE_ENV: "production" }
-    }
-  ]
+  ],
 };
+```
+
+---
+
+### VPS Deployment Steps
+
+```bash
+# 1. Clone/upload project to VPS
+git clone <your-repo> /var/www/krushi-suvidha
+cd /var/www/krushi-suvidha
+
+# 2. Install dependencies
+npm install -g pnpm pm2
+pnpm install
+
+# 3. Build frontend (React/Vite)
+pnpm --filter @workspace/agri-admin run build
+# Output: artifacts/agri-admin/dist/
+
+# 4. Build API server (TypeScript → ESM)
+pnpm --filter @workspace/api-server run build
+# Output: artifacts/api-server/dist/
+
+# 5. Start with PM2
+pm2 start ecosystem.config.cjs
+
+# 6. Save PM2 process list (auto-restart on reboot)
+pm2 save
+pm2 startup
+
+# 7. Set up Nginx (copy config above to /etc/nginx/sites-available/krushi-suvidha)
+sudo ln -s /etc/nginx/sites-available/krushi-suvidha /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+
+# 8. SSL certificate (Let's Encrypt)
+sudo certbot --nginx -d krushisuvidhaai.airavatatechnologies.com
 ```
 
 ---
 
 ## 2. Authentication APIs
 
-> These endpoints **need to be added** to the API server for mobile app authentication. Farmers authenticate using their mobile number + OTP (no password). JWT tokens are used for session management.
+> These endpoints **need to be added** to the API server for mobile app authentication. Farmers authenticate using their mobile number + OTP. JWT tokens are used for session management.
 
 ### 2.1 Request OTP
 
@@ -126,7 +185,7 @@ POST /api/auth/otp/request
 
 **Notes:**
 - OTP is 6 digits, expires in 5 minutes
-- Use an SMS gateway (MSG91, Twilio, or Fast2SMS) on the server side
+- Use an SMS gateway (MSG91, Fast2SMS, or Twilio) on the server side
 - Rate limit: max 3 OTP requests per mobile per 10 minutes
 
 ---
@@ -224,11 +283,11 @@ GET /api/document-types
 ```json
 {
   "types": [
-    { "id": "form7", "label": "Form 7 (Ownership Register)", "description": "Maharashtra 7/12 – Rights Register" },
-    { "id": "form12", "label": "Form 12 (Crop Inspection Register)", "description": "Maharashtra 7/12 – Crop Inspection Register" },
-    { "id": "form8a", "label": "Form 8A (Holding Register)", "description": "Maharashtra – Holding Register" },
-    { "id": "aadhar", "label": "Aadhaar Card", "description": "UIDAI Aadhaar identity card" },
-    { "id": "bank_passbook", "label": "Bank Passbook", "description": "Bank account passbook front page" }
+    { "id": "form7",        "label": "Form 7 (Ownership Register)",        "description": "Maharashtra 7/12 — Rights Register" },
+    { "id": "form12",       "label": "Form 12 (Crop Inspection Register)",  "description": "Maharashtra 7/12 — Crop Inspection Register" },
+    { "id": "form8a",       "label": "Form 8A (Holding Register)",          "description": "Maharashtra — Holding Register" },
+    { "id": "aadhar",       "label": "Aadhaar Card",                        "description": "UIDAI Aadhaar identity card" },
+    { "id": "bank_passbook","label": "Bank Passbook",                       "description": "Bank account passbook front page" }
   ]
 }
 ```
@@ -250,7 +309,7 @@ Authorization: Bearer <token>
 | `file` | File | Yes | PDF or image (JPG/PNG/WEBP), max 50 MB |
 | `document_type` | string | Yes | One of: `form7`, `form12`, `form8a`, `aadhar`, `bank_passbook` |
 | `mode` | string | No | `fast`, `balanced`, or `accurate` (default: `accurate`) |
-| `profile_phone` | string | No | Farmer's mobile number — auto-saves extracted data to profile |
+| `profile_phone` | string | No | Farmer's mobile number — auto-saves extracted data to their profile |
 
 **Response 200:**
 ```json
@@ -267,7 +326,7 @@ Authorization: Bearer <token>
 }
 ```
 
-> **Important:** Save the `request_id`. Poll the next endpoint every 3–5 seconds until `status` is `"complete"` or `"error"`.
+> Save the `request_id`. Poll the next endpoint every 4 seconds until `status` is `"complete"` or `"error"`.
 
 ---
 
@@ -283,7 +342,6 @@ Authorization: Bearer <token>
 {
   "status": "processing",
   "document_type": "form7",
-  "document_label": "Form 7 (Ownership Register)",
   "pipelines": {
     "extract": { "status": "processing" },
     "marker": { "status": "complete" }
@@ -291,7 +349,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response — Complete (Form 7 example):**
+**Response — Complete:**
 ```json
 {
   "status": "complete",
@@ -304,17 +362,10 @@ Authorization: Bearer <token>
       {
         "title": "Header Details",
         "fields": [
-          { "key": "village", "label": "Village (गाव)", "value": "Ozhar" },
-          { "key": "taluka", "label": "Taluka (तालुका)", "value": "Niphad" },
-          { "key": "district", "label": "District (जिल्हा)", "value": "Nashik" },
-          { "key": "survey_number", "label": "Survey Number", "value": "142/A" }
-        ],
-        "tables": []
-      },
-      {
-        "title": "Ownership Details",
-        "fields": [
-          { "key": "owner_name", "label": "Owner Name", "value": "Ramesh Patel" }
+          { "key": "village",       "label": "Village (गाव)",     "value": "Ozhar" },
+          { "key": "taluka",        "label": "Taluka (तालुका)",   "value": "Niphad" },
+          { "key": "district",      "label": "District (जिल्हा)", "value": "Nashik" },
+          { "key": "survey_number", "label": "Survey Number",     "value": "142/A" }
         ],
         "tables": []
       }
@@ -330,23 +381,19 @@ Authorization: Bearer <token>
 }
 ```
 
-**Response — Aadhaar (includes photo):**
+**Aadhaar response also includes:**
 ```json
 {
-  "status": "complete",
-  "document_type": "aadhar",
-  "structured": { "sections": [...], "empty": false },
   "aadhar_photo": {
     "base64": "/9j/4AAQSkZJRgAB...",
     "mimeType": "image/jpeg"
-  },
-  "profile": { "phone": "9876543210", "section": "identity", "saved": true, "error": null }
+  }
 }
 ```
 
-**Polling Strategy for Mobile App:**
+**Polling Strategy:**
 ```
-Upload → get request_id → poll every 4 seconds → timeout after 3 minutes
+Upload → save request_id → poll every 4 seconds → stop at "complete" or "error" → timeout after 3 minutes
 ```
 
 ---
@@ -354,8 +401,6 @@ Upload → get request_id → poll every 4 seconds → timeout after 3 minutes
 ## 4. Farmer Registration & Profile APIs
 
 ### 4.1 Submit New Farmer Registration
-
-> Called after the farmer has uploaded all 5 documents and the OCR is done. Creates a new farmer record in the Farmer Registry with status `"Pending"`.
 
 ```
 POST /api/farmers
@@ -388,11 +433,11 @@ Content-Type: application/json
   "status": "Pending",
   "source": "mobile",
   "docs": [
-    { "name": "Form 7", "fileName": "form7.pdf", "size": "1.2 MB", "status": "uploaded" },
-    { "name": "Form 12", "fileName": "form12.pdf", "size": "0.9 MB", "status": "uploaded" },
-    { "name": "Form 8A", "fileName": "form8a.pdf", "size": "1.1 MB", "status": "uploaded" },
-    { "name": "Aadhaar Card", "fileName": "aadhar.jpg", "size": "0.5 MB", "status": "uploaded" },
-    { "name": "Bank Passbook", "fileName": "passbook.jpg", "size": "0.6 MB", "status": "uploaded" }
+    { "name": "Form 7",       "fileName": "form7.pdf",    "size": "1.2 MB", "status": "uploaded" },
+    { "name": "Form 12",      "fileName": "form12.pdf",   "size": "0.9 MB", "status": "uploaded" },
+    { "name": "Form 8A",      "fileName": "form8a.pdf",   "size": "1.1 MB", "status": "uploaded" },
+    { "name": "Aadhaar Card", "fileName": "aadhar.jpg",   "size": "0.5 MB", "status": "uploaded" },
+    { "name": "Bank Passbook","fileName": "passbook.jpg", "size": "0.6 MB", "status": "uploaded" }
   ]
 }
 ```
@@ -418,27 +463,9 @@ GET /api/farmers/:farmerId
 Authorization: Bearer <token>
 ```
 
-> **Note:** The current API returns all farmers via `GET /api/farmers`. You need to add a single-farmer fetch endpoint. Until then, the app can fetch all and filter client-side, or the endpoint below can be added to the server.
+> **Note:** A dedicated single-farmer endpoint needs to be added to the API server. Until then, use `GET /api/farmers` and filter client-side by `farmerId`.
 
-**Response 200:**
-```json
-{
-  "farmerId": "F-043",
-  "name": "Ramesh Patel",
-  "mobile": "9876543210",
-  "status": "Verified",
-  "village": "Ozhar",
-  "district": "Nashik",
-  "taluka": "Niphad",
-  "land": "2.20",
-  "crop": "Grapes",
-  "aadhaar": "XXXX-XXXX-1234",
-  "bankAccount": "SBI-XXXXXXXXXXXX",
-  "category": "OBC",
-  "addedAt": "2026-05-03T07:30:00.000Z",
-  "docs": [...]
-}
-```
+**Response 200:** Full `FarmerRecord` object (see Data Models section).
 
 **Response 404:**
 ```json
@@ -447,9 +474,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 4.3 Get Farmer Status (Lightweight Poll)
-
-> The mobile app polls this to detect when their status changes from `Pending` → `Verified` or `Cancelled`.
+### 4.3 Poll Farmer Status (lightweight)
 
 ```
 GET /api/farmers/:farmerId/status
@@ -466,13 +491,13 @@ Authorization: Bearer <token>
 }
 ```
 
-**Possible `status` values:**
+**Status values:**
 
 | Status | Meaning for Farmer |
 |--------|--------------------|
 | `Pending` | Application received, under review |
 | `Verified` | Approved — full access unlocked |
-| `Active` | Previously verified, now active |
+| `Active` | Active registered farmer |
 | `Cancelled` | Application rejected |
 | `Inactive` | Account disabled |
 
@@ -486,12 +511,11 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-**Body (only include fields to update):**
+**Body (only fields to update):**
 ```json
 {
   "mobile": "9876543211",
-  "crop": "Wheat",
-  "bankAccount": "HDFC-XXXXXXXXXXXX"
+  "crop": "Wheat"
 }
 ```
 
@@ -501,7 +525,7 @@ Content-Type: application/json
 
 ## 5. Scheme APIs
 
-> These endpoints **already exist**. The mobile app uses them to show the farmer which schemes they are eligible for.
+> These endpoints **already exist**.
 
 ### 5.1 Get All Active Schemes
 
@@ -513,36 +537,7 @@ GET /api/schemes?search=PM-KISAN
 Authorization: Bearer <token>
 ```
 
-**Query Parameters:**
-
-| Parameter | Values | Description |
-|-----------|--------|-------------|
-| `type` | `CENTRAL`, `STATE` | Filter by scheme type |
-| `search` | string | Search by scheme name |
-
-**Response 200:**
-```json
-[
-  {
-    "id": "pm-kisan",
-    "name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
-    "type": "CENTRAL",
-    "category": "Income Support",
-    "description": "Direct income support of ₹6,000/year...",
-    "eligibility": {
-      "summary": "Indian citizen with land ownership...",
-      "parameters": [
-        { "parameter": "Land Ownership", "rule": "Must own cultivable land", "validation": "Land records" }
-      ],
-      "familyCriteria": ["One benefit per farmer family"],
-      "exclusions": ["Income tax payers", "Government employees"]
-    },
-    "documents": ["Aadhaar Card", "Land records / 7/12 extract", "Bank passbook"],
-    "benefits": "₹6,000 per year in 3 installments of ₹2,000 via DBT",
-    "status": "Active"
-  }
-]
-```
+**Response 200:** Array of Scheme objects (see Data Models).
 
 ---
 
@@ -555,18 +550,10 @@ Authorization: Bearer <token>
 
 **Example:** `GET /api/schemes/pm-kisan`
 
-**Response 200:** Full scheme object (same structure as above, single item).
-
 **Response 404:**
 ```json
 { "error": "Scheme not found" }
 ```
-
----
-
-### 5.3 Check Farmer Eligibility for Schemes
-
-> This is computed **client-side** in the mobile app using the farmer's profile data and scheme eligibility rules. No separate API call needed. See the eligibility engine logic in Section 9.
 
 ---
 
@@ -592,7 +579,7 @@ Content-Type: application/json
   "village": "Ozhar",
   "category": "Scheme",
   "subject": "PM-KISAN installment not received",
-  "description": "I have been verified since April 2026 but the first installment of PM-KISAN has not been credited to my account. My Aadhaar and bank account are linked.",
+  "description": "I have been verified since April 2026 but the first installment of PM-KISAN has not been credited to my account.",
   "schemeId": "pm-kisan",
   "schemeName": "PM-KISAN",
   "attachmentUrl": null
@@ -644,7 +631,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 6.3 Get Single Grievance
+### 6.3 Get Single Grievance Detail
 
 ```
 GET /api/grievances/:grievanceId
@@ -662,8 +649,8 @@ Authorization: Bearer <token>
   "status": "Resolved",
   "submittedAt": "2026-05-03T08:00:00.000Z",
   "resolvedAt": "2026-05-05T14:30:00.000Z",
-  "response": "Your payment has been initiated. Please allow 2-3 working days for credit.",
-  "resolvedBy": "District Officer - Nashik"
+  "response": "Your payment has been initiated. Please allow 2–3 working days for credit.",
+  "resolvedBy": "District Officer — Nashik"
 }
 ```
 
@@ -671,7 +658,7 @@ Authorization: Bearer <token>
 
 ## 7. Notification APIs
 
-> These endpoints **need to be added** to the API server. Used to alert farmers about status changes, scheme eligibility, grievance updates.
+> These endpoints **need to be added** to the API server.
 
 ### 7.1 Get Farmer Notifications
 
@@ -696,10 +683,10 @@ Authorization: Bearer <token>
     "notificationId": "N-002",
     "type": "scheme_eligible",
     "title": "You are eligible for PM-KISAN",
-    "body": "Based on your profile, you qualify for ₹6,000/year income support. Tap to learn more.",
-    "isRead": true,
+    "body": "Based on your profile, you qualify for ₹6,000/year income support.",
+    "isRead": false,
     "createdAt": "2026-05-04T09:16:00.000Z",
-    "data": { "schemeId": "pm-kisan", "schemeName": "PM-KISAN" }
+    "data": { "schemeId": "pm-kisan" }
   },
   {
     "notificationId": "N-003",
@@ -738,9 +725,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 7.3 Register FCM Push Token
-
-> Needed for push notifications (Firebase Cloud Messaging / Expo Push Notifications).
+### 7.3 Register FCM / Expo Push Token
 
 ```
 POST /api/notifications/register-token
@@ -767,7 +752,6 @@ Content-Type: application/json
 ## 8. Error Handling
 
 All errors follow this format:
-
 ```json
 { "error": "Human-readable error message" }
 ```
@@ -784,11 +768,11 @@ All errors follow this format:
 | `404` | Resource not found |
 | `429` | Too many requests (rate limited) |
 | `500` | Internal server error |
-| `502` | Upstream service error (OCR pipeline) |
+| `502` | Upstream OCR service error |
 
 **Mobile App Error Handling Strategy:**
 - `401` → Clear local token → Redirect to Login screen
-- `502` on OCR → Show retry button with message "Processing service unavailable, please retry"
+- `502` on OCR → Show retry button: "Processing service unavailable, please retry"
 - `429` on OTP → Show countdown timer
 - Network errors → Show offline banner with retry
 
@@ -796,11 +780,11 @@ All errors follow this format:
 
 ## 9. Data Models Reference
 
-### FarmerRecord (MongoDB document)
+### FarmerRecord
 
 ```typescript
 interface FarmerRecord {
-  farmerId: string;          // "F-001", auto-assigned
+  farmerId: string;          // "F-001" — auto-assigned
   name: string;
   mobile?: string;
   aadhaar: string;           // masked: "XXXX-XXXX-1234"
@@ -814,7 +798,7 @@ interface FarmerRecord {
   village: string;
   taluka?: string;
   district: string;
-  land: number | string;     // hectares, format "H.A.SM"
+  land: number | string;     // hectares
   surveyNumber: string;
   khateNumber?: string;
   crop: string;
@@ -824,14 +808,11 @@ interface FarmerRecord {
   ifsc?: string;
   accountNo?: string;
   accountType?: string;
-  aadhaarLinked?: string;
-  npciStatus?: string;
   status: "Active" | "Inactive" | "Pending" | "Verified" | "Cancelled";
   source: "ocr" | "manual" | "seed" | "mobile";
   addedAt: string;           // ISO datetime
   docs?: DocRecord[];
-  aiRiskScore?: number;      // 0–100
-  landParcels?: LandParcelRecord[];
+  aiRiskScore?: number;
 }
 
 interface DocRecord {
@@ -842,10 +823,10 @@ interface DocRecord {
 }
 ```
 
-### Document Type IDs (for `POST /api/extract`)
+### Document Type IDs
 
-| ID | Label | Required for Registration |
-|----|-------|--------------------------|
+| ID | Label | Required |
+|----|-------|---------|
 | `form7` | Form 7 — Ownership Register (7/12) | Yes |
 | `form12` | Form 12 — Crop Inspection Register | Yes |
 | `form8a` | Form 8A — Holding Register | Yes |
@@ -859,7 +840,6 @@ interface Scheme {
   id: string;
   name: string;
   type: "CENTRAL" | "STATE";
-  state: string | null;
   category: string;
   description: string;
   eligibility: {
@@ -891,7 +871,6 @@ interface Grievance {
   description: string;
   schemeId?: string;
   schemeName?: string;
-  attachmentUrl?: string;
   status: "Submitted" | "Under Review" | "Resolved" | "Closed";
   submittedAt: string;
   resolvedAt?: string;
@@ -915,10 +894,11 @@ interface Grievance {
 | `GET` | `/api/grievances` | List farmer's grievances |
 | `GET` | `/api/grievances/:id` | Get grievance detail |
 | `GET` | `/api/notifications` | Get farmer notifications |
-| `PATCH` | `/api/notifications/:id/read` | Mark as read |
+| `PATCH` | `/api/notifications/:id/read` | Mark notification as read |
 | `POST` | `/api/notifications/register-token` | Register push token |
 
 ---
 
-*Document Version: 1.0 — May 2026*  
-*Project: Krushi Suvidha AI — Airavata Technologies*
+*Document Version: 1.1 — May 2026*  
+*Project: Krushi Suvidha AI — Airavata Technologies*  
+*Production: https://krushisuvidhaai.airavatatechnologies.com — Port 3014*

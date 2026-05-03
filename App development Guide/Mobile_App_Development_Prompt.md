@@ -15,11 +15,24 @@ The app allows farmers to:
 5. Apply for schemes
 6. File and track grievances
 
-**API Base URL:** `https://krushisuvidhaai.airavatatechnologies.com/api`  
-**Platform:** Android + iOS (Expo managed workflow)  
-**Language:** TypeScript  
-**State:** Zustand or React Context  
-**Navigation:** Expo Router (file-based routing)
+---
+
+## BACKEND CONFIGURATION
+
+> These credentials are already live and running in production. Use them directly.
+
+| Setting | Value |
+|---------|-------|
+| **API Base URL** | `https://krushisuvidhaai.airavatatechnologies.com/api` |
+| **Server Port** | `3014` (single port — API + Admin Dashboard on one Express server) |
+| **MongoDB URI** | `mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0` |
+| **DATALAB_API_KEY** | `Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI` |
+| **Platform** | Android + iOS (Expo managed workflow) |
+| **Language** | TypeScript |
+| **State** | Zustand |
+| **Navigation** | Expo Router (file-based routing) |
+
+> The MongoDB and DATALAB credentials are needed if you ever extend the API server. The mobile app only talks to the REST API — it does not connect to MongoDB or Datalab directly.
 
 ---
 
@@ -29,8 +42,9 @@ The app allows farmers to:
 **Krushi Suvidha AI** (कृषी सुविधा AI)
 
 ### Logo & Identity
-- App logo: Use a green leaf / wheat sheaf icon with "कृषी सुविधा" in Devanagari script
+- App logo: Green leaf / wheat sheaf icon with "कृषी सुविधा" in Devanagari script
 - Tagline: "शेतकऱ्यांसाठी, शेतकऱ्यांनी" (For farmers, by farmers)
+- Company: Airavata Technologies
 
 ### Color Palette — GREEN ONLY (no blue, purple, orange, red except errors)
 
@@ -119,7 +133,7 @@ App
 **Purpose:** Farmer enters mobile number to receive OTP.
 
 **Layout:**
-- Top: Back arrow + "Login / Register" header
+- Top: "Login / Register" header
 - Hero section (light green background):
   - Green wheat/farm illustration
   - "Welcome Farmer" in Devanagari
@@ -134,15 +148,14 @@ App
 **Validation:**
 - Mobile must be exactly 10 digits
 - Terms checkbox must be checked
-- Disable button while loading
 
 **API Call:**
 ```
-POST /api/auth/otp/request
+POST https://krushisuvidhaai.airavatatechnologies.com/api/auth/otp/request
 Body: { "mobile": "9876543210" }
 ```
 
-**On Success:** Navigate to OTP screen, pass mobile number as route param
+**On Success:** Navigate to OTP screen with mobile as route param.
 
 ---
 
@@ -151,27 +164,26 @@ Body: { "mobile": "9876543210" }
 **Purpose:** Farmer enters the 6-digit OTP received via SMS.
 
 **Layout:**
-- Header: "← Back" + "Verify OTP"
-- "OTP sent to +91-98765-43210" (masked middle digits)
+- "Verify OTP" header
+- "OTP sent to +91-98765-43210"
 - 6 individual digit input boxes (auto-focus next on input)
 - Countdown timer: "Resend OTP in 0:45"
 - "Resend OTP" link (active after countdown)
-- Large "Verify & Continue →" button
+- "Verify & Continue →" button (dark green)
 
 **Logic:**
-- Auto-submit when 6th digit is entered
-- Show loading spinner on verification button
+- Auto-submit when 6th digit entered
 - Shake animation on wrong OTP
 
 **API Call:**
 ```
-POST /api/auth/otp/verify
+POST https://krushisuvidhaai.airavatatechnologies.com/api/auth/otp/verify
 Body: { "mobile": "9876543210", "otp": "482910" }
 ```
 
 **On Success:**
-- Save JWT to `expo-secure-store`
-- If `isNewFarmer: true` → Navigate to Registration screen
+- Save JWT to `expo-secure-store` with key `jwt_token`
+- If `isNewFarmer: true` → Navigate to Registration
 - If `isNewFarmer: false` → Navigate to Home (Dashboard)
 
 ---
@@ -180,84 +192,67 @@ Body: { "mobile": "9876543210", "otp": "482910" }
 
 **Purpose:** Main hub after login. Shows registration status or verified farmer dashboard.
 
-#### State A: Pending Farmer (not yet verified)
+#### State A: Pending Farmer
 
 **Layout:**
-- Header: "कृषी सुविधा AI" logo + notification bell
+- Header: "कृषी सुविधा AI" logo + notification bell icon
 - Status card (amber border):
-  - Large status icon (⏳)
+  - Status icon: ⏳
   - "Registration Under Review"
-  - "Submitted: 3 May 2026"
-  - Farmer ID: "F-043"
+  - Submission date + Farmer ID
   - Progress tracker: `Submitted → Under Review → Verified`
-  - "Your documents are being reviewed by the District Officer. You will be notified once verified."
-- "Upload More Documents" button (if any doc missing)
-- Tips section: "While you wait, learn about government schemes →"
+  - Message: "Your documents are being reviewed by the District Officer."
+- Tips section: "While you wait, explore government schemes →"
+
+**Polling:** Call `GET /api/farmers/:farmerId/status` every 30 seconds while status is Pending.
 
 #### State B: Verified Farmer
 
 **Layout:**
-- Header: Green background, "Good morning, Ramesh!" + notification bell
+- Green gradient header: "Good morning, [Name]!" + notification bell
 - Profile summary card:
-  - Farmer avatar (initials circle, green background)
+  - Farmer avatar (initials circle)
   - Name, Farmer ID, District, Village
   - "✅ Verified Farmer" green badge
-- Stats row (4 tiles, green shades):
-  - Land: 2.2 ha
-  - Crop: Grapes
-  - Schemes Eligible: 5
-  - Grievances: 1 Open
-- "Eligible Schemes" horizontal scroll of scheme cards
+- Stats row (4 tiles):
+  - Land (ha) | Crop | Eligible Schemes | Open Grievances
+- "Eligible Schemes" horizontal scroll
 - "Recent Notifications" list (last 3)
 - "File a Grievance" button
 
 #### State C: Cancelled Farmer
 
 **Layout:**
-- Red/orange status card:
-  - "Registration Cancelled"
-  - Reason (if provided by officer)
-  - "Contact District Office" button
-  - "Re-apply" button
+- Red status card with reason
+- "Contact District Office" + "Re-apply" buttons
 
-**API Calls (poll every 30 seconds while status is Pending):**
+**API Calls:**
 ```
-GET /api/farmers/:farmerId/status
-GET /api/notifications?farmerId=:farmerId
+GET /api/auth/me                              ← on mount
+GET /api/farmers/:farmerId/status             ← poll every 30s if Pending
+GET /api/notifications?farmerId=:farmerId     ← on mount
 ```
 
 ---
 
-### SCREEN 5: Document Upload / Registration (`register/upload`)
+### SCREEN 5: Document Upload / Registration
 
-**Purpose:** Step-by-step document upload for the 5 required documents.
-
-**Layout — Step-by-step stepper:**
-
-```
-Step 1: Personal Info (no upload — just form fields)
-Step 2: Upload Documents
-Step 3: Review Extracted Data
-Step 4: Confirm & Submit
-```
+**4-step flow:**
 
 #### Step 1 — Personal Information Form
 
-Fields (all required unless noted):
-- Full Name (Marathi script input supported)
+Fields:
+- Full Name (Marathi input supported)
 - Date of Birth (date picker)
-- Gender (Male / Female / Other — radio)
+- Gender (radio: Male / Female / Other)
 - Father's Name
-- Category (SC / ST / OBC / NT / VJNT / General — dropdown)
-- Mobile (pre-filled from login, read-only)
-- Village
-- Taluka (dropdown or text)
-- District (dropdown — all Maharashtra districts)
-- "Next →" button
+- Category (dropdown: SC / ST / OBC / NT / VJNT / General)
+- Mobile (pre-filled, read-only)
+- Village, Taluka, District (dropdown: all 36 Maharashtra districts)
 
 #### Step 2 — Document Upload
 
-Show 5 upload cards (matching the web admin's New Registration screen):
+5 upload cards — one per document:
 
 ```
 ┌─────────────────────────────────┐
@@ -265,96 +260,78 @@ Show 5 upload cards (matching the web admin's New Registration screen):
 │ Maharashtra 7/12 – Rights       │
 │ [📷 Take Photo] [📁 Browse]     │
 │ ✅ Uploaded — form7.pdf (1.2MB) │
+│ Extracted: Village: Ozhar       │
 └─────────────────────────────────┘
 ```
 
-Five document cards:
-1. **Form 7** — `document_type: "form7"`
-2. **Form 12** — `document_type: "form12"`
-3. **Form 8A** — `document_type: "form8a"`
-4. **Aadhaar Card** — `document_type: "aadhar"`
-5. **Bank Passbook** — `document_type: "bank_passbook"`
-
-Each card has:
-- Document name + description
-- "Take Photo" button (camera) + "Upload from Gallery/Files" button
-- Upload progress bar
-- Status: Pending / Uploading / Processing / Done / Error
-- Extracted preview (name, village, survey number) after processing
+Documents:
+1. Form 7 → `document_type: "form7"`
+2. Form 12 → `document_type: "form12"`
+3. Form 8A → `document_type: "form8a"`
+4. Aadhaar Card → `document_type: "aadhar"`
+5. Bank Passbook → `document_type: "bank_passbook"`
 
 **Upload flow per document:**
-1. Farmer selects file / takes photo
-2. Call `POST /api/extract` with `multipart/form-data`, `document_type`, and `profile_phone`
-3. Get `request_id`
+1. Farmer picks file or takes photo
+2. `POST /api/extract` with `multipart/form-data`, `document_type`, `profile_phone`
+3. Save `request_id`
 4. Poll `GET /api/extract/:request_id` every 4 seconds
-5. On complete: show extracted fields preview
-6. On error: show retry button
+5. On complete → show extracted field preview in card
+6. On error → show retry button
+7. For Aadhaar: if `aadhar_photo.base64` returned, show farmer's photo
 
-**All 5 documents must show "Done" to enable "Next →"**
-
-**Important for Aadhaar:**
-- If `aadhar_photo.base64` is returned, show the farmer's photo in the card as confirmation
+All 5 must show "Done" to enable "Next →".
 
 #### Step 3 — Review Extracted Data
 
-Show a summary of all extracted data organized in sections:
-- **Identity:** Name, DOB, Aadhaar number, Gender (from Aadhaar)
-- **Land:** Village, District, Survey Number, Area (from Form 7)
+Summary of all extracted data, organized by section:
+- **Identity:** Name, DOB, Aadhaar number (from Aadhaar)
+- **Land:** Village, District, Survey No., Area (from Form 7)
 - **Crop:** Season crops (from Form 12)
 - **Bank:** Account number, IFSC, Bank name (from passbook)
 
-Each field is editable (tap to correct if OCR was wrong).
+All fields editable — farmer can correct any OCR mistakes.
 
-"Confirm & Submit →" button at bottom.
+#### Step 4 — Submit Registration
 
-#### Step 4 — Confirmation
-
+**API Call:**
 ```
 POST /api/farmers
-Body: All combined farmer data with status: "Pending", source: "mobile"
+Body: { all farmer data, status: "Pending", source: "mobile" }
 ```
 
 **On 201 Success:**
-- Show success animation (green checkmark, confetti particles)
-- "Registration Submitted!"
-- Show Farmer ID: "F-043"
-- "Your application is now under review by the District Officer."
+- Green checkmark success animation
+- Show Farmer ID: "Your ID: F-043"
 - "Go to Home" button
-- Save farmerId to local storage/SecureStore
+- Save `farmerId` to SecureStore
 
 ---
 
 ### SCREEN 6: Farmer Profile (`(app)/(tabs)/profile`)
 
-**Purpose:** View and edit verified farmer profile.
-
 **Layout:**
-- Header: "My Profile" + Edit button (pencil icon)
-- Avatar circle with initials (tap to change photo — optional)
-- "✅ Verified Farmer" green badge
+- Header: "My Profile" + Edit (pencil icon)
+- Avatar initials circle + "✅ Verified Farmer" badge
 - Farmer ID in monospace
-- Tabbed sections:
+- Tabs:
   - **Personal** — Name, DOB, Gender, Father's Name, Category, Mobile
   - **Land** — District, Village, Taluka, Survey No., Land Area, Crop
   - **Bank** — Bank Name, Branch, IFSC, Account (masked)
-  - **Documents** — List of 5 uploaded documents with status chips
+  - **Documents** — 5 doc cards with status chips (uploaded / failed)
 
 **Edit Mode:**
-- Tap Edit → fields become editable inputs
-- "Save Changes" button → `PATCH /api/farmers/:farmerId`
-
-**Show registration date and last updated date at bottom.**
+- Tap Edit → editable inputs
+- "Save Changes" → `PATCH /api/farmers/:farmerId`
 
 ---
 
 ### SCREEN 7: All Schemes (`(app)/(tabs)/schemes`)
 
-**Purpose:** Browse all government schemes and see eligibility.
-
 **Layout:**
 - Header: "Government Schemes" + search bar
 - Filter chips: All | Central Govt | Maharashtra State
-- Eligibility toggle: "Show only eligible for me" (ON by default for verified farmers)
+- Toggle: "Show only schemes I'm eligible for" (ON by default for verified farmers)
 - Scheme cards list:
 
 ```
@@ -366,57 +343,44 @@ Body: All combined farmer data with status: "Pending", source: "mobile"
 └────────────────────────────────────────┘
 ```
 
-**Eligibility computation (client-side):**
-- Fetch farmer profile from local state
-- For each scheme, compute eligibility using these rules:
-  - PM-KISAN: Has land + Aadhaar + bank account
-  - PMFBY: Has land + crop data
-  - KCC: Age 18–75 + has land
-  - PM KUSUM: Land ≥ 0.5 ha
-  - PKVY: Has land + organic-compatible crop
-  - Pension schemes: Age 18–40 + small/marginal farmer
+**API Call:** `GET /api/schemes` — fetch all, compute eligibility client-side.
 
-**API Call:** `GET /api/schemes` (fetch all, filter client-side)
+**Eligibility is computed client-side** using the farmer's profile. See Eligibility Engine section.
 
 ---
 
 ### SCREEN 8: Scheme Detail (`schemes/[id]`)
 
-**Purpose:** Full scheme detail with apply option.
-
 **Layout:**
 - Back button + scheme name header
 - Hero card (light green gradient):
-  - Scheme name
-  - Type badge (Central / State)
-  - Status badge (Active)
-  - Your eligibility score bar (e.g., 82%)
-- Benefits section: "₹6,000 per year in 3 installments"
+  - Scheme name, Type badge, Status badge
+  - Eligibility score bar (e.g., 82%)
+- Benefits section
 - Tabs:
-  - **Overview** — Eligibility criteria table, family criteria, exclusions
-  - **Documents Needed** — List of required documents with checkmarks (✅ if farmer already has it uploaded)
-  - **How to Apply** — Step-by-step process, contact info
-- Bottom: "Apply for this Scheme →" button (opens in-app or links to official portal)
+  - **Overview** — Eligibility criteria table, exclusions
+  - **Documents Needed** — List with checkmarks (✅ if farmer has it)
+  - **How to Apply** — Step-by-step + contact info
+- Bottom: "Apply for this Scheme →" button
 
-**Eligibility match card:**
+**Eligibility match breakdown:**
 ```
 ✅ Land holding: 2.2 ha
 ✅ Aadhaar linked
 ✅ Bank account available
-✅ Active farmer status
-❌ Pending Aadhaar-bank linkage verification
+❌ Aadhaar–bank linkage not yet verified
 ```
+
+**API Call:** `GET /api/schemes/:id`
 
 ---
 
 ### SCREEN 9: Grievances (`(app)/(tabs)/grievances`)
 
-**Purpose:** View, file, and track grievances.
-
 **Layout:**
 - Header: "Grievances" + "File New +" button
-- Stats: 1 Open | 0 Resolved
-- Grievance list:
+- Stats: N Open | N Resolved
+- Grievance cards:
 
 ```
 ┌──────────────────────────────────────────┐
@@ -427,11 +391,7 @@ Body: All combined farmer data with status: "Pending", source: "mobile"
 └──────────────────────────────────────────┘
 ```
 
-**Status color coding:**
-- Submitted: grey
-- Under Review: amber
-- Resolved: green
-- Closed: slate
+Status colors: Submitted → grey | Under Review → amber | Resolved → green | Closed → slate
 
 **API Call:** `GET /api/grievances?farmerId=:farmerId`
 
@@ -441,14 +401,13 @@ Body: All combined farmer data with status: "Pending", source: "mobile"
 
 **Layout:**
 - Header: "← File a Grievance"
-- Form card:
+- Form:
   - **Category** — dropdown: Scheme / Land / Payment / Registration / Other
-  - **Related Scheme** — optional dropdown (fetch from GET /api/schemes)
-  - **Subject** — single line text (max 100 chars)
-  - **Description** — multi-line textarea (min 50 chars, max 500)
+  - **Related Scheme** — optional dropdown (from GET /api/schemes)
+  - **Subject** — single line (max 100 chars)
+  - **Description** — textarea (min 50, max 500 chars)
   - **Attach Photo** — optional image picker
   - "Submit Grievance →" button (dark green)
-- Note: "Your name, mobile number, and district are auto-filled from your profile"
 
 **API Call:**
 ```
@@ -457,8 +416,7 @@ Body: { farmerId, farmerName, mobile, district, village, category, subject, desc
 ```
 
 **On Success:**
-- Show success card: "Grievance Registered!"
-- Show tracking ID: GR-2026-0041
+- Success card: "Grievance Registered! ID: GR-2026-0041"
 - Navigate back to Grievances list
 
 ---
@@ -466,18 +424,17 @@ Body: { farmerId, farmerName, mobile, district, village, category, subject, desc
 ### SCREEN 11: Grievance Detail (`grievances/[id]`)
 
 **Layout:**
-- Header: "← Grievance GR-2026-0041"
 - Status timeline:
   ```
   ● Submitted — 3 May 2026
   ● Under Review — 4 May 2026
   ● Resolved — 5 May 2026
   ```
-- Details card: Category, Subject, Description
+- Details: Category, Subject, Description
 - Officer Response card (shown when resolved):
   ```
   👮 District Officer — Nashik
-  "Your payment has been initiated. Allow 2-3 working days."
+  "Your payment has been initiated..."
   ```
 
 ---
@@ -485,17 +442,15 @@ Body: { farmerId, farmerName, mobile, district, village, category, subject, desc
 ### SCREEN 12: Notifications (`notifications`)
 
 **Layout:**
-- Header: "Notifications"
 - "Mark all as read" button
 - Grouped by date (Today / Yesterday / Earlier)
-- Each notification:
-  - Icon based on type (✅ verification, 📋 scheme, 💬 grievance)
-  - Title + body
-  - Timestamp
-  - Unread: slightly darker background with green left border
+- Notification item:
+  - Icon by type: ✅ verification | 📋 scheme | 💬 grievance
+  - Title + body + timestamp
+  - Unread: darker bg + green left border
   - Tap → navigate to relevant screen
 
-**API Call:**
+**API Calls:**
 ```
 GET /api/notifications?farmerId=:farmerId
 PATCH /api/notifications/:id/read  (on tap)
@@ -511,14 +466,13 @@ PATCH /api/notifications/:id/read  (on tap)
 npx create-expo-app KrushiSuvidhaApp --template expo-template-blank-typescript
 cd KrushiSuvidhaApp
 
-# Core dependencies
 npx expo install expo-router expo-secure-store expo-image-picker
 npx expo install expo-document-picker expo-camera expo-file-system
-npx expo install expo-notifications expo-font
+npx expo install expo-notifications expo-font expo-device
 npm install zustand axios react-hook-form @hookform/resolvers zod
 npm install @react-native-community/datetimepicker
 npm install react-native-reanimated react-native-gesture-handler
-npm install nativewind tailwindcss  # for styling
+npm install nativewind tailwindcss
 ```
 
 ### File Structure
@@ -529,8 +483,8 @@ KrushiSuvidhaApp/
 │   ├── (auth)/
 │   │   ├── _layout.tsx
 │   │   ├── index.tsx          # Splash + Welcome
-│   │   ├── login.tsx          # Mobile number entry
-│   │   └── otp-verify.tsx     # OTP verification
+│   │   ├── login.tsx
+│   │   └── otp-verify.tsx
 │   ├── (app)/
 │   │   ├── _layout.tsx        # Tab navigator
 │   │   ├── (tabs)/
@@ -548,14 +502,13 @@ KrushiSuvidhaApp/
 │   │       ├── grievances/new.tsx
 │   │       ├── grievances/[id].tsx
 │   │       └── notifications.tsx
-│   └── _layout.tsx            # Root layout + auth guard
+│   └── _layout.tsx
 ├── components/
 │   ├── ui/
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
 │   │   ├── Badge.tsx
 │   │   ├── Input.tsx
-│   │   ├── StatusBar.tsx
 │   │   └── ProgressBar.tsx
 │   ├── farmer/
 │   │   ├── StatusCard.tsx
@@ -568,11 +521,11 @@ KrushiSuvidhaApp/
 │       ├── GrievanceCard.tsx
 │       └── StatusTimeline.tsx
 ├── store/
-│   ├── authStore.ts           # JWT, farmerId, mobile
-│   ├── farmerStore.ts         # Farmer profile data
-│   └── notificationStore.ts  # Notifications + push tokens
+│   ├── authStore.ts
+│   ├── farmerStore.ts
+│   └── notificationStore.ts
 ├── services/
-│   ├── api.ts                 # Axios instance + interceptors
+│   ├── api.ts                 # Axios instance with base URL + JWT interceptor
 │   ├── authService.ts
 │   ├── farmerService.ts
 │   ├── extractService.ts
@@ -580,19 +533,16 @@ KrushiSuvidhaApp/
 │   └── grievanceService.ts
 ├── hooks/
 │   ├── useAuth.ts
-│   ├── useFarmerStatus.ts     # Polls status while Pending
+│   ├── useFarmerStatus.ts
 │   └── useNotifications.ts
 ├── utils/
-│   ├── eligibility.ts         # Client-side scheme eligibility engine
-│   ├── storage.ts             # SecureStore wrappers
-│   └── i18n.ts                # Language translations
-├── constants/
-│   ├── colors.ts
-│   ├── districts.ts           # Maharashtra districts list
-│   └── documentTypes.ts
-└── assets/
-    ├── logo.png
-    └── fonts/
+│   ├── eligibility.ts
+│   ├── storage.ts
+│   └── i18n.ts
+└── constants/
+    ├── colors.ts
+    ├── districts.ts           # All 36 Maharashtra districts
+    └── documentTypes.ts
 ```
 
 ### API Service Layer
@@ -617,7 +567,7 @@ api.interceptors.response.use(
   async (err) => {
     if (err.response?.status === 401) {
       await SecureStore.deleteItemAsync('jwt_token');
-      // Navigate to login
+      // Trigger navigation to login (use a navigation ref or event emitter)
     }
     return Promise.reject(err);
   }
@@ -629,7 +579,7 @@ api.interceptors.response.use(
 ```typescript
 // app/_layout.tsx
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@/store/authStore';
 
@@ -661,7 +611,7 @@ export default function RootLayout() {
 // hooks/useDocumentUpload.ts
 export function useDocumentUpload(documentType: string, mobile: string) {
   const [status, setStatus] = useState<'idle'|'uploading'|'processing'|'done'|'error'>('idle');
-  const [extracted, setExtracted] = useState(null);
+  const [extracted, setExtracted] = useState<any>(null);
 
   const upload = async (file: { uri: string; name: string; type: string }) => {
     setStatus('uploading');
@@ -675,10 +625,12 @@ export function useDocumentUpload(documentType: string, mobile: string) {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     const requestId = data.request_id;
-
     setStatus('processing');
-    // Poll until done
+
+    // Poll until done (max 3 minutes = 45 attempts × 4 seconds)
+    let attempts = 0;
     const poll = async (): Promise<void> => {
+      if (attempts++ > 45) { setStatus('error'); return; }
       const result = await api.get(`/extract/${requestId}`);
       if (result.data.status === 'processing') {
         await new Promise(r => setTimeout(r, 4000));
@@ -702,23 +654,40 @@ export function useDocumentUpload(documentType: string, mobile: string) {
 
 ```typescript
 // hooks/useFarmerStatus.ts
+import * as Notifications from 'expo-notifications';
+
 export function useFarmerStatus(farmerId: string, currentStatus: string) {
   const { updateStatus } = useFarmerStore();
 
   useEffect(() => {
     if (currentStatus !== 'Pending') return;
     const interval = setInterval(async () => {
-      const { data } = await api.get(`/farmers/${farmerId}/status`);
-      if (data.status !== currentStatus) {
-        updateStatus(data.status);
-        // Trigger local notification
-        if (data.status === 'Verified') {
-          showLocalNotification('Registration Verified!', 'Your farmer registration has been approved.');
-        } else if (data.status === 'Cancelled') {
-          showLocalNotification('Registration Cancelled', 'Please contact your District Office.');
+      try {
+        const { data } = await api.get(`/farmers/${farmerId}/status`);
+        if (data.status !== currentStatus) {
+          updateStatus(data.status);
+          if (data.status === 'Verified') {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Registration Verified! ✅',
+                body: 'Your farmer registration has been approved by the District Officer.',
+              },
+              trigger: null,
+            });
+          } else if (data.status === 'Cancelled') {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Registration Update',
+                body: 'Your registration status has been updated. Please open the app for details.',
+              },
+              trigger: null,
+            });
+          }
         }
+      } catch (e) {
+        // Ignore network errors during polling
       }
-    }, 30000); // Poll every 30 seconds
+    }, 30000);
     return () => clearInterval(interval);
   }, [farmerId, currentStatus]);
 }
@@ -728,30 +697,52 @@ export function useFarmerStatus(farmerId: string, currentStatus: string) {
 
 ```typescript
 // utils/eligibility.ts
-export function checkEligibility(farmer: FarmerRecord, scheme: Scheme): { eligible: boolean; score: number; reasons: string[]; gaps: string[] } {
+function getAge(dob: string): number {
+  const d = new Date(dob);
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+}
+
+function getLandHa(land: string | number): number {
+  const s = String(land);
+  const [h, a] = s.split('.');
+  return parseFloat(h || '0') + parseFloat(a || '0') / 100;
+}
+
+export function checkEligibility(farmer: any, scheme: any) {
   let score = 0;
   const reasons: string[] = [];
   const gaps: string[] = [];
-  const landHa = parseFloat(String(farmer.land)) || 0;
+  const landHa = getLandHa(farmer.land);
   const age = farmer.dob ? getAge(farmer.dob) : 35;
   const name = scheme.name.toLowerCase();
 
-  if (farmer.status === 'Verified' || farmer.status === 'Active') { score += 20; reasons.push('Active registered farmer'); }
+  if (['Verified', 'Active'].includes(farmer.status)) { score += 20; reasons.push('Active registered farmer'); }
   if (farmer.bankAccount) { score += 15; reasons.push('Bank account linked'); }
 
   if (name.includes('pm-kisan')) {
-    if (landHa > 0) { score += 30; reasons.push(`Land: ${landHa} ha`); }
+    if (landHa > 0) { score += 30; reasons.push(`Land: ${landHa.toFixed(2)} ha`); }
     if (farmer.aadhaar) { score += 15; reasons.push('Aadhaar available'); }
   } else if (name.includes('pmfby') || name.includes('fasal bima')) {
-    if (landHa > 0) { score += 30; reasons.push(`Cultivable land: ${landHa} ha`); }
+    if (landHa > 0) { score += 30; reasons.push(`Cultivable land: ${landHa.toFixed(2)} ha`); }
     if (farmer.crop) { score += 20; reasons.push(`Crop: ${farmer.crop}`); }
   } else if (name.includes('kcc') || name.includes('kisan credit')) {
-    if (age >= 18 && age <= 75) { score += 25; reasons.push(`Age ${age} in range`); }
-    else gaps.push(`Age ${age} outside 18-75 range`);
-    if (landHa > 0) { score += 30; reasons.push('Land owner'); }
+    if (age >= 18 && age <= 75) { score += 25; reasons.push(`Age ${age} in 18–75 range`); }
+    else gaps.push(`Age ${age} outside 18–75 range`);
+    if (landHa > 0) { score += 30; reasons.push('Agricultural land owner'); }
+  } else if (name.includes('kusum') || name.includes('solar')) {
+    if (landHa >= 0.5) { score += 35; reasons.push(`${landHa.toFixed(2)} ha suitable for solar`); }
+    else gaps.push('Insufficient land for solar pump');
+  } else if (name.includes('maan-dhan') || name.includes('pension')) {
+    if (age >= 18 && age <= 40) { score += 35; reasons.push(`Age ${age} in 18–40 range`); }
+    else gaps.push(`Age ${age} outside 18–40 range`);
   } else {
-    if (landHa > 0) { score += 25; reasons.push(`Land: ${landHa} ha`); }
+    if (landHa > 0) { score += 25; reasons.push(`Land: ${landHa.toFixed(2)} ha`); }
     if (farmer.crop) { score += 15; reasons.push(`Crop: ${farmer.crop}`); }
+  }
+
+  const cat = (farmer.category || '').toLowerCase();
+  if (['sc','st','obc','nt','vjnt'].some(c => cat.includes(c))) {
+    score += 10; reasons.push(`Reserved category: ${farmer.category}`);
   }
 
   return { eligible: score >= 45, score: Math.min(100, score), reasons, gaps };
@@ -762,26 +753,39 @@ export function checkEligibility(farmer: FarmerRecord, scheme: Scheme): { eligib
 
 ## PUSH NOTIFICATIONS SETUP
 
-Use **Expo Notifications** for push notifications.
-
 ```typescript
-// On app start (after login):
+// Call this after successful login
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 async function registerForPushNotifications(farmerId: string) {
   if (!Device.isDevice) return;
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') return;
+
   const token = (await Notifications.getExpoPushTokenAsync()).data;
-  await api.post('/notifications/register-token', { farmerId, pushToken: token, platform: Platform.OS });
+  await api.post('/notifications/register-token', {
+    farmerId,
+    pushToken: token,
+    platform: Platform.OS,
+  });
 }
+
+// Configure notification handler at app root
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 ```
 
-**Server-side** (when officer changes farmer status to Verified/Cancelled): Look up farmer's push token and send notification via Expo Push API:
+**Server-side push** (when officer verifies/cancels a farmer, the API server should):
 ```
 POST https://exp.host/--/api/v2/push/send
-Body: { to: pushToken, title: "Registration Verified!", body: "...", data: { type: "status_change" } }
+Body: { to: pushToken, title: "...", body: "...", data: { type: "status_change" } }
 ```
 
 ---
@@ -789,7 +793,6 @@ Body: { to: pushToken, title: "Registration Verified!", body: "...", data: { typ
 ## MARATHI TRANSLATIONS (KEY STRINGS)
 
 ```typescript
-// constants/translations.ts
 export const translations = {
   en: {
     welcome: "Welcome Farmer",
@@ -802,6 +805,8 @@ export const translations = {
     uploadDocuments: "Upload Your Documents",
     fileGrievance: "File a Grievance",
     eligibleSchemes: "Eligible Schemes",
+    notifications: "Notifications",
+    profile: "My Profile",
   },
   mr: {
     welcome: "शेतकरी स्वागत",
@@ -814,6 +819,8 @@ export const translations = {
     uploadDocuments: "तुमची कागदपत्रे अपलोड करा",
     fileGrievance: "तक्रार नोंदवा",
     eligibleSchemes: "पात्र योजना",
+    notifications: "सूचना",
+    profile: "माझी प्रोफाइल",
   }
 };
 ```
@@ -822,58 +829,35 @@ export const translations = {
 
 ## IMPORTANT IMPLEMENTATION NOTES
 
-### 1. Token Storage
-Use `expo-secure-store` (NOT AsyncStorage) for the JWT token. AsyncStorage is not encrypted.
-
-### 2. File Uploads
-- Use `expo-image-picker` for camera / gallery selection
-- Use `expo-document-picker` for PDF files
-- Convert URI to FormData blob for multipart upload
-- Show upload progress using axios `onUploadProgress`
-
-### 3. OCR Polling Timeout
-Set a maximum polling time of **3 minutes** (45 polls × 4 seconds). After timeout, show error and offer retry.
-
-### 4. Offline Handling
-- Cache farmer profile and schemes locally using AsyncStorage
-- Show "You're offline" banner when no network
-- Queue grievance submissions for retry when back online
-
-### 5. Camera Permissions
-Request camera permission before opening camera. Show explanation dialog if denied.
-
-### 6. Maharashtra Districts List
-Hardcode all 36 Maharashtra districts as a dropdown option list for the registration form.
-
-### 7. Testing
-Test on both Android (API 26+) and iOS (13+). Use Expo Go for development, build with EAS Build for production.
-
-### 8. App Store / Play Store Submission
-- App ID: `com.airavatatechnologies.krushisuvidha`
-- Build with: `eas build --platform all --profile production`
-- Submit with: `eas submit`
+1. **Token Storage:** Use `expo-secure-store` (NOT AsyncStorage) for JWT — SecureStore is encrypted.
+2. **File Uploads:** Use `expo-image-picker` for camera/gallery. Convert to FormData blob for multipart upload.
+3. **OCR Polling Timeout:** Max 3 minutes (45 polls × 4 seconds). After timeout, show retry.
+4. **Offline Handling:** Cache farmer profile and schemes in AsyncStorage. Show "You're offline" banner. Queue grievance submissions for retry.
+5. **Camera Permissions:** Request before opening camera. Show explanation dialog if denied.
+6. **Maharashtra Districts:** Hardcode all 36 districts as a dropdown list in `constants/districts.ts`.
+7. **App ID:** `com.airavatatechnologies.krushisuvidha`
+8. **Build:** `eas build --platform all --profile production`
 
 ---
 
 ## DELIVERABLES CHECKLIST
 
-- [ ] All 12 screens implemented
-- [ ] API integration complete (all endpoints)
-- [ ] OCR document upload with polling
-- [ ] Farmer status polling (real-time updates)
-- [ ] Scheme eligibility engine (client-side)
-- [ ] Grievance submission + tracking
-- [ ] Push notifications (Expo)
+- [ ] All 12 screens implemented with green-only design system
+- [ ] JWT auth flow (OTP login, SecureStore, auth guard)
+- [ ] 5-document OCR upload with 4-second polling
+- [ ] Farmer status polling (30-second interval, local notification on change)
+- [ ] Scheme eligibility engine (client-side, all scheme types)
+- [ ] Grievance submission + status tracking
+- [ ] Expo push notifications + server-side token registration
 - [ ] Marathi language toggle
-- [ ] Offline handling + error states
-- [ ] Loading skeletons on all data-fetching screens
+- [ ] Offline handling + error states + loading skeletons
 - [ ] Form validation with react-hook-form + zod
-- [ ] JWT auth guard + auto-redirect
-- [ ] Tested on Android + iOS
+- [ ] Tested on Android (API 26+) and iOS (13+)
 
 ---
 
 *Project: Krushi Suvidha AI — Airavata Technologies*  
-*App for Maharashtra Farmers — Companion to AgriAdmin Web Dashboard*  
-*API Base: https://krushisuvidhaai.airavatatechnologies.com/api*  
-*Document Version: 1.0 — May 2026*
+*API: https://krushisuvidhaai.airavatatechnologies.com/api (Port 3014)*  
+*MongoDB: mongodb+srv://sairajkoyande_db_user:5QlrqFxJrJmM9rR4@cluster0.akmevxg.mongodb.net/?appName=Cluster0*  
+*DATALAB_API_KEY: Zgtv3ZTMRajX5sv5v9EqD81nsdUH0rfPwlWJd3SorTI*  
+*Document Version: 1.1 — May 2026*
