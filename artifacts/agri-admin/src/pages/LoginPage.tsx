@@ -47,8 +47,8 @@ export default function LoginPage() {
         <div className="absolute top-1/2 right-0 w-px h-3/4 -translate-y-1/2 opacity-10" style={{ background: "linear-gradient(to bottom, transparent, #4ade80, transparent)" }}/>
 
         {/* Logo */}
-        <div>
-          <img src="/krishi-suvidha-logo.png" alt="Krishi Suvidha" className="w-52 object-contain" style={{ filter: "brightness(1.1)" }}/>
+        <div className="flex justify-center">
+          <img src="/krishi-suvidha-logo.png" alt="Krishi Suvidha" className="w-72 object-contain" style={{ filter: "brightness(1.1)" }}/>
         </div>
 
         {/* Centre copy */}
