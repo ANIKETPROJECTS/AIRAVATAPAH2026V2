@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Search, Plus, Upload, Download, ChevronLeft, ChevronRight, Sparkles, Loader2, AlertCircle, Trash2, Eye, XCircle, CheckCircle2 } from "lucide-react";
 import { apiFetchFarmers, apiDeleteFarmer, apiUpdateFarmer, notifyFarmerChange, type FarmerRecord } from "@/data/farmerApi";
 import FarmerRegistrationForm from "@/components/forms/FarmerRegistrationForm";
@@ -30,6 +31,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: string) => void }) {
+  const { addNotification } = useNotifications();
   const [farmers, setFarmers] = useState<FarmerRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -115,12 +117,22 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
     setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
     setViewFarmer(null);
     showToast(`Farmer ${updated.status === "Verified" ? "verified ✓" : updated.status === "Cancelled" ? "rejected" : "updated"}`);
+    if (updated.status === "Verified") {
+      addNotification({ type:"farmer", title:"Farmer Verified", body:`${updated.name} (${updated.farmerId}) has been successfully verified and added to the Farmers list.`, farmerName:updated.name, farmerId:updated.farmerId });
+    } else if (updated.status === "Cancelled") {
+      addNotification({ type:"system", title:"Registration Cancelled", body:`${updated.name} (${updated.farmerId}) registration was cancelled.`, farmerName:updated.name, farmerId:updated.farmerId });
+    }
   };
 
   const handleReviewUpdated = (updated: FarmerRecord) => {
     setFarmers(prev => prev.map(f => f.farmerId === updated.farmerId ? updated : f));
     setReviewFarmer(null);
     showToast(updated.status === "Verified" ? "Farmer verification approved ✓" : "Farmer registration cancelled");
+    if (updated.status === "Verified") {
+      addNotification({ type:"farmer", title:"Farmer Verified ✓", body:`${updated.name} (${updated.farmerId}) passed verification — now visible in Verified Farmers.`, farmerName:updated.name, farmerId:updated.farmerId });
+    } else if (updated.status === "Cancelled") {
+      addNotification({ type:"system", title:"Registration Rejected", body:`${updated.name} (${updated.farmerId}) registration was rejected during review.`, farmerName:updated.name, farmerId:updated.farmerId });
+    }
   };
 
   const handleQuickReject = async (farmerId: string) => {
@@ -139,9 +151,10 @@ export default function FarmerRegistry({ onNavigate }: { onNavigate?: (key: stri
     }
   };
 
-  const handleRegistrationSuccess = (msg: string) => {
+  const handleRegistrationSuccess = (msg: string, farmerName?: string, farmerId?: string) => {
     showToast(msg);
     loadFarmers();
+    addNotification({ type:"farmer", title:"New Farmer Registered", body: farmerName ? `${farmerName} (${farmerId}) has been registered and is pending verification.` : msg, farmerName, farmerId });
   };
 
   return (

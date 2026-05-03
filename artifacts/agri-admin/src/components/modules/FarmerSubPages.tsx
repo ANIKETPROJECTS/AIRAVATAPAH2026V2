@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useNotifications } from "@/contexts/NotificationContext";
 import {
   Search, Filter, ArrowUpDown, Shield, AlertCircle, Ticket,
   FileText, Activity, CheckCircle2, XCircle, Calendar, Info,
@@ -191,6 +192,7 @@ function SchemeApplyModal({ scheme, farmer, onClose, onApplied }: {
 }
 
 export function SchemesPage({ farmer }: { farmer: FarmerRecord }) {
+  const { addNotification } = useNotifications();
   const baseSchemes = deriveSchemes(farmer);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [applyingScheme, setApplyingScheme] = useState<Scheme|null>(null);
@@ -238,7 +240,7 @@ export function SchemesPage({ farmer }: { farmer: FarmerRecord }) {
           scheme={applyingScheme}
           farmer={farmer}
           onClose={()=>setApplyingScheme(null)}
-          onApplied={id=>{ setAppliedIds(prev=>new Set([...prev,id])); setSuccessMsg(`Application for ${applyingScheme.name} submitted successfully.`); }}
+          onApplied={id=>{ setAppliedIds(prev=>new Set([...prev,id])); setSuccessMsg(`Application for ${applyingScheme.name} submitted successfully.`); addNotification({ type:"scheme", title:"Scheme Application Submitted", body:`${applyingScheme.name} application submitted for ${farmer.name}.`, farmerName:farmer.name, farmerId:farmer.farmerId }); }}
         />
       )}
       {successMsg&&<SuccessBanner title="Application Submitted!" sub={successMsg} onClose={()=>setSuccessMsg("")}/>}
@@ -455,6 +457,7 @@ function RaiseGrievanceModal({ farmer, onClose, onSubmitted }: {
 }
 
 export function GrievancesPage({ farmer }: { farmer: FarmerRecord }) {
+  const { addNotification } = useNotifications();
   const base = derivedGrievances(farmer);
   const [extra, setExtra] = useState<Grievance[]>([]);
   const all = useMemo(()=>[...extra,...base], [base, extra]);
@@ -485,7 +488,7 @@ export function GrievancesPage({ farmer }: { farmer: FarmerRecord }) {
 
   return (
     <div className="space-y-5">
-      {showModal&&<RaiseGrievanceModal farmer={farmer} onClose={()=>setShowModal(false)} onSubmitted={g=>{ setExtra(p=>[g,...p]); setSuccessMsg(`Grievance "${g.title}" filed — ID: ${g.id}`); }}/>}
+      {showModal&&<RaiseGrievanceModal farmer={farmer} onClose={()=>setShowModal(false)} onSubmitted={g=>{ setExtra(p=>[g,...p]); setSuccessMsg(`Grievance "${g.title}" filed — ID: ${g.id}`); addNotification({ type:"grievance", title:"New Grievance Filed", body:`"${g.title}" raised for ${farmer.name} · Priority: ${g.priority}`, farmerName:farmer.name, farmerId:farmer.farmerId }); }}/>}
       {successMsg&&<SuccessBanner title="Grievance Filed Successfully!" sub={successMsg} onClose={()=>setSuccessMsg("")}/>}
 
       {/* Stats */}
@@ -666,6 +669,7 @@ function RaiseTicketModal({ farmer, onClose, onSubmitted }: {
 }
 
 export function TicketsPage({ farmer }: { farmer: FarmerRecord }) {
+  const { addNotification } = useNotifications();
   const base = derivedTickets(farmer);
   const [extra, setExtra] = useState<SupportTicket[]>([]);
   const all = useMemo(()=>[...extra,...base], [base, extra]);
@@ -691,7 +695,7 @@ export function TicketsPage({ farmer }: { farmer: FarmerRecord }) {
 
   return (
     <div className="space-y-5">
-      {showModal&&<RaiseTicketModal farmer={farmer} onClose={()=>setShowModal(false)} onSubmitted={t=>{ setExtra(p=>[t,...p]); setSuccessMsg(`Ticket "${t.subject}" raised — ID: ${t.id}`); }}/>}
+      {showModal&&<RaiseTicketModal farmer={farmer} onClose={()=>setShowModal(false)} onSubmitted={t=>{ setExtra(p=>[t,...p]); setSuccessMsg(`Ticket "${t.subject}" raised — ID: ${t.id}`); addNotification({ type:"ticket", title:"Support Ticket Raised", body:`"${t.subject}" logged for ${farmer.name} · Type: ${t.type}`, farmerName:farmer.name, farmerId:farmer.farmerId }); }}/>}
       {successMsg&&<SuccessBanner title="Support Ticket Raised!" sub={successMsg} onClose={()=>setSuccessMsg("")}/>}
 
       {/* Stats */}

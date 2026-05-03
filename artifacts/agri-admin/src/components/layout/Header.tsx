@@ -1,13 +1,146 @@
-import { useState, useEffect } from "react";
-import { Bell, User, MessageSquare } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Bell, User, MessageSquare, Shield, AlertTriangle, Ticket, CheckCircle2, Info, X, BellOff, CheckCheck } from "lucide-react";
+import { useNotifications, type AppNotification, type NotificationType } from "@/contexts/NotificationContext";
 
+/* ── time-ago helper ── */
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+/* ── icon + color per type ── */
+function NotifIcon({ type }: { type: NotificationType }) {
+  const base = "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0";
+  if (type === "scheme")    return <div className={`${base} bg-teal-100`}><Shield className="h-4 w-4 text-teal-600"/></div>;
+  if (type === "grievance") return <div className={`${base} bg-lime-100`}><AlertTriangle className="h-4 w-4 text-lime-700"/></div>;
+  if (type === "ticket")    return <div className={`${base} bg-green-100`}><Ticket className="h-4 w-4 text-green-700"/></div>;
+  if (type === "farmer")    return <div className={`${base} bg-emerald-100`}><CheckCircle2 className="h-4 w-4 text-emerald-600"/></div>;
+  return <div className={`${base} bg-slate-100`}><Info className="h-4 w-4 text-slate-500"/></div>;
+}
+
+/* ── single notification row ── */
+function NotifRow({ n, onRead }: { n: AppNotification; onRead: () => void }) {
+  return (
+    <button
+      onClick={onRead}
+      className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-border/50 last:border-0 ${!n.read ? "bg-emerald-50/40" : ""}`}
+    >
+      <NotifIcon type={n.type}/>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <span className={`text-xs font-semibold text-slate-800 leading-tight ${!n.read ? "text-slate-900" : "text-slate-600"}`}>{n.title}</span>
+          <span className="text-[10px] text-muted-foreground flex-shrink-0 mt-0.5">{timeAgo(n.timestamp)}</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{n.body}</p>
+        {n.farmerId && (
+          <span className="text-[10px] font-mono text-secondary mt-1 block">{n.farmerId}</span>
+        )}
+      </div>
+      {!n.read && <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1.5"/>}
+    </button>
+  );
+}
+
+/* ── dropdown panel ── */
+function NotifPanel({ onClose }: { onClose: () => void }) {
+  const { notifications, unreadCount, markRead, markAllRead, clearAll } = useNotifications();
+
+  return (
+    <div className="absolute right-0 top-full mt-2 w-[360px] bg-white border border-border rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-slate-50">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-secondary"/>
+          <span className="font-bold text-sm text-foreground">Notifications</span>
+          {unreadCount > 0 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">{unreadCount} new</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {unreadCount > 0 && (
+            <button onClick={markAllRead} title="Mark all read"
+              className="flex items-center gap-1 text-[11px] text-secondary hover:text-secondary/80 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors font-semibold">
+              <CheckCheck className="h-3.5 w-3.5"/>Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button onClick={clearAll} title="Clear all"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-slate-700 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors">
+              <X className="h-3 w-3"/>Clear
+            </button>
+          )}
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors ml-1">
+            <X className="h-3.5 w-3.5 text-muted-foreground"/>
+          </button>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="max-h-[420px] overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 text-center px-6">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+              <BellOff className="h-6 w-6 text-slate-400"/>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-slate-600 mb-1">All caught up!</div>
+              <p className="text-xs text-muted-foreground">No notifications yet. Actions like scheme applications, grievances, and ticket submissions will appear here.</p>
+            </div>
+          </div>
+        ) : (
+          notifications.map(n => (
+            <NotifRow key={n.id} n={n} onRead={() => markRead(n.id)}/>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="px-4 py-2.5 border-t border-border bg-slate-50 text-center">
+          <span className="text-[11px] text-muted-foreground">{notifications.length} total · {unreadCount} unread</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main header ── */
 export default function Header({ onAIOpen }: { onAIOpen: () => void }) {
   const [time, setTime] = useState(new Date());
+  const [panelOpen, setPanelOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  /* Request browser notification permission once */
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  /* Close panel on outside click */
+  useEffect(() => {
+    if (!panelOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setPanelOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [panelOpen]);
 
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card">
@@ -25,10 +158,23 @@ export default function Header({ onAIOpen }: { onAIOpen: () => void }) {
           <span className="hidden sm:inline">AI Assistant</span>
           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
         </button>
-        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-          <Bell className="h-5 w-5 text-foreground" />
-          <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-        </button>
+
+        {/* Notification bell */}
+        <div className="relative" ref={panelRef}>
+          <button
+            onClick={() => setPanelOpen(o => !o)}
+            className={`relative p-2 rounded-lg transition-colors ${panelOpen ? "bg-emerald-50 text-secondary" : "hover:bg-muted"}`}
+          >
+            <Bell className={`h-5 w-5 ${panelOpen ? "text-secondary" : "text-foreground"}`} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+          {panelOpen && <NotifPanel onClose={() => setPanelOpen(false)}/>}
+        </div>
+
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
             <User className="h-4 w-4 text-primary-foreground" />
