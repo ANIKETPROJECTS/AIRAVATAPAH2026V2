@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { connectMongo } from "./lib/mongo";
 import { seedSchemes } from "./lib/seed-schemes";
+import { seedInsuranceSubsidies } from "./lib/seed-insurance-subsidies";
 
 const rawPort = process.env["PORT"];
 
@@ -20,6 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 connectMongo()
   .then(async (db) => {
     await seedSchemes(db);
+    await seedInsuranceSubsidies(db);
     app.listen(port, (err) => {
       if (err) {
         logger.error({ err }, "Error listening on port");

@@ -14,6 +14,7 @@ import FarmerAppPreview from "@/components/modules/FarmerAppPreview";
 import NewRegistration from "@/components/modules/NewRegistration";
 import UserManagement from "@/components/modules/UserManagement";
 import AllSchemes from "@/components/modules/AllSchemes";
+import AllInsuranceSubsidies from "@/components/modules/AllInsuranceSubsidies";
 import AIAssistant from "@/components/AIAssistant";
 import { useLang } from "@/contexts/LanguageContext";
 import { useAuth, type SectionKey } from "@/contexts/AuthContext";
@@ -27,6 +28,7 @@ const pageTitleKeys: Record<string, string> = {
   verifiedfarmers:  "page_verifiedfarmers",
   applications:     "page_applications",
   allschemes:       "All Schemes",
+  allinsurance:     "All Insurance & Subsidies",
   subsidies:        "page_subsidies",
   insurance:        "page_insurance",
   grievances:       "page_grievances",
@@ -74,7 +76,7 @@ export default function Index() {
   };
 
   const pageTitle = pageTitleKeys[active]
-    ? (["usermanagement", "allschemes"].includes(active) ? pageTitleKeys[active] : t(pageTitleKeys[active], lang))
+    ? (["usermanagement", "allschemes", "allinsurance"].includes(active) ? pageTitleKeys[active] : t(pageTitleKeys[active], lang))
     : active;
 
   const renderContent = () => {
@@ -95,6 +97,7 @@ export default function Index() {
     if (active === "verifiedfarmers") return <VerifiedFarmers/>;
     if (active === "applications")    return <SchemeApplications/>;
     if (active === "allschemes")      return <AllSchemes/>;
+    if (active === "allinsurance")    return <AllInsuranceSubsidies/>;
     if (active === "subsidies")       return <SubsidyManagement/>;
     if (active === "insurance")       return <InsuranceClaims/>;
     if (active === "grievances")      return <GrievanceManagement/>;
