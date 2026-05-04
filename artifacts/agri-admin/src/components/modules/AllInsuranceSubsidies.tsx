@@ -226,7 +226,11 @@ function GridCard({
   );
 }
 
-export default function AllInsuranceSubsidies() {
+interface AllInsuranceSubsidiesProps {
+  defaultTypeFilter?: "Insurance" | "Subsidy";
+}
+
+export default function AllInsuranceSubsidies({ defaultTypeFilter }: AllInsuranceSubsidiesProps = {}) {
   const [items, setItems] = useState<InsuranceSubsidy[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -236,7 +240,7 @@ export default function AllInsuranceSubsidies() {
   const [view, setView] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "Insurance" | "Subsidy">("ALL");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "Insurance" | "Subsidy">(defaultTypeFilter ?? "ALL");
   const [regionFilter, setRegionFilter] = useState<"ALL" | "Central" | "Maharashtra">("ALL");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<InsuranceSubsidy | null>(null);

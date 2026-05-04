@@ -14,7 +14,8 @@ export const T: Record<string, Record<LangCode, string>> = {
   nav_verifiedfarmers:  { en: "Farmers",                   hi: "किसान",                  mr: "शेतकरी" },
   nav_usermanagement:   { en: "User Management",            hi: "उपयोगकर्ता प्रबंधन",     mr: "वापरकर्ता व्यवस्थापन" },
   nav_allschemes:       { en: "All Schemes",                hi: "सभी योजनाएं",             mr: "सर्व योजना" },
-  nav_allinsurance:     { en: "All Insurance/Subsidies",   hi: "सभी बीमा/सब्सिडी",       mr: "सर्व विमा/अनुदान" },
+  nav_allinsurance:     { en: "All Insurance",             hi: "सभी बीमा योजनाएं",        mr: "सर्व विमा योजना" },
+  nav_allsubsidies:     { en: "All Subsidies",             hi: "सभी सब्सिडी योजनाएं",     mr: "सर्व अनुदान योजना" },
 
   page_dashboard:       { en: "Dashboard Overview",        hi: "डैशबोर्ड अवलोकन",       mr: "डॅशबोर्ड विहंगावलोकन" },
   page_newregistration: { en: "New Registration",          hi: "नई पंजीकरण",             mr: "नवीन नोंदणी" },

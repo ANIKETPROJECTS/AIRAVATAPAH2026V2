@@ -28,7 +28,8 @@ const pageTitleKeys: Record<string, string> = {
   verifiedfarmers:  "page_verifiedfarmers",
   applications:     "page_applications",
   allschemes:       "All Schemes",
-  allinsurance:     "All Insurance & Subsidies",
+  allinsurance:     "All Insurance",
+  allsubsidies:     "All Subsidies",
   subsidies:        "page_subsidies",
   insurance:        "page_insurance",
   grievances:       "page_grievances",
@@ -76,7 +77,7 @@ export default function Index() {
   };
 
   const pageTitle = pageTitleKeys[active]
-    ? (["usermanagement", "allschemes", "allinsurance"].includes(active) ? pageTitleKeys[active] : t(pageTitleKeys[active], lang))
+    ? (["usermanagement", "allschemes", "allinsurance", "allsubsidies"].includes(active) ? pageTitleKeys[active] : t(pageTitleKeys[active], lang))
     : active;
 
   const renderContent = () => {
@@ -97,7 +98,8 @@ export default function Index() {
     if (active === "verifiedfarmers") return <VerifiedFarmers/>;
     if (active === "applications")    return <SchemeApplications/>;
     if (active === "allschemes")      return <AllSchemes/>;
-    if (active === "allinsurance")    return <AllInsuranceSubsidies/>;
+    if (active === "allinsurance")    return <AllInsuranceSubsidies defaultTypeFilter="Insurance"/>;
+    if (active === "allsubsidies")    return <AllInsuranceSubsidies defaultTypeFilter="Subsidy"/>;
     if (active === "subsidies")       return <SubsidyManagement/>;
     if (active === "insurance")       return <InsuranceClaims/>;
     if (active === "grievances")      return <GrievanceManagement/>;

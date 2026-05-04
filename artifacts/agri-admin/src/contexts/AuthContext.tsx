@@ -5,7 +5,7 @@ export type UserRole = "admin" | "district_officer" | "taluka_officer" | "viewer
 
 export const SECTIONS = [
   "dashboard", "newregistration", "farmers", "verifiedfarmers",
-  "applications", "allschemes", "allinsurance", "subsidies", "insurance", "grievances",
+  "applications", "allschemes", "allinsurance", "allsubsidies", "subsidies", "insurance", "grievances",
   "reports", "settings", "farmerapp", "usermanagement",
 ] as const;
 export type SectionKey = typeof SECTIONS[number];
@@ -17,7 +17,8 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   verifiedfarmers:  "Verified Farmers",
   applications:     "Scheme Applications",
   allschemes:       "All Schemes",
-  allinsurance:     "All Insurance/Subsidies",
+  allinsurance:     "All Insurance",
+  allsubsidies:     "All Subsidies",
   subsidies:        "Subsidy Management",
   insurance:        "Insurance Claims",
   grievances:       "Grievance Management",
@@ -38,12 +39,12 @@ export const ROLE_PRESETS: Record<UserRole, Partial<Record<SectionKey, boolean>>
   admin: Object.fromEntries(SECTIONS.map(s => [s, true])) as Record<SectionKey, boolean>,
   district_officer: {
     dashboard: true, newregistration: true, farmers: true, verifiedfarmers: true,
-    applications: true, allschemes: true, allinsurance: true, subsidies: true, insurance: true, grievances: true, reports: true,
+    applications: true, allschemes: true, allinsurance: true, allsubsidies: true, subsidies: true, insurance: true, grievances: true, reports: true,
   },
   taluka_officer: {
     dashboard: true, newregistration: true, farmers: true, verifiedfarmers: true, grievances: true,
   },
-  viewer: { dashboard: true, reports: true, allschemes: true, allinsurance: true },
+  viewer: { dashboard: true, reports: true, allschemes: true, allinsurance: true, allsubsidies: true },
 };
 
 export const AVATAR_COLORS = [
